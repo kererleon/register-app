@@ -17,7 +17,9 @@ environment:
 dependencies:
   app_links: ^7.2.1
   badges: ^2.0.2
-  biometric_storage: ^5.0.1
+  # Only used on macOS and Linux; the copy has no Android part.
+  biometric_storage:
+    path: packages/biometric_storage/
   built_collection: ^5.1.0
   built_redux:
     git:
