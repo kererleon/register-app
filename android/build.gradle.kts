@@ -15,20 +15,13 @@ subprojects {
     val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
     project.layout.buildDirectory.value(newSubprojectBuildDir)
 }
-subprojects {
-    project.evaluationDependsOn(":app")
-}
-
-tasks.register<Delete>("clean") {
-    delete(rootProject.layout.buildDirectory)
-}
-
 // Some older plugins do not declare a namespace, which newer Android Gradle
-// plugins require. Use their manifest package instead.
+// plugins require. Use their manifest package instead, as soon as the
+// Android library plugin is applied to them.
 subprojects {
-    afterEvaluate {
-        val android = extensions.findByName("android")
-        if (android is com.android.build.gradle.BaseExtension && android.namespace == null) {
+    plugins.withId("com.android.library") {
+        val android = extensions.getByName("android") as com.android.build.gradle.BaseExtension
+        if (android.namespace == null) {
             val manifest = file("src/main/AndroidManifest.xml")
             if (manifest.exists()) {
                 Regex("package=\"([^\"]+)\"").find(manifest.readText())?.let {
@@ -37,4 +30,12 @@ subprojects {
             }
         }
     }
+}
+
+subprojects {
+    project.evaluationDependsOn(":app")
+}
+
+tasks.register<Delete>("clean") {
+    delete(rootProject.layout.buildDirectory)
 }
