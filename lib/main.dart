@@ -43,7 +43,7 @@ import 'package:flutter_built_redux/flutter_built_redux.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:responsive_scaffold/responsive_scaffold.dart';
-import 'package:uni_links/uni_links.dart';
+import 'package:app_links/app_links.dart';
 
 GlobalKey<NavigatorState>? navigatorKey;
 GlobalKey<NavigatorState> nestedNavKey = GlobalKey();
@@ -88,8 +88,9 @@ Future<void> main() async {
       binding.allowFirstFrame();
       Uri? uri;
       if (Platform.isAndroid) {
-        uri = await getInitialUri();
-        uriLinkStream.listen((event) {
+        final appLinks = AppLinks();
+        uri = await appLinks.getInitialLink();
+        appLinks.uriLinkStream.listen((event) {
           store.actions.start(event);
         });
       }
