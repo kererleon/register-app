@@ -25,15 +25,23 @@ import 'package:tuple/tuple.dart';
 class AbsencesPageContainer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return StoreConnection<AppState, AppActions, Tuple2<AbsencesState, bool>>(
+    return StoreConnection<AppState, AppActions,
+        Tuple3<AbsencesState, bool, String?>>(
       builder: (context, vm, actions) {
         return AbsencesPage(
           state: vm.item1,
           noInternet: vm.item2,
+          defaultSignature: vm.item3,
+          onAddFuture: actions.absencesActions.addFuture.call,
+          onRemoveFuture: actions.absencesActions.removeFuture.call,
         );
       },
       connect: (state) {
-        return Tuple2(state.absencesState, state.noInternet);
+        return Tuple3(
+          state.absencesState,
+          state.noInternet,
+          state.config?.fullName,
+        );
       },
     );
   }

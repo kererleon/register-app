@@ -18,6 +18,7 @@
 import 'package:collapsible_sidebar/collapsible_sidebar.dart';
 import 'package:dr/main.dart';
 import 'package:dr/middleware/middleware.dart';
+import 'package:dr/ui/theme.dart';
 import 'package:flutter/material.dart';
 
 typedef SelectAccountCallback = void Function(int index);
@@ -34,6 +35,7 @@ class Sidebar extends StatelessWidget {
     required this.currentSelected,
     required this.showGrades,
     required this.showAbsences,
+    required this.showToday,
     required this.showCalendar,
     required this.showCertificate,
     required this.showMessages,
@@ -49,6 +51,7 @@ class Sidebar extends StatelessWidget {
   final VoidCallback goHome,
       showGrades,
       showAbsences,
+      showToday,
       showCalendar,
       showCertificate,
       showMessages,
@@ -111,64 +114,70 @@ class Sidebar extends StatelessWidget {
       toggleTooltipCollapsed: "Ausklappen",
       toggleTooltipExpanded: "Einklappen",
       toggleTitle: const SizedBox(),
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
       avatar:
           //"https://vinzentinum.digitalesregister.it/v2/theme/icons/profile_empty.png" is the (ugly) default
           userIcon?.endsWith("/profile_empty.png") ?? true
               ? const Icon(Icons.account_circle)
               : Image.network(userIcon!),
       unselectedIconColor: Theme.of(context).iconTheme.color!,
-      selectedIconColor: Theme.of(context).colorScheme.secondary,
+      selectedIconColor: Theme.of(context).colorScheme.primary,
       unselectedTextColor: Theme.of(context).textTheme.titleMedium!.color!,
-      selectedTextColor: Theme.of(context).colorScheme.secondary,
-      selectedIconBox: Theme.of(context).colorScheme.secondary.withAlpha(20),
+      selectedTextColor: Theme.of(context).colorScheme.primary,
+      selectedIconBox: Theme.of(context).colorScheme.primary.withAlpha(40),
       items: [
+        CollapsibleItem(
+          text: br("Heute", "Heute 🗿"),
+          icon: Icons.bolt_rounded,
+          isSelected: currentSelected == Pages.today,
+          onPressed: showToday,
+        ),
         if (tabletMode)
           CollapsibleItem(
             isSelected: currentSelected == Pages.homework,
             icon: Icons.assignment,
-            text: "Hausaufgaben",
+            text: br("Hausaufgaben", "Hausaufgaben 😭"),
             onPressed: goHome,
           ),
         CollapsibleItem(
           onPressed: showGrades,
           isSelected: currentSelected == Pages.grades,
-          text: "Noten",
+          text: br("Noten", "Noten 📉"),
           icon: Icons.grade,
         ),
         CollapsibleItem(
-            text: "Absenzen",
+            text: br("Absenzen", "Absenzen 🛌"),
             icon: Icons.hotel,
             isSelected: currentSelected == Pages.absences,
             onPressed: showAbsences),
         CollapsibleItem(
-          text: "Kalender",
+          text: br("Kalender", "Kalender 🗓️"),
           icon: Icons.calendar_today,
           isSelected: currentSelected == Pages.calendar,
           onPressed: showCalendar,
         ),
         CollapsibleItem(
-          text: "Zeugnis",
+          text: br("Zeugnis", "Zeugnis 📜"),
           icon: Icons.list,
           isSelected: currentSelected == Pages.certificate,
           onPressed: showCertificate,
         ),
         CollapsibleItem(
-          text: "Mitteilungen",
+          text: br("Mitteilungen", "Mitteilungen 📨"),
           icon: Icons.message,
           isSelected: currentSelected == Pages.messages,
           onPressed: showMessages,
         ),
         CollapsibleItem(
           hasDivider: true,
-          text: "Einstellungen",
+          text: br("Einstellungen", "Einstellungen ⚙️"),
           icon: Icons.settings,
           isSelected: currentSelected == Pages.settings,
           onPressed: showSettings,
         ),
         CollapsibleItem(
           hasDivider: true,
-          text: "Abmelden",
+          text: br("Abmelden", "Abmelden ✌️"),
           icon: Icons.logout,
           onPressed: logout,
         ),

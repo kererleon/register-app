@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "it.digitalesregisterapp" "\0"
-            VALUE "FileDescription", "digitales_register" "\0"
+            VALUE "CompanyName", "com.webandgrow" "\0"
+            VALUE "FileDescription", "Register" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "digitales_register" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2022 it.digitalesregisterapp. All rights reserved." "\0"
-            VALUE "OriginalFilename", "digitales_register.exe" "\0"
-            VALUE "ProductName", "digitales_register" "\0"
+            VALUE "InternalName", "Register" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 com.webandgrow. All rights reserved." "\0"
+            VALUE "OriginalFilename", "Register.exe" "\0"
+            VALUE "ProductName", "Register" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

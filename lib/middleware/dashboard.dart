@@ -25,6 +25,9 @@ final _dashboardMiddleware = MiddlewareBuilder<AppState, AppStateBuilder,
   ..add(DashboardActionsNames.deleteHomework, _deleteHomework)
   ..add(DashboardActionsNames.toggleDone, _toggleDone)
   ..add(DashboardActionsNames.openAttachment, _openAttachment)
+  ..add(DashboardActionsNames.moveHomework, _moveHomework)
+  ..add(DashboardActionsNames.loaded, _notifyNewEntries)
+  ..add(DashboardActionsNames.resetMovedHomework, _resetMovedHomework)
   ..add(SettingsActionsNames.markNotSeenDashboardEntries, _markNotSeenEntries);
 
 Future<void> _loadDays(MiddlewareApi<AppState, AppStateBuilder, AppActions> api,
@@ -32,6 +35,19 @@ Future<void> _loadDays(MiddlewareApi<AppState, AppStateBuilder, AppActions> api,
   if (api.state.noInternet) return;
 
   await next(action);
+  // Keep this and next week up to date even if the calendar is never opened:
+  // for the desktop widget and to notice substitutions.
+  final thisWeek = toMonday(UtcDateTime.now());
+  unawaited(api.actions.calendarActions.load(thisWeek));
+  unawaited(
+    api.actions.calendarActions.load(thisWeek.add(const Duration(days: 7))),
+  );
+  if (widgetSupported) {
+    if (!_gradesLoadedForWidget) {
+      _gradesLoadedForWidget = true;
+      unawaited(api.actions.gradesActions.load(api.state.gradesState.semester));
+    }
+  }
   final dynamic data = await wrapper.send("api/student/dashboard/dashboard",
       args: {"viewFuture": action.payload});
 
@@ -175,3 +191,97 @@ Future<void> _openAttachment(
 
   await openFile(action.payload.uniqueName);
 }
+
+Future<void> _moveHomework(
+    MiddlewareApi<AppState, AppStateBuilder, AppActions> api,
+    ActionHandler next,
+    Action<MoveHomeworkPayload> action) async {
+  await next(action);
+  final hw = action.payload.homework;
+  final key = homeworkMoveKey(hw);
+  final ownReminder = isOwnReminder(hw);
+  // Entries of teachers cannot be changed. Instead, a reminder on the new day
+  // makes the move visible everywhere, including the website.
+  final text =
+      ownReminder ? hw.subtitle : _movedReminderText(hw, action.payload.from);
+  final dynamic created = await wrapper.send(
+    "api/student/dashboard/save_reminder",
+    args: {
+      "date": DateFormat("yyyy-MM-dd").format(action.payload.to),
+      "text": text,
+    },
+  );
+  final createdId = getInt(getMap(created)?["id"]);
+  if (created == null || createdId == null) {
+    if (!wrapper.noInternet) {
+      showSnackBar("Die Aufgabe konnte nicht verschoben werden");
+    }
+    return;
+  }
+  // Remove what the new reminder replaces: the old reminder itself, or the
+  // reminder of an earlier move of the same entry.
+  final replacedId =
+      ownReminder ? hw.id : api.state.dashboardState.movedReminderIds[key];
+  if (replacedId != null) {
+    await wrapper.send(
+      "api/student/dashboard/delete_reminder",
+      args: {"id": replacedId},
+    );
+  }
+  if (!ownReminder) {
+    await api.actions.dashboardActions.homeworkMoved(
+      HomeworkMovedPayload(
+        key: key,
+        to: action.payload.to,
+        reminderId: createdId,
+      ),
+    );
+  }
+  showSnackBar(
+    "Auf ${DateFormat("EEEE, d. MMMM", "de").format(action.payload.to)} verschoben",
+  );
+  await api.actions.dashboardActions.load(api.state.dashboardState.future);
+}
+
+String _movedReminderText(Homework hw, UtcDateTime from) {
+  final parts = [
+    if (hw.label != null) hw.label!,
+    hw.title,
+    if (!hw.subtitle.isNullOrEmpty) hw.subtitle,
+  ];
+  return "Verschoben: ${parts.join(" – ")} "
+      "(eigentlich ${DateFormat("EE dd.MM.", "de").format(from)})";
+}
+
+Future<void> _resetMovedHomework(
+    MiddlewareApi<AppState, AppStateBuilder, AppActions> api,
+    ActionHandler next,
+    Action<Homework> action) async {
+  final reminderId = api
+      .state.dashboardState.movedReminderIds[homeworkMoveKey(action.payload)];
+  if (reminderId != null) {
+    final dynamic result = await wrapper.send(
+      "api/student/dashboard/delete_reminder",
+      args: {"id": reminderId},
+    );
+    if (result == null && !wrapper.noInternet) {
+      showSnackBar("Die Erinnerung konnte nicht gelöscht werden");
+      return;
+    }
+  }
+  await next(action);
+  showSnackBar("Verschiebung zurückgesetzt");
+  await api.actions.dashboardActions.load(api.state.dashboardState.future);
+}
+
+Future<void> _notifyNewEntries(
+    MiddlewareApi<AppState, AppStateBuilder, AppActions> api,
+    ActionHandler next,
+    Action<DaysLoadedPayload> action) async {
+  await next(action);
+  await notifyNewEntries(api.state);
+  await exportWeekForWidget(api.state);
+}
+
+/// The grades widget needs the grades once per app start.
+var _gradesLoadedForWidget = false;

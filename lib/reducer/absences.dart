@@ -54,6 +54,7 @@ AbsencesState _parseAbsences(Map json) {
       ..statistic = stats
       ..absences = ListBuilder(absences)
       ..futureAbsences = ListBuilder(futureAbsences)
+      ..canEdit = json["canEdit"] == true || json["canEdit"] == 1
       ..lastFetched = UtcDateTime.now(),
   );
 }

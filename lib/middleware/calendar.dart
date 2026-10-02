@@ -20,6 +20,7 @@ part of 'middleware.dart';
 final _calendarMiddleware =
     MiddlewareBuilder<AppState, AppStateBuilder, AppActions>()
       ..add(CalendarActionsNames.load, _loadCalendar)
+      ..add(CalendarActionsNames.loaded, _updateDesktopWidget)
       ..add(CalendarActionsNames.select, _selectionChanged)
       ..add(CalendarActionsNames.setCurrentMonday, _weekChanged)
       ..add(CalendarActionsNames.onOpenFile, _openSubmission)
@@ -109,4 +110,16 @@ Future<void> _openSubmission(
   }
 
   await openFile(action.payload.uniqueName);
+}
+
+Future<void> _updateDesktopWidget(
+    MiddlewareApi<AppState, AppStateBuilder, AppActions> api,
+    ActionHandler next,
+    Action<Map<String, dynamic>> action) async {
+  await next(action);
+  await exportWeekForWidget(api.state);
+  await notifySubstitutions(
+    api.state,
+    action.payload.keys.map(UtcDateTime.parse),
+  );
 }

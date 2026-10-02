@@ -129,6 +129,14 @@ abstract class DashboardState
   BuiltList<HomeworkType>? get blacklist;
 
   BuiltList<Day>? get allDays;
+
+  /// Entries of teachers the user moved to another day, keyed by
+  /// [homeworkMoveKey], with the day they were moved to.
+  BuiltMap<String, UtcDateTime> get movedHomework;
+
+  /// For every moved entry, the id of the reminder created on the new day.
+  BuiltMap<String, int> get movedReminderIds;
+
   static Serializer<DashboardState> get serializer =>
       _$dashboardStateSerializer;
 
@@ -139,7 +147,9 @@ abstract class DashboardState
     builder
       ..future = true
       ..loading = false
-      ..blacklist = ListBuilder();
+      ..blacklist = ListBuilder()
+      ..movedHomework = MapBuilder()
+      ..movedReminderIds = MapBuilder();
   }
 }
 
@@ -376,6 +386,9 @@ abstract class AbsencesState
   AbsenceStatistic? get statistic;
   BuiltList<AbsenceGroup> get absences;
   BuiltList<FutureAbsence> get futureAbsences;
+
+  /// Whether the server allows entering and justifying absences.
+  bool? get canEdit;
 
   UtcDateTime? get lastFetched;
 

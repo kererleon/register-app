@@ -21,6 +21,7 @@ import 'package:dr/actions/app_actions.dart';
 import 'package:dr/actions/grades_actions.dart';
 import 'package:dr/app_state.dart';
 import 'package:dr/data.dart';
+import 'package:dr/grade_forecast.dart';
 import 'package:dr/ui/sorted_grades_widget.dart';
 import 'package:flutter/material.dart' hide Builder;
 import 'package:flutter_built_redux/flutter_built_redux.dart';
@@ -66,6 +67,9 @@ abstract class SortedGradesViewModel
   bool? get showCancelled;
   bool get noInternet;
 
+  /// The next test of each subject, keyed by the lower-case subject name.
+  BuiltMap<String, UpcomingTest> get nextTests;
+
   factory SortedGradesViewModel(
           [void Function(SortedGradesViewModelBuilder)? updates]) =
       _$SortedGradesViewModel;
@@ -79,6 +83,7 @@ abstract class SortedGradesViewModel
         ..semester = state.gradesState.semester.toBuilder()
         ..showCancelled = state.settingsState.showCancelled
         ..noInternet = state.noInternet
+        ..nextTests = MapBuilder(nextTestsBySubject(state))
         ..ignoredSubjectsForAverage =
             state.settingsState.ignoreForGradesAverage.toBuilder(),
     );

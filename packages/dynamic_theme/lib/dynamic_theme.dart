@@ -15,6 +15,7 @@ class DynamicTheme extends StatefulWidget {
     required this.data,
     required this.themedWidgetBuilder,
     this.defaultBrightness = Brightness.light,
+    this.followDeviceByDefault = true,
   }) : super(key: key);
 
   /// Builder that gets called when the brightness or theme changes
@@ -27,6 +28,9 @@ class DynamicTheme extends StatefulWidget {
   ///
   /// Defaults to `Brightness.light`
   final Brightness defaultBrightness;
+
+  /// Whether to follow the device's brightness until the user chooses one.
+  final bool followDeviceByDefault;
 
   @override
   DynamicThemeState createState() => DynamicThemeState();
@@ -95,7 +99,7 @@ class DynamicThemeState extends State<DynamicTheme>
     _deviceBrightness = _getDeviceBrightness();
     _brightness = widget.defaultBrightness;
     _platformOverride = false;
-    _followDevice = true;
+    _followDevice = widget.followDeviceByDefault;
     _themeData = widget.data(brightness, _platformOverride);
   }
 
@@ -198,7 +202,8 @@ class DynamicThemeState extends State<DynamicTheme>
   /// Returns a boolean whether to override the platform
   Future<bool> _getFollowDeviceBool() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_sharedPreferencesFollowDeviceKey) ?? true;
+    return prefs.getBool(_sharedPreferencesFollowDeviceKey) ??
+        widget.followDeviceByDefault;
   }
 
   /// Returns a boolean whether to override the platform

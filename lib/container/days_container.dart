@@ -21,6 +21,7 @@ import 'package:dr/actions/app_actions.dart';
 import 'package:dr/actions/dashboard_actions.dart';
 import 'package:dr/app_state.dart';
 import 'package:dr/data.dart';
+import 'package:dr/utc_date_time.dart';
 import 'package:dr/ui/days.dart';
 import 'package:flutter/material.dart' hide Builder;
 import 'package:flutter_built_redux/flutter_built_redux.dart';
@@ -67,6 +68,13 @@ class DaysContainer extends StatelessWidget {
           markAllAsSeenCallback: actions.dashboardActions.markAllAsSeen.call,
           refreshNoInternet: actions.refreshNoInternet.call,
           onOpenAttachment: actions.dashboardActions.openAttachment.call,
+          moveHomeworkCallback: (hw, from, to) {
+            actions.dashboardActions.moveHomework(
+              MoveHomeworkPayload(homework: hw, from: from, to: to),
+            );
+          },
+          resetMovedHomeworkCallback:
+              actions.dashboardActions.resetMovedHomework.call,
         );
       },
       connect: (state) {
@@ -82,6 +90,9 @@ typedef ToggleDoneCallback = void Function(Homework hw, bool done);
 typedef MarkAsNotNewOrChangedCallback = void Function(Homework hw);
 typedef MarkDeletedHomeworkAsSeenCallback = void Function(Day day);
 typedef AttachmentCallback = void Function(GradeGroupSubmission ggs);
+typedef MoveHomeworkCallback = void Function(
+    Homework hw, UtcDateTime from, UtcDateTime to);
+typedef ResetMovedHomeworkCallback = void Function(Homework hw);
 
 abstract class DaysViewModel
     implements Built<DaysViewModel, DaysViewModelBuilder> {
@@ -97,26 +108,28 @@ abstract class DaysViewModel
   bool get showNotifications;
   BuiltList<Day> get days;
 
+  /// For entries of teachers the user moved: the day they were moved to.
+  BuiltMap<String, UtcDateTime> get movedTo;
+
   factory DaysViewModel([void Function(DaysViewModelBuilder)? updates]) =
       _$DaysViewModel;
   DaysViewModel._();
 
   factory DaysViewModel.from(AppState state) {
-    final unorderedDays = state.dashboardState.allDays
-            ?.where((day) => day.future == state.dashboardState.future)
-            .map(
-              (day) => day.rebuild(
-                (b) => b
-                  ..deletedHomework.where(
-                    (hw) => !isBlacklisted(hw, state.dashboardState.blacklist!),
-                  )
-                  ..homework.where(
-                    (hw) => !isBlacklisted(hw, state.dashboardState.blacklist!),
-                  ),
+    final unorderedDays = (state.dashboardState.allDays ?? BuiltList<Day>())
+        .where((day) => day.future == state.dashboardState.future)
+        .map(
+          (day) => day.rebuild(
+            (b) => b
+              ..deletedHomework.where(
+                (hw) => !isBlacklisted(hw, state.dashboardState.blacklist!),
+              )
+              ..homework.where(
+                (hw) => !isBlacklisted(hw, state.dashboardState.blacklist!),
               ),
-            )
-            .toList() ??
-        [];
+          ),
+        )
+        .toList();
 
     return DaysViewModel(
       (b) => b
@@ -133,7 +146,8 @@ abstract class DaysViewModel
             (state.notificationState.notifications?.length ?? 0) > 0
         ..colorBorders = state.settingsState.dashboardColorBorders
         ..colorTestsInRed = state.settingsState.dashboardColorTestsInRed
-        ..subjectThemes = state.settingsState.subjectThemes.toBuilder(),
+        ..subjectThemes = state.settingsState.subjectThemes.toBuilder()
+        ..movedTo = state.dashboardState.movedHomework.toBuilder(),
     );
   }
 }

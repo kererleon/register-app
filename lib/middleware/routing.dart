@@ -19,6 +19,7 @@ part of 'middleware.dart';
 
 enum Pages {
   homework,
+  today,
   grades,
   absences,
   calendar,
@@ -43,6 +44,7 @@ final routingMiddleware =
       ..add(RoutingActionsNames.showEditGradesAverageSettings,
           _showEditGradesAverageSettings)
       ..add(RoutingActionsNames.showCalendar, _showCalendar)
+      ..add(RoutingActionsNames.showToday, _showToday)
       ..add(RoutingActionsNames.showAbsences, _showAbsences)
       ..add(RoutingActionsNames.showGradesChart, _showGradesChart)
       ..add(RoutingActionsNames.showGrades, _showGrades)
@@ -142,9 +144,23 @@ Future<void> _showCalendar(
     Action<void> action) async {
   scaffoldKey!.currentState!
       .selectContentWidget(CalendarContainer(), Pages.calendar);
+  unawaited(ensureTeacherPhotos());
   await api.actions.calendarActions.setCurrentMonday(toMonday(now));
 
   await next(action);
+}
+
+Future<void> _showToday(
+    MiddlewareApi<AppState, AppStateBuilder, AppActions> api,
+    ActionHandler next,
+    Action<void> action) async {
+  scaffoldKey!.currentState!
+      .selectContentWidget(const TodayContainer(), Pages.today);
+  await next(action);
+  // Everything the page summarizes.
+  unawaited(api.actions.calendarActions.load(toMonday(now)));
+  unawaited(api.actions.absencesActions.load());
+  unawaited(api.actions.gradesActions.load(api.state.gradesState.semester));
 }
 
 Future<void> _showGrades(

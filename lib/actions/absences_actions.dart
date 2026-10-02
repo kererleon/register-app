@@ -25,4 +25,38 @@ abstract class AbsencesActions extends ReduxActions {
 
   abstract final VoidActionDispatcher load;
   abstract final ActionDispatcher<dynamic> loaded;
+  abstract final ActionDispatcher<AddFutureAbsencePayload> addFuture;
+  abstract final ActionDispatcher<int> removeFuture;
+  abstract final ActionDispatcher<JustifyAbsencePayload> justify;
+}
+
+class AddFutureAbsencePayload {
+  final DateTime startDate;
+  final DateTime endDate;
+  final int startHour;
+  final int endHour;
+  final String reason;
+  final String signature;
+
+  const AddFutureAbsencePayload({
+    required this.startDate,
+    required this.endDate,
+    required this.startHour,
+    required this.endHour,
+    required this.reason,
+    required this.signature,
+  });
+}
+
+class JustifyAbsencePayload {
+  /// Index into [AbsencesState.absences], which keeps the server's order.
+  final int group;
+  final String reason;
+  final String signature;
+
+  const JustifyAbsencePayload({
+    required this.group,
+    required this.reason,
+    required this.signature,
+  });
 }

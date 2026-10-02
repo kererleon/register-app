@@ -50,3 +50,15 @@ app.*.map.json
 
 # Private requests & answers
 **/lib/requests/
+# Personal and secret files that must never be published
+STAND.md
+*.p12
+*.mobileprovision
+*.keystore
+*.jks
+key.properties
+.env
+**/Flutter/ephemeral/
+
+# Apple team ID for signing (local only)
+Team.xcconfig

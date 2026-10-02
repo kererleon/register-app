@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with digitales_register.  If not, see <http://www.gnu.org/licenses/>.
 
+import 'package:dr/actions/absences_actions.dart';
 import 'package:dr/actions/app_actions.dart';
 import 'package:dr/app_state.dart';
 import 'package:dr/data.dart';
@@ -34,7 +35,16 @@ class AbsenceGroupContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     return StoreConnection<AppState, AppActions, AbsencesViewModel>(
       builder: (context, vm, actions) {
-        return AbsenceGroupWidget(vm: vm);
+        return AbsenceGroupWidget(
+          vm: vm,
+          onJustify: (reason, signature) => actions.absencesActions.justify(
+            JustifyAbsencePayload(
+              group: group,
+              reason: reason,
+              signature: signature,
+            ),
+          ),
+        );
       },
       connect: (state) {
         final absenceGroup = state.absencesState.absences[group];
@@ -85,6 +95,13 @@ class AbsenceGroupContainer extends StatelessWidget {
           absenceGroup.reason,
           absenceGroup.justified,
           absenceGroup.note,
+          canJustify: state.absencesState.canEdit != false &&
+              absenceGroup.justified == AbsenceJustified.notYetJustified,
+          signatureInfo: absenceGroup.reasonSignature != null &&
+                  absenceGroup.reasonTimestamp != null
+              ? "${DateFormat("d.M.yyyy, HH:mm", "de").format(absenceGroup.reasonTimestamp!)} · ${absenceGroup.reasonSignature}"
+              : null,
+          defaultSignature: state.config?.fullName,
         );
       },
     );
@@ -99,12 +116,36 @@ class AbsencesViewModel {
   final String? note;
   final AbsenceJustified justified;
 
+  final bool canJustify;
+  final String? signatureInfo;
+  final String? defaultSignature;
+
   AbsencesViewModel(
     this.fromTo,
     this.duration,
     this.justifiedString,
     this.reason,
     this.justified,
-    this.note,
-  );
+    this.note, {
+    required this.canJustify,
+    required this.signatureInfo,
+    required this.defaultSignature,
+  });
+
+  @override
+  bool operator ==(Object other) =>
+      other is AbsencesViewModel &&
+      other.fromTo == fromTo &&
+      other.duration == duration &&
+      other.justifiedString == justifiedString &&
+      other.reason == reason &&
+      other.note == note &&
+      other.justified == justified &&
+      other.canJustify == canJustify &&
+      other.signatureInfo == signatureInfo &&
+      other.defaultSignature == defaultSignature;
+
+  @override
+  int get hashCode => Object.hash(fromTo, duration, justifiedString, reason,
+      note, justified, canJustify, signatureInfo, defaultSignature);
 }

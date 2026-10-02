@@ -19,9 +19,14 @@ import 'package:built_collection/built_collection.dart';
 import 'package:dr/app_state.dart';
 import 'package:dr/container/calendar_week_container.dart';
 import 'package:dr/data.dart';
+import 'package:dr/lesson_time.dart';
 import 'package:dr/main.dart';
+import 'package:dr/teacher_photos.dart';
+import 'package:dr/ui/holo.dart';
 import 'package:dr/ui/last_fetched_overlay.dart';
 import 'package:dr/ui/no_internet.dart';
+import 'package:dr/ui/subject_icons.dart';
+import 'package:dr/ui/theme.dart';
 import 'package:dr/utc_date_time.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -100,57 +105,53 @@ class _HoursChunk extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: <Widget>[
-        Card(
-          shape: RoundedRectangleBorder(
-            side: BorderSide(
-              color: isSelected
-                  ? Theme.of(context).colorScheme.secondary
-                  : Colors.grey,
-              width: 0.75,
-            ),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          color: Theme.of(context).scaffoldBackgroundColor,
-          elevation: 0,
-          child: Container(),
+    final scheme = Theme.of(context).colorScheme;
+    final dark = scheme.brightness == Brightness.dark;
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 2.5, vertical: 3),
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: scheme.surfaceContainer.withValues(alpha: dark ? 0.7 : 0.88),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isSelected
+              ? scheme.primary.withValues(alpha: 0.8)
+              : scheme.outlineVariant,
         ),
-        Card(
-          color: Colors.transparent,
-          elevation: 0,
-          clipBehavior: Clip.antiAlias,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Column(
-            children: List.generate(
-              hours.length * 2 - 1,
-              (n) => n.isEven
-                  ? HourWidget(
-                      hour: hours[n ~/ 2],
-                      subjectNicks: subjectNicks,
-                      day: day,
-                      isSelected: selectedHour == hours[n ~/ 2].fromHour,
-                      backgroundColor: colorBackground
-                          ? Color(subjectThemes[hours[n ~/ 2].subject]!.color)
-                              .withOpacity(0.25)
-                          : Colors.transparent,
-                      selectedBackgroundColor: colorBackground
-                          ? Color(subjectThemes[hours[n ~/ 2].subject]!.color)
-                              .withOpacity(0.5)
-                          : Theme.of(context)
-                              .colorScheme
-                              .secondary
-                              .withAlpha(35),
-                    )
-                  : const Divider(
-                      height: 0,
-                    ),
+        boxShadow: [
+          if (isSelected)
+            BoxShadow(
+              color: AppColors.violet.withValues(alpha: 0.35),
+              blurRadius: 18,
+              spreadRadius: -6,
             ),
-          ),
+        ],
+      ),
+      child: Column(
+        children: List.generate(
+          hours.length * 2 - 1,
+          (n) {
+            if (n.isOdd) return const Divider(height: 0);
+            final hour = hours[n ~/ 2];
+            final subjectColor = subjectThemes[hour.subject] != null
+                ? Color(subjectThemes[hour.subject]!.color)
+                : scheme.primary;
+            return HourWidget(
+              hour: hour,
+              subjectNicks: subjectNicks,
+              day: day,
+              isSelected: selectedHour == hour.fromHour,
+              accent: subjectColor,
+              backgroundColor: colorBackground
+                  ? subjectColor.withValues(alpha: 0.22)
+                  : Colors.transparent,
+              selectedBackgroundColor: colorBackground
+                  ? subjectColor.withValues(alpha: 0.45)
+                  : AppColors.violet.withValues(alpha: 0.22),
+            );
+          },
         ),
-      ],
+      ),
     );
   }
 }
@@ -189,12 +190,46 @@ class CalendarDayWidget extends StatelessWidget {
         }
       }
     }
+    final theme = Theme.of(context);
+    final now = DateTime.now();
+    final isToday = calendarDay.date.year == now.year &&
+        calendarDay.date.month == now.month &&
+        calendarDay.date.day == now.day;
     return Column(
       children: <Widget>[
-        Text(DateFormat("E", "de").format(calendarDay.date)),
-        Text(
-          DateFormat("dd.MM", "de").format(calendarDay.date),
-          style: DefaultTextStyle.of(context).style.copyWith(fontSize: 12),
+        Container(
+          margin: const EdgeInsets.fromLTRB(3, 6, 3, 4),
+          padding: const EdgeInsets.symmetric(vertical: 5),
+          width: double.infinity,
+          decoration: BoxDecoration(
+            gradient: isToday ? AppColors.accentGradient : null,
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: [
+              if (isToday)
+                BoxShadow(
+                  color: AppColors.violet.withValues(alpha: 0.45),
+                  blurRadius: 14,
+                  spreadRadius: -4,
+                ),
+            ],
+          ),
+          child: Column(
+            children: [
+              HudLabel(
+                DateFormat("E", "de").format(calendarDay.date),
+                color: isToday ? Colors.white : null,
+              ),
+              Text(
+                DateFormat("dd.MM", "de").format(calendarDay.date),
+                style: mono(
+                  theme.textTheme.bodySmall?.copyWith(
+                    color: isToday ? Colors.white : theme.colorScheme.onSurface,
+                  ),
+                  weight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
         ),
         if (chunks.isNotEmpty) ...[
           for (var i = 0; i < chunks.length; i++) ...[
@@ -256,8 +291,10 @@ class HourWidget extends StatelessWidget {
   final bool isSelected;
   final Color backgroundColor;
   final Color selectedBackgroundColor;
+  final Color accent;
 
   const HourWidget({
+    required this.accent,
     super.key,
     required this.hour,
     required this.subjectNicks,
@@ -270,60 +307,111 @@ class HourWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Flexible(
       flex: hour.length,
-      child: ClipRect(
-        child: InkWell(
-          onTap: () {
-            actions.calendarActions.select(
-              CalendarSelection((b) => b
-                ..date = day.date
-                ..hour = hour.fromHour),
-            );
-          },
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              border: hour.warning
-                  ? const Border(
-                      left: BorderSide(color: Colors.red, width: 5),
-                    )
-                  : null,
-              color: isSelected ? selectedBackgroundColor : backgroundColor,
+      child: ValueListenableBuilder(
+        valueListenable: minuteTicker,
+        builder: (context, _, __) => _buildTile(context, isLessonNow(hour)),
+      ),
+    );
+  }
+
+  Widget _buildTile(BuildContext context, bool isNow) {
+    return ClipRect(
+      child: _TeacherPhotoBackground(
+        hour: hour,
+        accent: accent,
+        child: _tileContent(context, isNow),
+      ),
+    );
+  }
+
+  Widget _tileContent(BuildContext context, bool isNow) {
+    return Material(
+      type: MaterialType.transparency,
+      child: InkWell(
+        onTap: () {
+          actions.calendarActions.select(
+            CalendarSelection((b) => b
+              ..date = day.date
+              ..hour = hour.fromHour),
+          );
+        },
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            border: Border(
+              left: BorderSide(
+                color: hour.warning
+                    ? AppColors.danger
+                    : isNow
+                        ? AppColors.cyan
+                        : accent,
+                width: hour.warning || isNow ? 4 : 3,
+              ),
             ),
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    subjectNicks[hour.subject.toLowerCase()] ?? hour.subject,
-                    maxLines: 1,
-                    softWrap: false,
-                  ),
-                  if (hour.teachers.isNotEmpty)
-                    const SizedBox(
-                      height: 5,
-                    ),
-                  for (final teacher in hour.teachers)
+            color: isSelected
+                ? selectedBackgroundColor
+                : isNow
+                    ? AppColors.cyan.withValues(alpha: 0.2)
+                    : backgroundColor,
+          ),
+          child: Center(
+            // Short lessons have little room: shrink the labels instead
+            // of letting them overflow.
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (isNow) HudLabel("Jetzt", color: AppColors.cyan),
                     Text(
-                      teacher.lastName,
+                      subjectNicks[hour.subject.toLowerCase()] ?? hour.subject,
                       maxLines: 1,
                       softWrap: false,
-                      style: DefaultTextStyle.of(context)
-                          .style
-                          .copyWith(fontSize: 11),
+                      style: Theme.of(context)
+                          .textTheme
+                          .labelLarge
+                          ?.copyWith(fontWeight: FontWeight.w700),
                     ),
-                  if (hour.rooms.isNotEmpty)
-                    const SizedBox(
-                      height: 5,
-                    ),
-                  for (final room in hour.rooms)
-                    Text(
-                      room,
-                      maxLines: 1,
-                      softWrap: false,
-                      style: DefaultTextStyle.of(context)
-                          .style
-                          .copyWith(fontSize: 11),
-                    ),
-                ],
+                    if (hour.teachers.isNotEmpty)
+                      const SizedBox(
+                        height: 5,
+                      ),
+                    for (final teacher in hour.teachers)
+                      Text(
+                        teacher.lastName,
+                        maxLines: 1,
+                        softWrap: false,
+                        style: mono(
+                          Theme.of(context).textTheme.bodySmall?.copyWith(
+                                fontSize: 10,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
+                              ),
+                        ),
+                      ),
+                    if (hour.rooms.isNotEmpty)
+                      const SizedBox(
+                        height: 5,
+                      ),
+                    for (final room in hour.rooms)
+                      Text(
+                        room,
+                        maxLines: 1,
+                        softWrap: false,
+                        style: mono(
+                          Theme.of(context).textTheme.bodySmall?.copyWith(
+                                fontSize: 10,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
+                              ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -419,4 +507,75 @@ UtcDateTime calculateEaster(int year) {
   final n = (h + l - 7 * m + 90) ~/ 25;
   final p = (h + l - 7 * m + 33 * n + 19) % 32;
   return UtcDateTime(year, n, p);
+}
+
+/// The background of a calendar tile: icons that fit the subject, or in the
+/// brainrot style the teacher's (own) picture, darkened for readability.
+class _TeacherPhotoBackground extends StatelessWidget {
+  final CalendarHour hour;
+  final Color accent;
+  final Widget child;
+
+  const _TeacherPhotoBackground({
+    required this.hour,
+    required this.accent,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: teacherImageChanges,
+      builder: (context, _) {
+        // The holo style shows icons that fit the subject; the teacher's
+        // picture is only the background in the brainrot style.
+        if (!isBrainrot) {
+          return Stack(
+            fit: StackFit.passthrough,
+            children: [
+              Positioned.fill(
+                child: SubjectIconPattern(
+                  subject: hour.subject,
+                  color: accent,
+                ),
+              ),
+              child,
+            ],
+          );
+        }
+        final image =
+            hour.teachers.isEmpty ? null : teacherImage(hour.teachers.first);
+        if (image == null) return child;
+        final surface = Theme.of(context).colorScheme.surface;
+        return Stack(
+          fit: StackFit.passthrough,
+          children: [
+            Positioned.fill(
+              child: Image(
+                image: image,
+                fit: BoxFit.cover,
+                alignment: const Alignment(0, -0.5),
+                errorBuilder: (_, __, ___) => const SizedBox(),
+              ),
+            ),
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      surface.withValues(alpha: 0.45),
+                      surface.withValues(alpha: 0.8),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            child,
+          ],
+        );
+      },
+    );
+  }
 }

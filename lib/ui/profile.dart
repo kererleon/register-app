@@ -17,7 +17,9 @@
 
 import 'package:dr/app_state.dart';
 import 'package:dr/container/settings_page.dart';
+import 'package:dr/ui/holo.dart';
 import 'package:dr/ui/no_internet.dart';
+import 'package:dr/ui/theme.dart';
 import 'package:dr/ui/user_profile.dart';
 import 'package:flutter/material.dart';
 
@@ -39,6 +41,7 @@ class Profile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: const Text("Profil"),
       ),
@@ -49,32 +52,62 @@ class Profile extends StatelessWidget {
                   : const CircularProgressIndicator(),
             )
           : ListView(
+              padding: const EdgeInsets.only(bottom: 32),
               children: <Widget>[
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  child: UserProfile(
-                    name: profileState.name!,
-                    username: profileState.username!,
-                    role: profileState.roleName!,
+                UserProfile(
+                  name: profileState.name!,
+                  username: profileState.username!,
+                  role: profileState.roleName!,
+                ),
+                const SectionLabel("Benachrichtigungen"),
+                HoloPanel(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: SwitchListTile.adaptive(
+                    secondary: Icon(
+                      Icons.mark_email_unread_outlined,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    title: const Text("Emails für Benachrichtigungen senden"),
+                    value: profileState.sendNotificationEmails!,
+                    onChanged: noInternet ? null : setSendNotificationEmails,
                   ),
                 ),
-                SwitchListTile.adaptive(
-                  title: const Text("Emails für Benachrichtigungen senden"),
-                  value: profileState.sendNotificationEmails!,
-                  onChanged: noInternet ? null : setSendNotificationEmails,
-                ),
-                ListTile(
-                  title: const Text("Email-Adresse ändern"),
-                  subtitle: Text(profileState.email!),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: changeEmail,
-                  enabled: !noInternet,
-                ),
-                ListTile(
-                  title: const Text("Passwort ändern"),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: changePass,
-                  enabled: !noInternet,
+                const SectionLabel("Zugang"),
+                HoloPanel(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Column(
+                    children: [
+                      ListTile(
+                        leading: Icon(
+                          Icons.alternate_email_rounded,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        title: const Text("Email-Adresse ändern"),
+                        subtitle: Text(
+                          profileState.email!,
+                          style: mono(Theme.of(context).textTheme.bodySmall),
+                        ),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: changeEmail,
+                        enabled: !noInternet,
+                      ),
+                      Divider(
+                        indent: 16,
+                        endIndent: 16,
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                      ),
+                      ListTile(
+                        leading: Icon(
+                          Icons.key_rounded,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        title: const Text("Passwort ändern"),
+                        trailing: const Icon(Icons.chevron_right_rounded),
+                        onTap: changePass,
+                        enabled: !noInternet,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),

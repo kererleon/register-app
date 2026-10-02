@@ -74,6 +74,66 @@ abstract class Day implements Built<Day, DayBuilder> {
   }
 }
 
+const _testWords = [
+  "test",
+  "schularbeit",
+  "prüfung",
+  "klausur",
+  "lernzielkontrolle",
+  "verifica",
+  "compito in classe",
+  "interrogazione",
+  "esame",
+];
+const _homeworkWords = [
+  "hausaufgabe",
+  "hausübung",
+  "compiti",
+  "compito",
+  "esercizi",
+  "esercizio",
+  "homework",
+];
+
+// Whole words only: "test" must not match the Italian "testo" (text).
+final _testPattern = RegExp(
+  "(^|[^a-zäöüàèéìòù])(${_testWords.join("|")})(s|arbeit|en)?(\$|[^a-zäöüàèéìòù])",
+);
+
+/// Whether [text] reads like a test or an exam (German or Italian).
+bool looksLikeTest(String text) => _testPattern.hasMatch(text.toLowerCase());
+
+bool looksLikeHomework(String text) {
+  final t = text.toLowerCase();
+  return _homeworkWords.any(t.contains);
+}
+
+/// Whether a dashboard entry is a test or an exam.
+///
+/// The server's warning flag only says that an entry is not marked as
+/// homework, which some teachers forget, so the type and the text decide.
+bool isTestEntry(Homework hw) {
+  if (hw.type == HomeworkType.grade || hw.type == HomeworkType.observation) {
+    return false;
+  }
+  final text = "${hw.title} ${hw.subtitle}";
+  if (looksLikeTest(text)) return true;
+  if (hw.type == HomeworkType.lessonHomework ||
+      hw.type == HomeworkType.homework ||
+      looksLikeHomework(text)) {
+    return false;
+  }
+  return hw.type == HomeworkType.gradeGroup;
+}
+
+/// Identifies an entry across reloads, for remembering where it was moved.
+String homeworkMoveKey(Homework hw) => "${hw.type.name}:${hw.id}";
+
+/// Own reminders can really be moved on the server; everything else is only
+/// moved in the app.
+bool isOwnReminder(Homework hw) =>
+    hw.type == HomeworkType.homework && hw.deleteable;
+
 abstract class Homework implements Built<Homework, HomeworkBuilder> {
   factory Homework([void Function(HomeworkBuilder)? updates]) = _$Homework;
   Homework._();
@@ -553,7 +613,13 @@ abstract class CalendarHour
   BuiltList<HomeworkExam> get homeworkExams;
   BuiltList<LessonContent> get lessonContents;
   int get length => toHour - fromHour + 1;
-  bool get warning => homeworkExams.any((it) => it.warning == true);
+  bool get warning => homeworkExams.any(
+        (it) =>
+            looksLikeTest("${it.typeName} ${it.name}") ||
+            (it.warning == true &&
+                !it.homework &&
+                !looksLikeHomework("${it.typeName} ${it.name}")),
+      );
 
   BuiltList<Teacher> get teachers;
 

@@ -19,6 +19,7 @@ import 'package:dr/container/calendar_container.dart';
 import 'package:dr/container/calendar_detail_container.dart';
 import 'package:dr/container/calendar_week_container.dart';
 import 'package:dr/main.dart';
+import 'package:dr/ui/holo.dart';
 import 'package:dr/utc_date_time.dart';
 import 'package:dr/util.dart';
 import 'package:flutter/material.dart';
@@ -185,7 +186,7 @@ class _CalendarState extends State<Calendar> with TickerProviderStateMixin {
                         TextButton(
                           style: TextButton.styleFrom(
                             foregroundColor:
-                                Theme.of(context).colorScheme.onPrimary,
+                                Theme.of(context).colorScheme.primary,
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                           ),
                           onPressed: () {
@@ -203,8 +204,7 @@ class _CalendarState extends State<Calendar> with TickerProviderStateMixin {
                   body: Column(
                     children: <Widget>[
                       Material(
-                        clipBehavior: Clip.antiAlias,
-                        elevation: 4,
+                        type: MaterialType.transparency,
                         child: Row(
                           children: <Widget>[
                             Expanded(
@@ -225,8 +225,12 @@ class _CalendarState extends State<Calendar> with TickerProviderStateMixin {
                               opacity: _dateRangeOpacityAnimation,
                               child: TextButton(
                                 style: ButtonStyle(
-                                  textStyle: MaterialStateProperty.all(
-                                      Theme.of(context).textTheme.titleLarge),
+                                  textStyle: WidgetStateProperty.all(
+                                    mono(
+                                      Theme.of(context).textTheme.titleMedium,
+                                      weight: FontWeight.w600,
+                                    ),
+                                  ),
                                 ),
                                 onPressed: () async {
                                   final result = await showDatePicker(
@@ -370,7 +374,7 @@ class EditNickBar extends StatelessWidget {
                   blurRadius: 2,
                 ),
               ],
-              color: Theme.of(context).scaffoldBackgroundColor,
+              color: Theme.of(context).colorScheme.surface,
             ),
             child: Material(
               child: Row(

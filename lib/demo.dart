@@ -3,7 +3,8 @@
 import 'package:intl/intl.dart';
 
 dynamic getDemoResponse(String url, dynamic args) {
-  dynamic response = _demoRequestsAndResponses[url];
+  dynamic response =
+      _demoAbsenceResponses[url] ?? _demoRequestsAndResponses[url];
   if (response is Function) {
     response = response(args);
   }
@@ -4234,4 +4235,78 @@ final _demoRequestsAndResponses = <String, dynamic>{
   "student/certificate":
       "<div class=\"student-subject-list\"><div class=\"default-page-container\"><h2 class=\"h2 margin-top\">Zeugnis Debertol Michael</h2>Zeugnis noch nicht verfügbar</div></div>",
   "api/message/getMyMessages": [],
+};
+
+// Absences are kept in memory so that entering, justifying and removing them
+// can be tried out in demo mode.
+final _demoFutureAbsences = <Map<String, dynamic>>[];
+final _demoPastAbsences = <Map<String, dynamic>>[
+  {
+    "id": 1,
+    "justified": 1,
+    "reason": null,
+    "reason_signature": null,
+    "reason_timestamp": null,
+    "note": null,
+    "group": [
+      for (final hour in [3, 2, 1])
+        {
+          "date": DateFormat("yyyy-MM-dd")
+              .format(DateTime.now().subtract(const Duration(days: 2))),
+          "hour": hour,
+          "minutes": 50,
+          "minutes_begin": 0,
+          "minutes_end": 0,
+        },
+    ],
+  },
+];
+var _demoFutureAbsenceId = 1;
+
+final _demoAbsenceResponses = <String, dynamic Function(dynamic)>{
+  "api/student/dashboard/absences": (dynamic _) {
+    final base = Map<String, dynamic>.from(
+      _demoRequestsAndResponses["api/student/dashboard/absences"] as Map,
+    );
+    final open = _demoPastAbsences.where((a) => a["justified"] == 1).length;
+    return base
+      ..["absences"] = _demoPastAbsences
+      ..["futureAbsences"] = _demoFutureAbsences
+      ..["statistics"] = {
+        "counter": _demoPastAbsences.length,
+        "counterForSchool": 0,
+        "percentage": "1.2",
+        "justified": _demoPastAbsences.length - open,
+        "notJustified": 0,
+        "delayed": 0,
+      };
+  },
+  "api/student/dashboard/absence_future": (dynamic args) {
+    final absence = Map<String, dynamic>.from(args["futureAbsence"] as Map);
+    _demoFutureAbsences.add(
+      absence
+        ..["id"] = _demoFutureAbsenceId++
+        ..["justified"] = 2
+        ..["note"] = null
+        ..["reason_timestamp"] =
+            DateFormat("yyyy-MM-dd HH:mm:ss").format(DateTime.now()),
+    );
+    return {"success": true};
+  },
+  "api/student/dashboard/remove_absence_future": (dynamic args) {
+    final id = args["futureAbsence"]["id"];
+    _demoFutureAbsences.removeWhere((a) => a["id"] == id);
+    return {"success": true};
+  },
+  "api/student/dashboard/absence_reason": (dynamic args) {
+    final group = args["absenceGroup"] as Map;
+    final stored = _demoPastAbsences.firstWhere((a) => a["id"] == group["id"]);
+    stored
+      ..["reason"] = group["reason"]
+      ..["reason_signature"] = group["reason_signature"]
+      ..["reason_timestamp"] =
+          DateFormat("yyyy-MM-dd HH:mm:ss").format(DateTime.now())
+      ..["justified"] = 2;
+    return {"success": true};
+  },
 };

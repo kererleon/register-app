@@ -20,6 +20,7 @@ part of 'middleware.dart';
 final _notificationsMiddleware =
     MiddlewareBuilder<AppState, AppStateBuilder, AppActions>()
       ..add(NotificationsActionsNames.load, _loadNotifications)
+      ..add(NotificationsActionsNames.loaded, _announceNotifications)
       ..add(NotificationsActionsNames.delete, _deleteNotification)
       ..add(NotificationsActionsNames.deleteAll, _deleteAllNotifications);
 
@@ -61,4 +62,12 @@ Future<void> _deleteAllNotifications(
     "api/notification/markAsRead",
     args: {},
   );
+}
+
+Future<void> _announceNotifications(
+    MiddlewareApi<AppState, AppStateBuilder, AppActions> api,
+    ActionHandler next,
+    Action<List> action) async {
+  await next(action);
+  await notifyServerNotifications(api.state);
 }

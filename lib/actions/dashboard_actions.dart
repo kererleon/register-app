@@ -44,6 +44,9 @@ abstract class DashboardActions extends ReduxActions {
   abstract final ActionDispatcher<GradeGroupSubmission> downloadAttachment;
   abstract final ActionDispatcher<GradeGroupSubmission> attachmentReady;
   abstract final ActionDispatcher<GradeGroupSubmission> openAttachment;
+  abstract final ActionDispatcher<MoveHomeworkPayload> moveHomework;
+  abstract final ActionDispatcher<HomeworkMovedPayload> homeworkMoved;
+  abstract final ActionDispatcher<Homework> resetMovedHomework;
 }
 
 abstract class DaysLoadedPayload
@@ -89,4 +92,30 @@ abstract class ToggleDonePayload
   int get homeworkId;
   String get type;
   bool get done;
+}
+
+class MoveHomeworkPayload {
+  final Homework homework;
+
+  /// The day the entry is shown on right now.
+  final UtcDateTime from;
+  final UtcDateTime to;
+
+  const MoveHomeworkPayload({
+    required this.homework,
+    required this.from,
+    required this.to,
+  });
+}
+
+class HomeworkMovedPayload {
+  final String key;
+  final UtcDateTime to;
+  final int reminderId;
+
+  const HomeworkMovedPayload({
+    required this.key,
+    required this.to,
+    required this.reminderId,
+  });
 }

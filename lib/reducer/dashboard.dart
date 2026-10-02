@@ -45,7 +45,21 @@ final dashboardReducerBuilder = NestedReducerBuilder<AppState, AppStateBuilder,
   ..add(DashboardActionsNames.markAllAsSeen, _markAllAsSeen)
   ..add(DashboardActionsNames.updateBlacklist, _updateBlacklist)
   ..add(DashboardActionsNames.downloadAttachment, _downloadAttachment)
-  ..add(DashboardActionsNames.attachmentReady, _attachmentReady);
+  ..add(DashboardActionsNames.attachmentReady, _attachmentReady)
+  ..add(DashboardActionsNames.homeworkMoved, _homeworkMoved)
+  ..add(DashboardActionsNames.resetMovedHomework, _resetMovedHomework);
+
+void _homeworkMoved(DashboardState state, Action<HomeworkMovedPayload> action,
+    DashboardStateBuilder builder) {
+  builder.movedHomework[action.payload.key] = action.payload.to;
+  builder.movedReminderIds[action.payload.key] = action.payload.reminderId;
+}
+
+void _resetMovedHomework(DashboardState state, Action<Homework> action,
+    DashboardStateBuilder builder) {
+  builder.movedHomework.remove(homeworkMoveKey(action.payload));
+  builder.movedReminderIds.remove(homeworkMoveKey(action.payload));
+}
 
 void _loaded(DashboardState state, Action<DaysLoadedPayload> action,
     DashboardStateBuilder builder) {

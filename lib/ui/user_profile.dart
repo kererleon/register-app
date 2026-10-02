@@ -15,6 +15,8 @@
 // You should have received a copy of the GNU General Public License
 // along with digitales_register.  If not, see <http://www.gnu.org/licenses/>.
 
+import 'package:dr/ui/holo.dart';
+import 'package:dr/ui/theme.dart';
 import 'package:flutter/material.dart';
 
 class UserProfile extends StatelessWidget {
@@ -28,19 +30,51 @@ class UserProfile extends StatelessWidget {
   });
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(
-          children: <Widget>[
-            Text(
-              name,
-              style: Theme.of(context).textTheme.headlineSmall,
+    final theme = Theme.of(context);
+    return GlowCard(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      child: Column(
+        children: <Widget>[
+          Container(
+            padding: const EdgeInsets.all(3),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: AppColors.accentGradient,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.violet.withValues(alpha: 0.5),
+                  blurRadius: 28,
+                  spreadRadius: -4,
+                ),
+              ],
             ),
-            Text("$username · $role"),
-          ],
-        ),
+            child: CircleAvatar(
+              radius: 40,
+              backgroundColor: theme.colorScheme.surfaceContainer,
+              child: GradientText(
+                _initials(name),
+                style: theme.textTheme.headlineMedium,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            name,
+            style: theme.textTheme.headlineSmall,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 6),
+          HudLabel("$username · $role"),
+        ],
       ),
     );
   }
+}
+
+String _initials(String name) {
+  final parts = name.trim().split(RegExp(r"\s+")).where((p) => p.isNotEmpty);
+  if (parts.isEmpty) return "?";
+  if (parts.length == 1) return parts.first.characters.first.toUpperCase();
+  return (parts.first.characters.first + parts.last.characters.first)
+      .toUpperCase();
 }

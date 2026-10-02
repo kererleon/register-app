@@ -19,7 +19,10 @@ import 'package:dr/app_state.dart';
 import 'package:dr/container/grades_page_container.dart';
 import 'package:dr/container/sorted_grades_container.dart';
 import 'package:dr/data.dart';
+import 'package:dr/grade_forecast.dart';
 import 'package:dr/ui/animated_linear_progress_indicator.dart';
+import 'package:dr/ui/holo.dart';
+import 'package:dr/ui/theme.dart';
 import 'package:dr/util.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -46,19 +49,28 @@ class SortedGradesWidget extends StatelessWidget {
     return Column(
       key: ValueKey(vm.semester),
       children: <Widget>[
-        SwitchListTile.adaptive(
-          title: const Text("Noten nach Art sortieren"),
-          onChanged: sortByTypeCallback,
-          value: vm.sortByType,
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              FilterChip(
+                avatar: const Icon(Icons.category_outlined, size: 18),
+                label: const Text("Nach Art sortieren"),
+                selected: vm.sortByType,
+                onSelected: sortByTypeCallback,
+              ),
+              FilterChip(
+                avatar: const Icon(Icons.delete_sweep_outlined, size: 18),
+                label: const Text("Gelöschte anzeigen"),
+                selected: vm.showCancelled!,
+                onSelected: showCancelledCallback,
+              ),
+            ],
+          ),
         ),
-        SwitchListTile.adaptive(
-          title: const Text("Gelöschte Noten anzeigen"),
-          onChanged: showCancelledCallback,
-          value: vm.showCancelled!,
-        ),
-        const Divider(
-          height: 0,
-        ),
+        SectionLabel(br("Fächer", "Fächer 📚")),
         for (final s in vm.subjects)
           SubjectWidget(
             subject: s,
@@ -67,6 +79,7 @@ class SortedGradesWidget extends StatelessWidget {
             showCancelled: vm.showCancelled!,
             semester: vm.semester,
             noInternet: vm.noInternet,
+            nextTest: nextTestFor(vm.nextTests.toMap(), s),
             ignoredForAverage: vm.ignoredSubjectsForAverage.any(
               (element) => element.toLowerCase() == s.name.toLowerCase(),
             ),
@@ -82,17 +95,30 @@ class SortedGradesWidget extends StatelessWidget {
               style: TextStyle(color: Colors.grey),
             ),
           ),
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          child: ListTile(
-            title: const Row(
-              children: [
-                Text("Notenrechner"),
-              ],
-            ),
-            subtitle:
-                const Text("Berechne den Durchschnitt von beliebigen Noten"),
-            onTap: showGradeCalculator,
+        const SectionLabel("Werkzeuge"),
+        HoloPanel(
+          onTap: showGradeCalculator,
+          child: Row(
+            children: [
+              SubjectGlyph(name: "Ø", color: AppColors.cyan),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Notenrechner",
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    Text(
+                      "Berechne den Durchschnitt von beliebigen Noten",
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded),
+            ],
           ),
         ),
       ],
@@ -105,6 +131,7 @@ class SubjectWidget extends StatefulWidget {
   final Subject subject;
   final Semester semester;
   final VoidCallback viewSubjectDetail;
+  final UpcomingTest? nextTest;
 
   const SubjectWidget(
       {super.key,
@@ -114,7 +141,8 @@ class SubjectWidget extends StatefulWidget {
       required this.showCancelled,
       required this.semester,
       required this.noInternet,
-      required this.ignoredForAverage});
+      required this.ignoredForAverage,
+      this.nextTest});
 
   @override
   _SubjectWidgetState createState() => _SubjectWidgetState();
@@ -149,101 +177,130 @@ class _SubjectWidgetState extends State<SubjectWidget> {
   @override
   Widget build(BuildContext context) {
     final entries = widget.subject.detailEntries(widget.semester);
+    final average = widget.subject.average(widget.semester);
     return AbsorbPointer(
       absorbing: widget.noInternet && entries == null,
-      child: ExpansionTile(
-        key: ValueKey(widget.subject.id),
-        title: Text.rich(
-          TextSpan(
-            text: widget.subject.name,
+      child: HoloPanel(
+        padding: EdgeInsets.zero,
+        accent: average == null ? null : gradeColor(average / 100),
+        highlighted: !closed,
+        child: ExpansionTile(
+          key: ValueKey(widget.subject.id),
+          title: Wrap(
+            spacing: 8,
+            runSpacing: 4,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              if (widget.ignoredForAverage)
-                const TextSpan(
-                  text: " *",
-                  style: TextStyle(color: Colors.grey),
+              Text.rich(
+                TextSpan(
+                  text: widget.subject.name,
+                  children: [
+                    if (widget.ignoredForAverage)
+                      const TextSpan(
+                        text: " *",
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                  ],
+                ),
+              ),
+              if (widget.nextTest != null)
+                StatusPill(
+                  label:
+                      "Test ${DateFormat("EE dd.MM.", "de").format(widget.nextTest!.date)}",
+                  color: AppColors.cyan,
+                  icon: Icons.bolt_rounded,
+                ),
+              if (average != null && average / 100 < passMark)
+                StatusPill(
+                  label: br("unter 6", "Ohio 🌽"),
+                  color: AppColors.danger,
+                  icon: Icons.warning_amber_rounded,
                 ),
             ],
           ),
-        ),
-        subtitle: _lastFetchedMessage(),
-        leading: Text.rich(
-          TextSpan(
-            text: 'Ø ',
-            children: <TextSpan>[
-              TextSpan(
-                text: widget.subject.averageFormatted(widget.semester),
+          subtitle: _lastFetchedMessage(),
+          tilePadding: const EdgeInsets.fromLTRB(8, 4, 12, 4),
+          leading: NeonRing(
+            value: average == null ? null : average / 100,
+            label: widget.subject.averageFormatted(widget.semester),
+            size: 46,
+          ),
+          trailing:
+              widget.noInternet && entries == null ? const SizedBox() : null,
+          onExpansionChanged: (expansion) {
+            setState(() {
+              closed = !expansion;
+              if (expansion) {
+                widget.viewSubjectDetail();
+              }
+            });
+          },
+          initiallyExpanded: !closed,
+          children: [
+            if (average != null)
+              _ForecastPanel(
+                subject: widget.subject,
+                semester: widget.semester,
+                nextTest: widget.nextTest,
               ),
-            ],
-          ),
-        ),
-        trailing:
-            widget.noInternet && entries == null ? const SizedBox() : null,
-        onExpansionChanged: (expansion) {
-          setState(() {
-            closed = !expansion;
-            if (expansion) {
-              widget.viewSubjectDetail();
-            }
-          });
-        },
-        initiallyExpanded: !closed,
-        children: [
-          AnimatedSize(
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeIn,
-            alignment: Alignment.topCenter,
-            child: AnimatedSwitcher(
-              layoutBuilder: (currentChild, previousChildren) {
-                return Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    if (currentChild != null) currentChild,
-                    for (final child in previousChildren)
-                      Positioned(
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        child: child,
-                      ),
-                  ],
-                );
-              },
+            AnimatedSize(
               duration: const Duration(milliseconds: 200),
-              child: entries != null
-                  ? Column(
-                      // we're using a UniqueKey here so that the framework
-                      // detects a change on every rebuild. There would be no
-                      // animations otherwise, as the Column as the direct child
-                      // of the AnimatedSwitcher always stays the same (just different children).
-                      key: UniqueKey(),
-                      children: [
-                        if (widget.sortByType)
-                          ...Subject.sortByType(entries).entries.map(
-                                (entry) => GradeTypeWidget(
-                                  typeName: entry.key,
-                                  entries: entry.value
-                                      .where((g) =>
-                                          widget.showCancelled || !g.cancelled)
-                                      .toList(),
-                                ),
-                              )
-                        else
-                          ...entries
-                              .where(
-                                  (g) => widget.showCancelled || !g.cancelled)
-                              .map(
-                                (g) => g is GradeDetail
-                                    ? GradeWidget(grade: g)
-                                    : ObservationWidget(
-                                        observation: g as Observation,
-                                      ),
-                              )
-                      ],
-                    )
-                  : AnimatedLinearProgressIndicator(show: !widget.noInternet),
+              curve: Curves.easeIn,
+              alignment: Alignment.topCenter,
+              child: AnimatedSwitcher(
+                layoutBuilder: (currentChild, previousChildren) {
+                  return Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      if (currentChild != null) currentChild,
+                      for (final child in previousChildren)
+                        Positioned(
+                          top: 0,
+                          left: 0,
+                          right: 0,
+                          child: child,
+                        ),
+                    ],
+                  );
+                },
+                duration: const Duration(milliseconds: 200),
+                child: entries != null
+                    ? Column(
+                        // we're using a UniqueKey here so that the framework
+                        // detects a change on every rebuild. There would be no
+                        // animations otherwise, as the Column as the direct child
+                        // of the AnimatedSwitcher always stays the same (just different children).
+                        key: UniqueKey(),
+                        children: [
+                          if (widget.sortByType)
+                            ...Subject.sortByType(entries).entries.map(
+                                  (entry) => GradeTypeWidget(
+                                    typeName: entry.key,
+                                    entries: entry.value
+                                        .where((g) =>
+                                            widget.showCancelled ||
+                                            !g.cancelled)
+                                        .toList(),
+                                  ),
+                                )
+                          else
+                            ...entries
+                                .where(
+                                    (g) => widget.showCancelled || !g.cancelled)
+                                .map(
+                                  (g) => g is GradeDetail
+                                      ? GradeWidget(grade: g)
+                                      : ObservationWidget(
+                                          observation: g as Observation,
+                                        ),
+                                )
+                        ],
+                      )
+                    : AnimatedLinearProgressIndicator(show: !widget.noInternet),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -287,9 +344,11 @@ class GradeWidget extends StatelessWidget {
                 ),
             ],
           ),
-          trailing: Text(
-            grade.gradeFormatted,
-            style: grade.cancelled ? lineThrough : null,
+          trailing: NeonRing(
+            value: parseGradeLabel(grade.gradeFormatted),
+            label: grade.gradeFormatted,
+            size: 46,
+            crossedOut: grade.cancelled,
           ),
           isThreeLine: true,
         ),
@@ -359,7 +418,11 @@ class Star extends StatelessWidget {
   const Star({super.key, required this.filled});
   @override
   Widget build(BuildContext context) {
-    return Icon(filled ? Icons.star : Icons.star_border);
+    return Icon(
+      filled ? Icons.star_rounded : Icons.star_outline_rounded,
+      color: filled ? AppColors.cyan : null,
+      size: 20,
+    );
   }
 }
 
@@ -383,9 +446,163 @@ class GradeTypeWidget extends StatelessWidget {
     return displayGrades.isEmpty
         ? const SizedBox()
         : ExpansionTile(
-            title: Text(typeName),
+            title: HudLabel(typeName),
             initiallyExpanded: true,
             children: displayGrades,
           );
+  }
+}
+
+/// "What do I need?": the grade the next test needs for a chosen average.
+class _ForecastPanel extends StatefulWidget {
+  final Subject subject;
+  final Semester semester;
+  final UpcomingTest? nextTest;
+
+  const _ForecastPanel({
+    required this.subject,
+    required this.semester,
+    this.nextTest,
+  });
+
+  @override
+  State<_ForecastPanel> createState() => _ForecastPanelState();
+}
+
+class _ForecastPanelState extends State<_ForecastPanel> {
+  double target = 7;
+  int weight = 100;
+
+  @override
+  void initState() {
+    super.initState();
+    final average = widget.subject.average(widget.semester);
+    // Start with the next full grade above the current average.
+    if (average != null) {
+      target = (average / 100).floorToDouble().clamp(5, 9) + 1;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final forecast = forecastNextGrade(
+      widget.subject,
+      widget.semester,
+      target: target,
+      weightPercentage: weight,
+    );
+    final needed = roundUpToQuarter(forecast.required);
+    final (headline, color) = switch (forecast.kind) {
+      ForecastKind.safe => (
+          br("Schon sicher", "Schon safe, sigma 🗿"),
+          AppColors.success
+        ),
+      ForecastKind.impossible => (
+          br("Mit einem Test nicht erreichbar", "Unmöglich, L + ratio 💀"),
+          AppColors.danger
+        ),
+      ForecastKind.reachable => (
+          "Mindestens ${formatGradeSteps(needed)}",
+          gradeColor(needed),
+        ),
+    };
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHigh.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          HudLabel(br("Was brauche ich?", "Was brauche ich? 🤔")),
+          if (widget.nextTest != null) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(Icons.bolt_rounded, size: 18, color: AppColors.danger),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    "Nächster Test: ${widget.nextTest!.homework.title} am "
+                    "${DateFormat("EEEE, d. MMMM", "de").format(widget.nextTest!.date)}",
+                    style: theme.textTheme.bodyMedium
+                        ?.copyWith(fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ],
+            ),
+          ],
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              if (forecast.kind == ForecastKind.reachable)
+                NeonRing(
+                  value: needed,
+                  label: formatGradeSteps(needed),
+                  size: 56,
+                  stroke: 5,
+                )
+              else
+                Icon(
+                  forecast.kind == ForecastKind.safe
+                      ? Icons.verified_rounded
+                      : Icons.block_rounded,
+                  color: color,
+                  size: 40,
+                ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      headline,
+                      style:
+                          theme.textTheme.titleMedium?.copyWith(color: color),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      "${widget.nextTest != null ? "in diesem Test" : "im nächsten Test"} "
+                      "($weight %), damit dein Durchschnitt auf "
+                      "${target.toStringAsFixed(0)} kommt.",
+                      style: theme.textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              const HudLabel("Ziel Ø"),
+              for (final t in const [6.0, 7.0, 8.0, 9.0])
+                ChoiceChip(
+                  label: Text(t.toStringAsFixed(0)),
+                  selected: target == t,
+                  onSelected: (_) => setState(() => target = t),
+                  visualDensity: VisualDensity.compact,
+                ),
+              const SizedBox(width: 8),
+              const HudLabel("Gewicht"),
+              for (final w in const [50, 100])
+                ChoiceChip(
+                  label: Text("$w %"),
+                  selected: weight == w,
+                  onSelected: (_) => setState(() => weight = w),
+                  visualDensity: VisualDensity.compact,
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }

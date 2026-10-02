@@ -12,7 +12,7 @@ version: 8.2.15+50
 publish_to: none
 
 environment:
-  sdk: ">=2.17.0 <3.0.0"
+  sdk: ">=3.0.0 <4.0.0"
 
 dependencies:
   badges: ^2.0.2
@@ -24,10 +24,7 @@ dependencies:
       ref: nnbd
   built_value: ^8.0.2
   charts_flutter:
-    git:
-      url: https://github.com/miDeb/charts
-      ref: select_nearest
-      path: charts_flutter
+    path: packages/charts/charts_flutter/
   collapsible_sidebar:
     path: packages/collapsible_sidebar/
   collection: ^1.15.0
@@ -44,22 +41,25 @@ dependencies:
       url: https://github.com/miDeb/flutter_built_redux.git
       ref: nnbd
   flutter_colorpicker: ^1.0.3
+  flutter_local_notifications: ^22.3.1
   flutter_localizations:
     sdk: flutter
   flutter_secure_storage: ^8.0.0
   flutter_svg: ^1.0.3
   flutter_widget_from_html_core: ^0.8.5+3
   fuzzy: ^0.4.0-nullsafety.0
+  google_fonts: ^6.2.1
   hive: ^2.0.0
-  http: ^0.13.0
-  intl: ^0.19.0
+  http: ^1.2.0
+  image_picker: ^1.2.3
+  intl: ^0.20.2
   mocktail: ^0.3.0
   mutex: ^3.0.0
   open_file:
     git:
       url: https://github.com/miDeb/open_file.git
       ref: master
-  package_info_plus: ^3.0.0
+  package_info_plus: ^9.0.1
   path_provider: ^2.0.0-nullsafety
   quill_delta: ^3.0.0-nullsafety.2
   quill_delta_viewer:
@@ -78,12 +78,17 @@ dependencies:
   url_launcher: ^6.1.0
 
 dependency_overrides:
+  win32: ^5.5.0
+  test: any
+  analyzer: any
+  intl: ^0.20.2
   file: ^6.1.4
   fwfh_text_style: ^2.22.08+1
 
 dev_dependencies:
   build_runner: ^2.1.10
   built_value_generator: ^8.0.2
+  flutter_launcher_icons: ^0.14.4
   flutter_native_splash: ^2.1.6
   flutter_test:
     sdk: flutter
@@ -93,16 +98,25 @@ dev_dependencies:
   msix: ^3.6.1
   quiver: ^3.0.0-nullsafety.3
 
-flutter_icons:
+flutter_launcher_icons:
+  image_path: "assets/icon/register_icon.png"
   android: "launcher_icon"
+  adaptive_icon_background: "#2E5CAA"
+  adaptive_icon_foreground: "assets/icon/register_icon_foreground.png"
   ios: true
-  image_path: "assets/index.png"
+  remove_alpha_ios: true
+  macos:
+    generate: true
+  windows:
+    generate: true
+    icon_size: 256
 
 flutter_native_splash:
-  color: "fafafa"
-  color_dark: "303030"
-  image: "assets/4.0x/splash-light.png"
-  image_dark: "assets/4.0x/splash-dark.png"
+  color: "0A0E1A"
+  image: "assets/icon/splash.png"
+  android_12:
+    color: "0A0E1A"
+    image: "assets/icon/splash.png"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://www.dartlang.org/tools/pub/pubspec
@@ -115,6 +129,7 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/
+    - assets/icon/
   #  - images/a_dot_ham.jpeg
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.io/assets-and-images/#resolution-aware.
@@ -141,11 +156,11 @@ flutter:
   # see https://flutter.io/custom-fonts/#from-packages
 
 msix_config:
-  display_name: Digitales Register
+  display_name: Register
   publisher_display_name: Michael Debertol
   identity_name: 2097MichaelDebertol.DigitalesRegister
   publisher: CN=2508760A-808B-4829-867A-4DB53593750E
   msix_version: 8.2.15.0
-  logo_path: assets/4.0x/transparent.png
+  logo_path: assets/icon/register_icon.png
   architecture: x64
   capabilities: "internetClient"

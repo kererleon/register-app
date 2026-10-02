@@ -22,12 +22,15 @@ import 'package:dr/app_state.dart';
 import 'package:dr/container/settings_page.dart';
 import 'package:dr/ui/autocomplete_options.dart';
 import 'package:dr/ui/dialog.dart';
-import 'package:dr/ui/donations.dart';
 import 'package:dr/ui/network_protocol_page.dart';
 import 'package:dr/util.dart';
 import 'package:dynamic_theme/dynamic_theme.dart';
 import 'package:flutter/gestures.dart';
+import 'package:dr/teacher_photos.dart';
+import 'package:dr/ui/holo.dart';
+import 'package:dr/ui/theme.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:responsive_scaffold/responsive_scaffold.dart';
 import 'package:scroll_to_index/scroll_to_index.dart';
@@ -164,26 +167,38 @@ class _SettingsPageWidgetState extends State<SettingsPageWidget> {
         children: <Widget>[
           if (!widget.vm.demoMode) ...[
             const SizedBox(height: 8),
-            ListTile(
-              title: Text(
-                "Profil",
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              trailing: const Icon(Icons.chevron_right),
+            HoloPanel(
               onTap: widget.onShowProfile,
+              child: Row(
+                children: [
+                  SubjectGlyph(name: "P", color: AppColors.violet),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Profil",
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        Text(
+                          "Email, Passwort und Benachrichtigungen",
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.chevron_right_rounded),
+                ],
+              ),
             ),
-            const Divider(),
           ],
           AutoScrollTag(
             controller: controller,
             index: 0,
             key: const ObjectKey(0),
-            child: ListTile(
-              title: Text(
-                "Anmeldung",
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-            ),
+            child:
+                _SettingsHeader("Anmeldung", icon: Icons.lock_outline_rounded),
           ),
           SwitchListTile.adaptive(
             title: const Text("Angemeldet bleiben"),
@@ -210,18 +225,14 @@ class _SettingsPageWidgetState extends State<SettingsPageWidget> {
                 : null,
             value: widget.vm.deleteDataOnLogout,
           ),
-          const Divider(),
+          const SizedBox(height: 8),
           AutoScrollTag(
             controller: controller,
             index: 1,
             key: const ObjectKey(1),
-            child: ListTile(
-              title: Text(
-                "Aussehen",
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-            ),
+            child: _SettingsHeader("Aussehen", icon: Icons.palette_outlined),
           ),
+          const _StylePicker(),
           RadioListTile(
             value: _Theme.followDevice,
             groupValue: currentTheme,
@@ -240,11 +251,7 @@ class _SettingsPageWidgetState extends State<SettingsPageWidget> {
             onChanged: _selectTheme,
             title: const Text("Dunkel"),
           ),
-          const Divider(
-            indent: 15,
-            endIndent: 15,
-            height: 0,
-          ),
+          const SizedBox(height: 4),
           ExpansionTile(
             title: const Text("Fächerfarben"),
             children: [
@@ -302,17 +309,12 @@ class _SettingsPageWidgetState extends State<SettingsPageWidget> {
             value: widget.vm.dashboardColorTestsInRed,
             onChanged: widget.onSetDashboardColorTestsInRed,
           ),
-          const Divider(),
+          const SizedBox(height: 8),
           AutoScrollTag(
             controller: controller,
             index: 2,
             key: const ObjectKey(2),
-            child: ListTile(
-              title: Text(
-                "Merkheft",
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-            ),
+            child: _SettingsHeader("Merkheft", icon: Icons.dashboard_outlined),
           ),
           SwitchListTile.adaptive(
             title: const Text("Neue oder geänderte Einträge markieren"),
@@ -335,17 +337,12 @@ class _SettingsPageWidgetState extends State<SettingsPageWidget> {
             },
             value: widget.vm.askWhenDelete,
           ),
-          const Divider(),
+          const SizedBox(height: 8),
           AutoScrollTag(
             controller: controller,
             index: 3,
             key: const ObjectKey(3),
-            child: ListTile(
-              title: Text(
-                "Noten",
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-            ),
+            child: _SettingsHeader("Noten", icon: Icons.insights_rounded),
           ),
           SwitchListTile.adaptive(
             title: const Text("Noten in einem Diagramm darstellen"),
@@ -426,16 +423,23 @@ class _SettingsPageWidgetState extends State<SettingsPageWidget> {
               ],
             ),
           ),
-          const Divider(),
+          const SizedBox(height: 8),
           AutoScrollTag(
             controller: controller,
             index: 4,
             key: const ObjectKey(4),
-            child: ListTile(
-              title: Text(
-                "Kalender",
-                style: Theme.of(context).textTheme.headlineSmall,
+            child: _SettingsHeader("Kalender",
+                icon: Icons.calendar_month_outlined),
+          ),
+          ValueListenableBuilder(
+            valueListenable: showTeacherPhotos,
+            builder: (context, bool show, _) => SwitchListTile.adaptive(
+              title: const Text("Fotos der Lehrpersonen"),
+              subtitle: const Text(
+                "Profilbilder in der Stunden-Detailkarte (im Brainrot-Stil auch als Hintergrund), von der Personen-Seite des Fallmerayer",
               ),
+              value: show,
+              onChanged: setShowTeacherPhotos,
             ),
           ),
           ExpansionTile(
@@ -521,17 +525,12 @@ class _SettingsPageWidgetState extends State<SettingsPageWidget> {
             },
             value: widget.vm.showCalendarEditNicksBar,
           ),
-          const Divider(),
+          const SizedBox(height: 8),
           AutoScrollTag(
             controller: controller,
             index: 5,
             key: const ObjectKey(5),
-            child: ListTile(
-              title: Text(
-                "Erweitert",
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-            ),
+            child: _SettingsHeader("Erweitert", icon: Icons.tune_rounded),
           ),
           if (Platform.isAndroid)
             SwitchListTile.adaptive(
@@ -556,46 +555,28 @@ class _SettingsPageWidgetState extends State<SettingsPageWidget> {
               );
             },
           ),
-          if (!Platform.isMacOS)
-            ListTile(
-              leading: const Icon(Icons.monetization_on),
-              title: const Text(
-                "Unterstütze uns jetzt!",
-              ),
-              onTap: () {
-                Navigator.of(context).push(
-                    MaterialPageRoute<void>(builder: (context) => Donate()));
-              },
-            ),
-          ListTile(
-            leading: const Icon(Icons.feedback),
-            title: const Text("Feedback geben"),
-            trailing: const Icon(Icons.open_in_new),
-            onTap: () async {
-              await launchUrl(
-                Uri.parse(
-                  "https://docs.google.com/forms/d/e/1FAIpQLSeRYFLq346UH6sMzKicMHwE8KhtnTm4KBv_yho5b0GSrRsluA/viewform?usp=sf_link&entry.1362624919=${Uri.encodeQueryComponent(appVersion)}",
-                ),
-              );
-            },
-          ),
           ListTile(
             leading: const Icon(Icons.code),
             trailing: const Icon(Icons.open_in_new),
-            title: const Text("Zum Quellcode"),
+            title: const Text("Original-Quellcode"),
+            subtitle: const Text("github.com/miDeb/digitales_register"),
             onTap: () => launchUrl(
               Uri.parse("https://github.com/miDeb/digitales_register"),
             ),
           ),
           AboutListTile(
             icon: const Icon(Icons.info_outline),
-            applicationIcon: SizedBox(
-              width: 100,
-              child: Image.asset("assets/transparent.png"),
+            applicationIcon: ClipRRect(
+              borderRadius: BorderRadius.circular(18),
+              child: Image.asset(
+                "assets/icon/register_icon.png",
+                width: 72,
+                height: 72,
+              ),
             ),
             applicationLegalese:
                 "Copyright Michael Debertol und Simon Wachtler 2019-2022",
-            applicationName: "Digitales Register (Client)",
+            applicationName: "Register",
             applicationVersion: appVersion,
             aboutBoxChildren: [
               const Text("Ein Client für das Digitale Register."),
@@ -604,7 +585,7 @@ class _SettingsPageWidgetState extends State<SettingsPageWidget> {
                   const TextSpan(text: "Entwickelt von "),
                   TextSpan(
                     text: "Michael Debertol",
-                    style: const TextStyle(color: Colors.blue),
+                    style: TextStyle(color: AppColors.cyan),
                     recognizer: TapGestureRecognizer()
                       ..onTap = () {
                         launchUrl(
@@ -616,7 +597,7 @@ class _SettingsPageWidgetState extends State<SettingsPageWidget> {
                   const TextSpan(text: " @ "),
                   TextSpan(
                     text: "evvvolution.com",
-                    style: const TextStyle(color: Colors.blue),
+                    style: TextStyle(color: AppColors.cyan),
                     recognizer: TapGestureRecognizer()
                       ..onTap = () {
                         launchUrl(
@@ -637,9 +618,9 @@ class _SettingsPageWidgetState extends State<SettingsPageWidget> {
               Align(
                 alignment: Alignment.centerLeft,
                 child: InkWell(
-                  child: const Text(
+                  child: Text(
                     "See the GNU General Public License for more details.",
-                    style: TextStyle(color: Colors.blue),
+                    style: TextStyle(color: AppColors.cyan),
                   ),
                   onTap: () {
                     launchUrl(
@@ -956,6 +937,198 @@ class _ColorPickerState extends State<_ColorPicker> {
           child: const Text("Auswählen"),
         ),
       ],
+    );
+  }
+}
+
+class _SettingsHeader extends StatelessWidget {
+  final String title;
+  final IconData icon;
+  const _SettingsHeader(this.title, {required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 6),
+      child: Row(
+        children: [
+          Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              gradient: AppColors.accentGradient,
+              borderRadius: BorderRadius.circular(10),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.violet.withValues(alpha: 0.45),
+                  blurRadius: 14,
+                  spreadRadius: -4,
+                ),
+              ],
+            ),
+            child: Icon(icon, size: 19, color: Colors.white),
+          ),
+          const SizedBox(width: 12),
+          Text(title, style: theme.textTheme.titleLarge),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Container(
+              height: 1,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.violet.withValues(alpha: 0.6),
+                    AppColors.cyan.withValues(alpha: 0),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Big preview cards to switch the look of the whole app.
+class _StylePicker extends StatelessWidget {
+  const _StylePicker();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const HudLabel("Stil der App"),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: _StyleCard(
+                  style: AppStyle.holo,
+                  title: "Holo",
+                  subtitle: "Futuristisch, clean, leuchtend",
+                  colors: [
+                    Color(0xFF0A0E1A),
+                    Color(0xFF7C5CFF),
+                    Color(0xFF22D3EE)
+                  ],
+                  emoji: "✦",
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _StyleCard(
+                  style: AppStyle.brainrot,
+                  title: "Brainrot",
+                  subtitle: "Skibidi, sigma, no cap",
+                  colors: [
+                    Color(0xFF14001F),
+                    Color(0xFFFF2E93),
+                    Color(0xFFB6FF00)
+                  ],
+                  emoji: "💀",
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StyleCard extends StatelessWidget {
+  final AppStyle style;
+  final String title;
+  final String subtitle;
+  final List<Color> colors;
+  final String emoji;
+
+  const _StyleCard({
+    required this.style,
+    required this.title,
+    required this.subtitle,
+    required this.colors,
+    required this.emoji,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final selected = appStyle.value == style;
+    final theme = Theme.of(context);
+    return GestureDetector(
+      onTap: selected ? null : () => setAppStyle(style),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.all(3),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          gradient:
+              selected ? LinearGradient(colors: [colors[1], colors[2]]) : null,
+          border: selected
+              ? null
+              : Border.all(color: theme.colorScheme.outlineVariant, width: 1.5),
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: colors[0],
+            borderRadius: BorderRadius.circular(13),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text(emoji, style: TextStyle(fontSize: 22, color: colors[2])),
+                  const Spacer(),
+                  if (selected)
+                    Icon(Icons.check_circle_rounded,
+                        color: colors[2], size: 20),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  for (final c in colors.skip(1))
+                    Container(
+                      width: 26,
+                      height: 8,
+                      margin: const EdgeInsets.only(right: 4),
+                      decoration: BoxDecoration(
+                        color: c,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Text(
+                title,
+                style: style == AppStyle.brainrot
+                    ? GoogleFonts.bangers(
+                        fontSize: 22,
+                        color: Colors.white,
+                        letterSpacing: 1.2,
+                      )
+                    : GoogleFonts.sora(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+              ),
+              Text(
+                subtitle,
+                style: const TextStyle(color: Colors.white70, fontSize: 12),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

@@ -21,6 +21,7 @@ final _gradesMiddleware = MiddlewareBuilder<AppState, AppStateBuilder,
     AppActions>()
   ..add(GradesActionsNames.setSemester, _setSemester)
   ..add(GradesActionsNames.load, _loadGrades)
+  ..add(GradesActionsNames.loaded, _updateWidgetGrades)
   ..add(GradesActionsNames.loadDetails, _loadGradesDetails)
   ..add(GradesActionsNames.loadCancelledDescription, _loadCancelledDescription);
 
@@ -209,4 +210,12 @@ class SemesterLock {
       _mutex.release();
     }
   }
+}
+
+Future<void> _updateWidgetGrades(
+    MiddlewareApi<AppState, AppStateBuilder, AppActions> api,
+    ActionHandler next,
+    Action<SubjectsLoadedPayload> action) async {
+  await next(action);
+  await exportWeekForWidget(api.state);
 }

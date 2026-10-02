@@ -15,7 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with digitales_register.  If not, see <http://www.gnu.org/licenses/>.
 
+import 'dart:async';
+
 import 'package:badges/badges.dart' as badge;
+import 'package:dr/desktop_notifications.dart' show refreshInterval;
 import 'package:built_collection/built_collection.dart';
 import 'package:deleteable_tile/deleteable_tile.dart';
 import 'package:dr/app_state.dart';
@@ -28,8 +31,10 @@ import 'package:dr/main.dart';
 import 'package:dr/middleware/middleware.dart';
 import 'package:dr/ui/animated_linear_progress_indicator.dart';
 import 'package:dr/ui/dialog.dart';
+import 'package:dr/ui/holo.dart';
 import 'package:dr/ui/last_fetched_overlay.dart';
 import 'package:dr/ui/no_internet.dart';
+import 'package:dr/ui/theme.dart';
 import 'package:dr/utc_date_time.dart';
 import 'package:dr/util.dart';
 import 'package:flutter/material.dart';
@@ -59,6 +64,8 @@ class DaysWidget extends StatefulWidget {
   final VoidCallback refresh;
   final VoidCallback refreshNoInternet;
   final AttachmentCallback onOpenAttachment;
+  final MoveHomeworkCallback moveHomeworkCallback;
+  final ResetMovedHomeworkCallback resetMovedHomeworkCallback;
 
   const DaysWidget({
     super.key,
@@ -74,6 +81,8 @@ class DaysWidget extends StatefulWidget {
     required this.refresh,
     required this.refreshNoInternet,
     required this.onOpenAttachment,
+    required this.moveHomeworkCallback,
+    required this.resetMovedHomeworkCallback,
   });
   @override
   _DaysWidgetState createState() => _DaysWidgetState();
@@ -172,8 +181,21 @@ class _DaysWidgetState extends State<DaysWidget> {
     }
   }
 
+  Timer? _autoRefresh;
+
+  @override
+  void dispose() {
+    _autoRefresh?.cancel();
+    super.dispose();
+  }
+
   @override
   void initState() {
+    // Reload regularly so that new entries show up (and are announced)
+    // while the app is open.
+    _autoRefresh = Timer.periodic(refreshInterval, (_) {
+      if (!widget.vm.noInternet && !widget.vm.loading) widget.refresh();
+    });
     updateValues();
     controller.addListener(() {
       update();
@@ -211,9 +233,7 @@ class _DaysWidgetState extends State<DaysWidget> {
       );
     }
     if (n.isEven) {
-      return const Divider(
-        height: 16,
-      );
+      return const SizedBox(height: 6);
     }
     final itemIndex = (n - 1) ~/ 2;
     return DayWidget(
@@ -226,6 +246,8 @@ class _DaysWidgetState extends State<DaysWidget> {
       toggleDoneCallback: widget.toggleDoneCallback,
       setDoNotAskWhenDeleteCallback: widget.setDoNotAskWhenDeleteCallback,
       onOpenAttachment: widget.onOpenAttachment,
+      moveHomeworkCallback: widget.moveHomeworkCallback,
+      resetMovedHomeworkCallback: widget.resetMovedHomeworkCallback,
       colorBorders: widget.vm.colorBorders,
       colorTestsInRed: widget.vm.colorTestsInRed,
       subjectThemes: widget.vm.subjectThemes,
@@ -330,7 +352,7 @@ class _DaysWidgetState extends State<DaysWidget> {
               }
             },
             child: FloatingActionButton(
-              backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+              backgroundColor: Theme.of(context).colorScheme.surface,
               heroTag: null,
               onPressed: () {
                 controller.animateTo(
@@ -350,7 +372,7 @@ class _DaysWidgetState extends State<DaysWidget> {
           ),
           if (_targets.isNotEmpty || _focused.isNotEmpty)
             FloatingActionButton(
-              backgroundColor: Colors.red,
+              backgroundColor: AppColors.danger,
               heroTag: null,
               onPressed: () {
                 widget.markAllAsSeenCallback();
@@ -360,7 +382,7 @@ class _DaysWidgetState extends State<DaysWidget> {
             ),
           if (_targets.isNotEmpty && _afterFirstFrame)
             FloatingActionButton.extended(
-              backgroundColor: Colors.red,
+              backgroundColor: AppColors.danger,
               icon: const Icon(Icons.arrow_drop_down),
               label: const Text("Neue Einträge"),
               onPressed: () async {
@@ -373,12 +395,12 @@ class _DaysWidgetState extends State<DaysWidget> {
         ],
       ),
       homeAppBar: ResponsiveAppBar(
-        title: const Text("Register"),
+        title: Text(br("Register", "Register 🧠🔥")),
         actions: <Widget>[
           if (widget.vm.noInternet)
             TextButton(
               style: TextButton.styleFrom(
-                foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                foregroundColor: AppColors.warning,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
               ),
               onPressed: widget.refreshNoInternet,
@@ -440,13 +462,15 @@ class DashboardHeader extends StatelessWidget {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.only(top: 5),
+          padding: const EdgeInsets.only(top: 6, bottom: 4),
           child: Center(
-            child: ElevatedButton(
-              onPressed: onSwitchFuture,
-              child: Text(
-                future ? "Vergangenheit" : "Zukunft",
-              ),
+            child: HoloToggle(
+              labels: [
+                br("Kommend", "Kommt noch 🔜"),
+                br("Vergangen", "Schon passiert 💀")
+              ],
+              selected: future ? 0 : 1,
+              onChanged: (_) => onSwitchFuture(),
             ),
           ),
         ),
@@ -463,6 +487,8 @@ class DayWidget extends StatelessWidget {
   final ToggleDoneCallback toggleDoneCallback;
   final VoidCallback setDoNotAskWhenDeleteCallback;
   final AttachmentCallback onOpenAttachment;
+  final MoveHomeworkCallback moveHomeworkCallback;
+  final ResetMovedHomeworkCallback resetMovedHomeworkCallback;
   final bool colorBorders, colorTestsInRed;
   final BuiltMap<String, SubjectTheme> subjectThemes;
 
@@ -484,6 +510,8 @@ class DayWidget extends StatelessWidget {
     required this.toggleDoneCallback,
     required this.setDoNotAskWhenDeleteCallback,
     required this.onOpenAttachment,
+    required this.moveHomeworkCallback,
+    required this.resetMovedHomeworkCallback,
     required this.colorBorders,
     required this.subjectThemes,
     required this.colorTestsInRed,
@@ -533,118 +561,199 @@ class DayWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var i = index;
-    return Column(
-      children: <Widget>[
-        SizedBox(
-          height: 48,
-          child: Row(
-            children: <Widget>[
-              Padding(
-                padding: const EdgeInsets.only(left: 15),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      day.displayName,
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    if (showLastFetched)
+    final theme = Theme.of(context);
+    final now = DateTime.now();
+    final isToday = day.date.year == now.year &&
+        day.date.month == now.month &&
+        day.date.day == now.day;
+    return CustomPaint(
+      painter: _TimelinePainter(
+        line: theme.colorScheme.outlineVariant,
+        highlighted: isToday,
+      ),
+      child: Column(
+        children: <Widget>[
+          SizedBox(
+            height: 56,
+            child: Row(
+              children: <Widget>[
+                const SizedBox(width: _timelineInset),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      HudLabel(
+                        isToday
+                            ? "Heute · ${DateFormat("dd.MM", "de").format(day.date)}"
+                            : DateFormat("EE · dd.MM.yyyy", "de")
+                                .format(day.date),
+                        color: isToday ? theme.colorScheme.secondary : null,
+                      ),
+                      const SizedBox(height: 2),
                       Text(
-                        "Zuletzt synchronisiert ${formatTimeAgo(day.lastRequested)}.",
-                        style: Theme.of(context).textTheme.bodySmall,
+                        day.displayName,
+                        style: theme.textTheme.titleLarge,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                  ],
-                ),
-              ),
-              if (day.deletedHomework.isNotEmpty)
-                AutoScrollTag(
-                  controller: controller,
-                  index: index,
-                  key: ValueKey(index),
-                  highlightColor: Colors.grey.withOpacity(0.5),
-                  child: IconButton(
-                    icon: badge.Badge(
-                      badgeContent: Icon(
-                        Icons.delete,
-                        size: 15,
-                        color: day.deletedHomework.any((h) => h.isChanged)
-                            ? Colors.white
-                            : null,
-                      ),
-                      badgeColor: day.deletedHomework.any((h) => h.isChanged)
-                          ? Colors.red
-                          : Theme.of(context).scaffoldBackgroundColor,
-                      toAnimate: day.deletedHomework.any((h) => h.isChanged),
-                      padding: EdgeInsets.zero,
-                      position: badge.BadgePosition.topStart(),
-                      elevation: 0,
-                      child: const Icon(Icons.info_outline),
-                    ),
-                    onPressed: () {
-                      showDialog<void>(
-                        context: context,
-                        builder: (context) {
-                          return InfoDialog(
-                            title: const Text("Gelöschte Einträge"),
-                            content: SingleChildScrollView(
-                              child: Column(
-                                children: day.deletedHomework
-                                    .map(
-                                      (i) => ItemWidget(
-                                        item: i,
-                                        isDeletedView: true,
-                                        colorBorder: colorBorders,
-                                        subjectThemes: subjectThemes,
-                                        colorTestsInRed: colorTestsInRed,
-                                        askWhenDelete: vm.askWhenDelete,
-                                        noInternet: vm.noInternet,
-                                      ),
-                                    )
-                                    .toList(),
-                              ),
-                            ),
-                          );
-                        },
-                      );
-                    },
+                      if (showLastFetched)
+                        Text(
+                          "Zuletzt synchronisiert ${formatTimeAgo(day.lastRequested)}.",
+                          style: theme.textTheme.bodySmall,
+                        ),
+                    ],
                   ),
                 ),
-              const Spacer(),
-              if (vm.showAddReminder)
-                IconButton(
-                  icon: const Icon(Icons.add),
-                  onPressed: vm.noInternet
-                      ? null
-                      : () async {
-                          final message =
-                              await showEnterReminderDialog(context);
-                          if (message != null) {
-                            addReminderCallback(day, message);
-                          }
-                        },
-                ),
-            ],
+                if (day.deletedHomework.isNotEmpty)
+                  AutoScrollTag(
+                    controller: controller,
+                    index: index,
+                    key: ValueKey(index),
+                    highlightColor: AppColors.violet.withValues(alpha: 0.3),
+                    child: IconButton(
+                      icon: badge.Badge(
+                        badgeContent: Icon(
+                          Icons.delete,
+                          size: 15,
+                          color: day.deletedHomework.any((h) => h.isChanged)
+                              ? Colors.white
+                              : null,
+                        ),
+                        badgeColor: day.deletedHomework.any((h) => h.isChanged)
+                            ? AppColors.danger
+                            : Theme.of(context).colorScheme.surface,
+                        toAnimate: day.deletedHomework.any((h) => h.isChanged),
+                        padding: EdgeInsets.zero,
+                        position: badge.BadgePosition.topStart(),
+                        elevation: 0,
+                        child: const Icon(Icons.info_outline),
+                      ),
+                      onPressed: () {
+                        showDialog<void>(
+                          context: context,
+                          builder: (context) {
+                            return InfoDialog(
+                              title: const Text("Gelöschte Einträge"),
+                              content: SingleChildScrollView(
+                                child: Column(
+                                  children: day.deletedHomework
+                                      .map(
+                                        (i) => ItemWidget(
+                                          item: i,
+                                          isDeletedView: true,
+                                          colorBorder: colorBorders,
+                                          subjectThemes: subjectThemes,
+                                          colorTestsInRed: colorTestsInRed,
+                                          askWhenDelete: vm.askWhenDelete,
+                                          noInternet: vm.noInternet,
+                                        ),
+                                      )
+                                      .toList(),
+                                ),
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                if (vm.showAddReminder)
+                  IconButton(
+                    tooltip: "Erinnerung hinzufügen",
+                    icon: const Icon(Icons.add_circle_outline_rounded),
+                    color: theme.colorScheme.primary,
+                    onPressed: vm.noInternet
+                        ? null
+                        : () async {
+                            final message =
+                                await showEnterReminderDialog(context);
+                            if (message != null) {
+                              addReminderCallback(day, message);
+                            }
+                          },
+                  ),
+                const SizedBox(width: 4),
+              ],
+            ),
           ),
-        ),
-        for (final hw in day.homework)
-          ItemWidget(
-            item: hw,
-            toggleDone: () => toggleDoneCallback(hw, !hw.checked),
-            removeThis: () => removeReminderCallback(hw, day),
-            setDoNotAskWhenDelete: setDoNotAskWhenDeleteCallback,
-            askWhenDelete: vm.askWhenDelete,
-            noInternet: vm.noInternet,
-            controller: controller,
-            index: ++i,
-            onOpenAttachment: onOpenAttachment,
-            subjectThemes: subjectThemes,
-            colorBorder: colorBorders,
-            colorTestsInRed: colorTestsInRed,
-          ),
-      ],
+          for (final hw in day.homework)
+            ItemWidget(
+              item: hw,
+              toggleDone: () => toggleDoneCallback(hw, !hw.checked),
+              removeThis: () => removeReminderCallback(hw, day),
+              setDoNotAskWhenDelete: setDoNotAskWhenDeleteCallback,
+              askWhenDelete: vm.askWhenDelete,
+              noInternet: vm.noInternet,
+              controller: controller,
+              index: ++i,
+              onOpenAttachment: onOpenAttachment,
+              movedTo: vm.movedTo[homeworkMoveKey(hw)],
+              onMove: (to) => moveHomeworkCallback(hw, day.date, to),
+              onResetMove: () => resetMovedHomeworkCallback(hw),
+              subjectThemes: subjectThemes,
+              colorBorder: colorBorders,
+              colorTestsInRed: colorTestsInRed,
+            ),
+        ],
+      ),
     );
   }
+}
+
+/// Space left of the dashboard entries for the timeline.
+const _timelineInset = 44.0;
+
+/// Draws the dashboard's timeline: a vertical line with a glowing node next
+/// to each day's title.
+class _TimelinePainter extends CustomPainter {
+  final Color line;
+  final bool highlighted;
+  const _TimelinePainter({required this.line, required this.highlighted});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const x = 24.0;
+    const nodeY = 28.0;
+    canvas.drawLine(
+      const Offset(x, 0),
+      Offset(x, size.height + 6),
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            AppColors.violet.withValues(alpha: 0.7),
+            line,
+          ],
+        ).createShader(Rect.fromLTWH(x, 0, 1, size.height))
+        ..strokeWidth = 1.5,
+    );
+    final nodeColor = highlighted ? AppColors.cyan : AppColors.violet;
+    canvas.drawCircle(
+      const Offset(x, nodeY),
+      highlighted ? 11 : 8,
+      Paint()
+        ..color = nodeColor.withValues(alpha: 0.5)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
+    );
+    canvas.drawCircle(
+      const Offset(x, nodeY),
+      highlighted ? 6 : 4.5,
+      Paint()
+        ..shader = AppColors.accentGradient.createShader(
+          Rect.fromCircle(center: const Offset(x, nodeY), radius: 6),
+        ),
+    );
+    canvas.drawCircle(
+      const Offset(x, nodeY),
+      2,
+      Paint()..color = Colors.white,
+    );
+  }
+
+  @override
+  bool shouldRepaint(_TimelinePainter old) =>
+      old.line != line || old.highlighted != highlighted;
 }
 
 class ItemWidget extends StatelessWidget {
@@ -661,6 +770,13 @@ class ItemWidget extends StatelessWidget {
       colorTestsInRed;
   final AttachmentCallback? onOpenAttachment;
   final BuiltMap<String, SubjectTheme> subjectThemes;
+
+  /// Moves the entry to another day; null where moving makes no sense.
+  final ValueChanged<UtcDateTime>? onMove;
+  final VoidCallback? onResetMove;
+
+  /// The day this entry of a teacher was moved to by the user.
+  final UtcDateTime? movedTo;
 
   final AutoScrollController? controller;
   final int? index;
@@ -679,6 +795,9 @@ class ItemWidget extends StatelessWidget {
     required this.noInternet,
     this.isCurrent = true,
     this.onOpenAttachment,
+    this.onMove,
+    this.onResetMove,
+    this.movedTo,
     required this.colorBorder,
     required this.subjectThemes,
     required this.colorTestsInRed,
@@ -753,210 +872,258 @@ class ItemWidget extends StatelessWidget {
     );
   }
 
-  Tuple2<Color, double> _getBorderConfig() {
-    if (item.warning && colorTestsInRed) {
-      return const Tuple2(Colors.red, 1.5);
+  /// The color of the stripe on the entry's left edge, or null for none.
+  Color? _accent() {
+    if (isTestEntry(item) && colorTestsInRed) {
+      return AppColors.danger;
     }
     if (colorBorder &&
         item.label != null &&
         subjectThemes.containsKey(item.label!)) {
-      return Tuple2(Color(subjectThemes[item.label]!.color), 1.5);
+      return Color(subjectThemes[item.label]!.color);
     }
     if (item.type == HomeworkType.grade || item.checked) {
-      return const Tuple2(Colors.green, 0);
+      return AppColors.success;
     }
-    return const Tuple2(Colors.grey, 0);
+    return null;
+  }
+
+  (IconData, Color?) _typeIcon(ColorScheme scheme) {
+    if (isTestEntry(item)) return (Icons.bolt_rounded, AppColors.danger);
+    switch (item.type) {
+      case HomeworkType.grade:
+        return (Icons.insights_rounded, AppColors.success);
+      case HomeworkType.observation:
+        return (Icons.visibility_outlined, scheme.secondary);
+      case HomeworkType.gradeGroup:
+        return (Icons.event_note_rounded, scheme.secondary);
+      case HomeworkType.homework:
+        return (Icons.edit_note_rounded, scheme.primary);
+      default:
+        return (Icons.assignment_outlined, scheme.primary);
+    }
+  }
+
+  Future<void> _pickMoveDate(BuildContext context) async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final picked = await showDatePicker(
+      context: context,
+      helpText: isOwnReminder(item)
+          ? "Erinnerung verschieben"
+          : "Als Erinnerung verschieben",
+      initialDate: movedTo ?? today,
+      firstDate: today.subtract(const Duration(days: 365)),
+      lastDate: today.add(const Duration(days: 365)),
+      locale: const Locale("de"),
+    );
+    if (picked == null) return;
+    final target = UtcDateTime(picked.year, picked.month, picked.day);
+    if (movedTo == target) return;
+    onMove!(target);
+  }
+
+  Future<void> _onDeletePressed(
+      BuildContext context, Future<void> Function() delete) async {
+    if (askWhenDelete) {
+      final confirmationResult = await _showConfirmDelete(context);
+      final shouldDelete = confirmationResult.item1;
+      final ask = confirmationResult.item2;
+      if (shouldDelete == true) {
+        if (!ask) {
+          setDoNotAskWhenDelete!();
+        }
+        await delete();
+        removeThis!();
+      }
+    } else {
+      await delete();
+      removeThis!();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final (typeIcon, typeColor) = _typeIcon(scheme);
+    final showBadge = (!isHistory && (item.isNew || item.isChanged)) ||
+        (isHistory && isCurrent);
+    final hasHistory = (isDeletedView
+            ? item.previousVersion?.previousVersion
+            : item.previousVersion) !=
+        null;
     Widget child = Deleteable(
       // this is a new entry or a reminder the user has just entered
       showEntryAnimation:
           now.difference(item.firstSeen) < const Duration(seconds: 1),
-      builder: (context, delete) => Card(
-        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          side: BorderSide(
-            color: _getBorderConfig().item1,
-            width: _getBorderConfig().item2,
-          ),
-          borderRadius: BorderRadius.circular(16),
+      builder: (context, delete) => HoloPanel(
+        margin: EdgeInsets.fromLTRB(
+          isHistory || isDeletedView ? 0 : _timelineInset,
+          5,
+          12,
+          5,
         ),
-        color: Colors.transparent,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: Column(
-            children: <Widget>[
-              Row(
-                children: <Widget>[
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(
-                        left: 8,
-                        top: 8,
-                        bottom: 6,
-                      ),
-                      child: Column(
-                        children: <Widget>[
+        padding: const EdgeInsets.fromLTRB(12, 10, 4, 10),
+        accent: _accent(),
+        highlighted:
+            !isHistory && !isDeletedView && (item.isNew || item.isChanged),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                if (!isHistory && !isDeletedView && item.deleteable)
+                  IconButton(
+                    tooltip: "Löschen",
+                    visualDensity: VisualDensity.compact,
+                    icon: const Icon(Icons.close_rounded, size: 20),
+                    onPressed: noInternet
+                        ? null
+                        : () => _onDeletePressed(context, delete),
+                  ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(typeIcon, size: 16, color: typeColor),
+                          const SizedBox(width: 6),
                           if (item.label != null)
-                            Stack(
-                              clipBehavior: Clip.none,
-                              children: <Widget>[
-                                Center(
-                                  child: Text(
-                                    item.label!,
-                                    textAlign: TextAlign.center,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                if ((!isHistory &&
-                                        (item.isNew || item.isChanged)) ||
-                                    (isHistory && isCurrent))
-                                  Positioned(
-                                    right: 0,
-                                    child: badge.Badge(
-                                      shape: badge.BadgeShape.square,
-                                      borderRadius: BorderRadius.circular(20),
-                                      badgeContent: Text(
-                                        isHistory && isCurrent
-                                            ? "aktuell"
-                                            : item.isNew
-                                                ? "neu"
-                                                : item.deleted
-                                                    ? "gelöscht"
-                                                    : "geändert",
-                                        style: const TextStyle(
-                                            color: Colors.white),
-                                      ),
-                                    ),
-                                  )
-                              ],
+                            Flexible(
+                              child: HudLabel(
+                                item.label!,
+                                color: typeColor,
+                              ),
                             ),
-                          ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            title: Text(item.title),
-                            subtitle: item.subtitle.isNullOrEmpty
-                                ? null
-                                : SelectableText(item.subtitle),
-                            leading:
-                                !isHistory && !isDeletedView && item.deleteable
-                                    ? IconButton(
-                                        icon: const Icon(Icons.close),
-                                        onPressed: noInternet
-                                            ? null
-                                            : () async {
-                                                if (askWhenDelete) {
-                                                  final confirmationResult =
-                                                      await _showConfirmDelete(
-                                                          context);
-                                                  final shouldDelete =
-                                                      confirmationResult.item1;
-                                                  final ask =
-                                                      confirmationResult.item2;
-                                                  if (shouldDelete == true) {
-                                                    if (!ask) {
-                                                      setDoNotAskWhenDelete!();
-                                                    }
-                                                    await delete();
-                                                    removeThis!();
-                                                  }
-                                                } else {
-                                                  await delete();
-                                                  removeThis!();
-                                                }
-                                              },
-                                        padding: EdgeInsets.zero)
-                                    : null,
-                          ),
+                          if (showBadge) ...[
+                            const SizedBox(width: 8),
+                            StatusPill(
+                              label: isHistory && isCurrent
+                                  ? "aktuell"
+                                  : item.isNew
+                                      ? "neu"
+                                      : item.deleted
+                                          ? "gelöscht"
+                                          : "geändert",
+                              color: item.deleted
+                                  ? AppColors.danger
+                                  : AppColors.cyan,
+                            ),
+                          ],
                         ],
                       ),
-                    ),
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: <Widget>[
-                      if (!isHistory && item.label != null)
-                        IconButton(
-                          icon: (isDeletedView
-                                      ? item.previousVersion!.previousVersion
-                                      : item.previousVersion) !=
-                                  null
-                              ? badge.Badge(
-                                  badgeContent:
-                                      const Icon(Icons.edit, size: 15),
-                                  padding: EdgeInsets.zero,
-                                  badgeColor: isDeletedView
-                                      ? Theme.of(context).dialogBackgroundColor
-                                      : Theme.of(context)
-                                          .scaffoldBackgroundColor,
-                                  toAnimate: false,
-                                  elevation: 0,
-                                  child: const Icon(
-                                    Icons.info_outline,
-                                  ),
-                                )
-                              : const Icon(
-                                  Icons.info_outline,
-                                ),
-                          onPressed: () {
-                            _showHistory(context);
-                          },
-                        ),
-                      if (item.type == HomeworkType.grade)
-                        Padding(
-                          padding: const EdgeInsets.only(right: 8.0),
-                          child: Text(
-                            item.gradeFormatted!,
-                            style: const TextStyle(
-                                color: Colors.green, fontSize: 30),
+                      const SizedBox(height: 6),
+                      Text(
+                        item.title,
+                        style: theme.textTheme.titleMedium,
+                      ),
+                      if (!item.subtitle.isNullOrEmpty) ...[
+                        const SizedBox(height: 2),
+                        SelectableText(
+                          item.subtitle,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: scheme.onSurfaceVariant,
                           ),
-                        )
-                      else if (!isHistory && !isDeletedView && item.checkable)
-                        Checkbox(
-                          visualDensity: VisualDensity.standard,
-                          activeColor: Colors.green,
-                          value: item.checked,
-                          onChanged: noInternet
-                              ? null
-                              : (done) {
-                                  toggleDone!();
-                                },
                         ),
+                      ],
+                      if (movedTo != null) ...[
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            StatusPill(
+                              label: "verschoben",
+                              color: AppColors.warning,
+                              icon: Icons.event_repeat_rounded,
+                            ),
+                            HudLabel(
+                              "auf ${DateFormat("EE dd.MM.", "de").format(movedTo!)}",
+                            ),
+                            TextButton.icon(
+                              style: TextButton.styleFrom(
+                                visualDensity: VisualDensity.compact,
+                              ),
+                              onPressed: noInternet ? null : onResetMove,
+                              icon: const Icon(Icons.undo_rounded, size: 16),
+                              label: const Text("Zurücksetzen"),
+                            ),
+                          ],
+                        ),
+                      ],
                     ],
                   ),
-                ],
-              ),
-              if (isHistory || isDeletedView) ...[
-                const Divider(height: 0),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text(
-                    formatChanged(item),
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: <Widget>[
+                    if (!isHistory && !isDeletedView && onMove != null)
+                      IconButton(
+                        tooltip: "Verschieben",
+                        visualDensity: VisualDensity.compact,
+                        icon: const Icon(Icons.event_repeat_rounded, size: 20),
+                        onPressed:
+                            noInternet ? null : () => _pickMoveDate(context),
+                      ),
+                    if (!isHistory && item.label != null)
+                      IconButton(
+                        tooltip: "Verlauf",
+                        visualDensity: VisualDensity.compact,
+                        icon: hasHistory
+                            ? badge.Badge(
+                                badgeContent: const Icon(Icons.edit,
+                                    size: 11, color: Colors.white),
+                                padding: const EdgeInsets.all(2),
+                                badgeColor: AppColors.violet,
+                                toAnimate: false,
+                                elevation: 0,
+                                child:
+                                    const Icon(Icons.history_rounded, size: 20),
+                              )
+                            : const Icon(Icons.info_outline_rounded, size: 20),
+                        onPressed: () {
+                          _showHistory(context);
+                        },
+                      ),
+                    if (item.type == HomeworkType.grade)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8, top: 2),
+                        child: NeonRing(
+                          value: parseGradeLabel(item.gradeFormatted),
+                          label: item.gradeFormatted!,
+                          size: 52,
+                        ),
+                      )
+                    else if (!isHistory && !isDeletedView && item.checkable)
+                      NeonCheck(
+                        value: item.checked,
+                        onTap: noInternet ? null : () => toggleDone!(),
+                      ),
+                  ],
                 ),
               ],
-              if (item.gradeGroupSubmissions?.isNotEmpty == true) ...[
-                const Divider(),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Text("Anhang",
-                        style: Theme.of(context).textTheme.titleMedium),
-                  ),
-                ),
-                for (final attachment in item.gradeGroupSubmissions!)
-                  AttachmentWidget(
-                    ggs: attachment,
-                    noInternet: noInternet,
-                    openCallback: onOpenAttachment!,
-                  )
-              ]
+            ),
+            if (isHistory || isDeletedView) ...[
+              const SizedBox(height: 8),
+              Text(
+                formatChanged(item),
+                style: theme.textTheme.bodySmall,
+              ),
             ],
-          ),
+            if (item.gradeGroupSubmissions?.isNotEmpty == true) ...[
+              const SizedBox(height: 8),
+              const HudLabel("Anhang"),
+              for (final attachment in item.gradeGroupSubmissions!)
+                AttachmentWidget(
+                  ggs: attachment,
+                  noInternet: noInternet,
+                  openCallback: onOpenAttachment!,
+                )
+            ]
+          ],
         ),
       ),
     );
@@ -965,7 +1132,7 @@ class ItemWidget extends StatelessWidget {
         index: index!,
         key: ValueKey(index),
         controller: controller!,
-        highlightColor: Colors.grey.withOpacity(0.5),
+        highlightColor: AppColors.violet.withValues(alpha: 0.3),
         child: child,
       );
     }

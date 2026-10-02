@@ -20,8 +20,10 @@ import 'package:dr/container/grades_chart_container.dart';
 import 'package:dr/container/grades_page_container.dart';
 import 'package:dr/container/sorted_grades_container.dart';
 import 'package:dr/ui/animated_linear_progress_indicator.dart';
+import 'package:dr/ui/holo.dart';
 import 'package:dr/ui/last_fetched_overlay.dart';
 import 'package:dr/ui/no_internet.dart';
+import 'package:dr/ui/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:responsive_scaffold/responsive_scaffold.dart';
 
@@ -75,37 +77,91 @@ class GradesPage extends StatelessWidget {
                     RawLastFetchedOverlay(
                       message: vm.lastFetchedMessage,
                       child: ListView(
+                        padding: const EdgeInsets.only(bottom: 48),
                         children: <Widget>[
-                          if (vm.showGradesDiagram)
-                            const SizedBox(
-                              height: 150,
-                              width: 250,
-                              child: GradesChartContainer(isFullscreen: false),
+                          if (vm.showAllSubjectsAverage || vm.showGradesDiagram)
+                            _GradesOverview(
+                              vm: vm,
+                              showGradesSettings: showGradesSettings,
                             ),
-                          if (vm.showAllSubjectsAverage) ...[
-                            ListTile(
-                              title: Row(
-                                children: [
-                                  const Text("Notendurchschnitt"),
-                                  IconButton(
-                                    icon: const Icon(Icons.settings),
-                                    onPressed: showGradesSettings,
-                                  ),
-                                ],
-                              ),
-                              trailing: Text(vm.allSubjectsAverage),
-                            ),
-                            const Divider(
-                              height: 0,
-                            ),
-                          ],
                           SortedGradesContainer(),
-                          const SizedBox(height: 50),
                         ],
                       ),
                     ),
                   ],
                 ),
+    );
+  }
+}
+
+class _GradesOverview extends StatelessWidget {
+  final GradesPageViewModel vm;
+  final VoidCallback showGradesSettings;
+
+  const _GradesOverview({required this.vm, required this.showGradesSettings});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final average = parseGradeLabel(vm.allSubjectsAverage);
+    return GlowCard(
+      padding: const EdgeInsets.fromLTRB(20, 18, 12, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (vm.showAllSubjectsAverage)
+            Row(
+              children: [
+                NeonRing(
+                  value: average,
+                  label: vm.allSubjectsAverage,
+                  size: 92,
+                  stroke: 7,
+                ),
+                const SizedBox(width: 20),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const HudLabel("Gesamtdurchschnitt"),
+                      const SizedBox(height: 4),
+                      Text(
+                        vm.showSemester.name,
+                        style: theme.textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        average == null
+                            ? "Noch keine Noten"
+                            : average >= 6
+                                ? br("Alles im grünen Bereich",
+                                    "W Rizz, alles grün 🔥")
+                                : br("Unter der Genügend-Grenze",
+                                    "Kritisch, lock in 😭"),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: gradeColor(average),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  tooltip: "Durchschnitt einstellen",
+                  icon: const Icon(Icons.tune_rounded),
+                  onPressed: showGradesSettings,
+                ),
+              ],
+            ),
+          if (vm.showGradesDiagram) ...[
+            if (vm.showAllSubjectsAverage) const SizedBox(height: 16),
+            const HudLabel("Verlauf"),
+            const SizedBox(
+              height: 160,
+              child: GradesChartContainer(isFullscreen: false),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

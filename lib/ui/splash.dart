@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with digitales_register.  If not, see <http://www.gnu.org/licenses/>.
 
+import 'package:dr/ui/theme.dart';
 import 'package:flutter/material.dart';
 
 class SplashScreen extends StatelessWidget {
@@ -45,11 +46,23 @@ class SplashScreen extends StatelessWidget {
 class _SplashWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final darkMode = Theme.of(context).brightness == Brightness.dark;
-    return Scaffold(
-      body: Center(
-        child: Image.asset(
-          darkMode ? "assets/splash-dark.png" : "assets/splash-light.png",
+    final theme = Theme.of(context);
+    return AuroraBackdrop(
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(32),
+              child: Image.asset(
+                "assets/icon/register_icon.png",
+                width: 128,
+                height: 128,
+              ),
+            ),
+            const SizedBox(height: 24),
+            GradientText("Register", style: theme.textTheme.headlineMedium),
+          ],
         ),
       ),
     );

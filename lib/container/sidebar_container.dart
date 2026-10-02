@@ -52,6 +52,7 @@ class SidebarContainer extends StatelessWidget {
           username: state.username,
           showAbsences: actions.routingActions.showAbsences.call,
           showCalendar: actions.routingActions.showCalendar.call,
+          showToday: actions.routingActions.showToday.call,
           showCertificate: actions.routingActions.showCertificate.call,
           showGrades: actions.routingActions.showGrades.call,
           showMessages: actions.routingActions.showMessages.call,

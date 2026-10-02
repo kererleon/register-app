@@ -17,63 +17,105 @@
 
 import 'package:dr/container/absence_group_container.dart';
 import 'package:dr/data.dart';
+import 'package:dr/ui/absence_forms.dart';
+import 'package:dr/ui/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-class AbsenceGroupWidget extends StatelessWidget {
-  final AbsencesViewModel vm;
+StatusPill justifiedPill(AbsenceJustified justified) {
+  switch (justified) {
+    case AbsenceJustified.justified:
+      return StatusPill(
+        label: "Entschuldigt",
+        color: AppColors.success,
+        icon: Icons.check_rounded,
+      );
+    case AbsenceJustified.forSchool:
+      return StatusPill(
+        label: "Im Auftrag der Schule",
+        color: AppColors.cyan,
+        icon: Icons.school_outlined,
+      );
+    case AbsenceJustified.notJustified:
+      return StatusPill(
+        label: "Nicht entschuldigt",
+        color: AppColors.danger,
+        icon: Icons.close_rounded,
+      );
+    default:
+      return StatusPill(
+        label: "Offen",
+        color: AppColors.warning,
+        icon: Icons.schedule_rounded,
+      );
+  }
+}
 
-  const AbsenceGroupWidget({super.key, required this.vm});
+class _AbsenceCard extends StatelessWidget {
+  final String title;
+  final String? subtitle;
+  final AbsenceJustified justified;
+  final List<String> texts;
+  final String? footer;
+  final Widget? action;
+
+  const _AbsenceCard({
+    required this.title,
+    required this.justified,
+    this.subtitle,
+    this.texts = const [],
+    this.footer,
+    this.action,
+  });
+
   @override
   Widget build(BuildContext context) {
-    const divider = Row(
-      children: [
-        Spacer(),
-        Flexible(
-          flex: 48,
-          child: Divider(
-            height: 8,
-          ),
-        ),
-        Spacer(),
-      ],
-    );
-
+    final theme = Theme.of(context);
+    final muted = theme.textTheme.bodySmall
+        ?.copyWith(color: theme.colorScheme.onSurfaceVariant);
     return Card(
-      shape: RoundedRectangleBorder(
-        side: vm.justified == AbsenceJustified.notYetJustified ||
-                vm.justified == AbsenceJustified.notJustified
-            ? const BorderSide(color: Colors.red)
-            : const BorderSide(color: Colors.green, width: 0),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      color: Colors.transparent,
-      elevation: 0,
       child: Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.fromLTRB(16, 14, 8, 14),
         child: Column(
-          children: <Widget>[
-            if (vm.reason != null) ...[
-              Text(vm.reason!),
-              divider,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title, style: theme.textTheme.titleMedium),
+                      if (subtitle != null) ...[
+                        const SizedBox(height: 2),
+                        Text(subtitle!, style: muted),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: justifiedPill(justified),
+                ),
+              ],
+            ),
+            for (final text in texts) ...[
+              const SizedBox(height: 10),
+              Text(text, style: theme.textTheme.bodyMedium),
             ],
-            if (vm.note != null) ...[
-              Text(vm.note!),
-              divider,
+            if (footer != null || action != null) ...[
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  if (footer != null)
+                    Expanded(child: Text(footer!, style: muted)),
+                  if (footer == null) const Spacer(),
+                  if (action != null) action!,
+                ],
+              ),
             ],
-            Text(
-              vm.fromTo,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            Text(
-              vm.duration,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            divider,
-            Text(
-              vm.justifiedString,
-              textAlign: TextAlign.center,
-            ),
           ],
         ),
       ),
@@ -81,95 +123,107 @@ class AbsenceGroupWidget extends StatelessWidget {
   }
 }
 
-class FutureAbsenceWidget extends StatelessWidget {
-  final FutureAbsence absence;
-  const FutureAbsenceWidget({
+class AbsenceGroupWidget extends StatelessWidget {
+  final AbsencesViewModel vm;
+  final void Function(String reason, String signature) onJustify;
+
+  const AbsenceGroupWidget({
     super.key,
-    required this.absence,
+    required this.vm,
+    required this.onJustify,
   });
 
   @override
   Widget build(BuildContext context) {
-    var fromTo = "";
-    if (absence.startDate == absence.endDate) {
-      fromTo +=
-          "${DateFormat("EE d.M.yyyy", "de").format(absence.startDate)}, ";
-      if (absence.startHour == absence.endHour) {
-        fromTo += "${absence.startHour}. h";
-      } else {
-        fromTo += "${absence.startHour}. - ${absence.endHour}. h";
-      }
-    } else {
-      fromTo +=
-          "${DateFormat("EE d.M.yyyy", "de").format(absence.startDate)} ${absence.startHour}. h - ${DateFormat("EE d.M.yyyy", "de").format(absence.endDate)} ${absence.endHour}. h ";
-    }
-
-    String justifiedString;
-    switch (absence.justified) {
-      case AbsenceJustified.justified:
-        justifiedString = "Entschuldigt";
-        break;
-      case AbsenceJustified.forSchool:
-        justifiedString = "Im Auftrag der Schule (entschuldigt)";
-        break;
-      case AbsenceJustified.notJustified:
-        justifiedString = "Nicht entschuldigt";
-        break;
-      default:
-        justifiedString = "Noch nicht entschuldigt";
-        break;
-    }
-
-    const divider = Row(
-      children: [
-        Spacer(),
-        Flexible(
-          flex: 48,
-          child: Divider(
-            height: 8,
-          ),
-        ),
-        Spacer(),
+    return _AbsenceCard(
+      title: vm.fromTo,
+      subtitle: vm.duration,
+      justified: vm.justified,
+      texts: [
+        if (vm.reason != null) vm.reason!,
+        if (vm.note != null) vm.note!,
       ],
+      footer: vm.signatureInfo,
+      action: vm.canJustify
+          ? FilledButton.tonalIcon(
+              onPressed: () async {
+                final result = await showJustifyAbsenceSheet(
+                  context,
+                  fromTo: vm.fromTo,
+                  defaultSignature: vm.defaultSignature,
+                );
+                if (result != null) onJustify(result.$1, result.$2);
+              },
+              icon: const Icon(Icons.edit_note_rounded, size: 20),
+              label: const Text("Entschuldigen"),
+            )
+          : null,
     );
+  }
+}
 
-    return Card(
-      shape: RoundedRectangleBorder(
-        side: absence.justified == AbsenceJustified.notYetJustified ||
-                absence.justified == AbsenceJustified.notJustified
-            ? const BorderSide(color: Colors.red)
-            : const BorderSide(color: Colors.green, width: 0),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      color: Colors.transparent,
-      elevation: 0,
-      child: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: Column(
-          children: <Widget>[
-            if (absence.note != null) ...[
-              Text(absence.note!),
-              divider,
-            ],
-            if (absence.reason != null) ...[
-              Text(absence.reason!),
-              divider,
-            ],
-            Text(
-              fromTo,
-              style: Theme.of(context).textTheme.titleMedium,
+String formatFutureAbsenceRange(FutureAbsence absence) {
+  final date = DateFormat("EE d.M.yyyy", "de");
+  if (absence.startDate == absence.endDate) {
+    final hours = absence.startHour == absence.endHour
+        ? "${absence.startHour}. Stunde"
+        : "${absence.startHour}.–${absence.endHour}. Stunde";
+    return "${date.format(absence.startDate)}, $hours";
+  }
+  return "${date.format(absence.startDate)} ${absence.startHour}. h – "
+      "${date.format(absence.endDate)} ${absence.endHour}. h";
+}
+
+class FutureAbsenceWidget extends StatelessWidget {
+  final FutureAbsence absence;
+  final VoidCallback? onRemove;
+
+  const FutureAbsenceWidget({
+    super.key,
+    required this.absence,
+    this.onRemove,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final range = formatFutureAbsenceRange(absence);
+    return _AbsenceCard(
+      title: range,
+      subtitle: "Im Voraus gemeldet",
+      justified: absence.justified,
+      texts: [
+        if (absence.reason != null) absence.reason!,
+        if (absence.note != null) absence.note!,
+      ],
+      footer: absence.reasonTimestamp != null && absence.reasonSignature != null
+          ? "${DateFormat("d.M.yyyy, HH:mm", "de").format(absence.reasonTimestamp!)} · ${absence.reasonSignature}"
+          : null,
+      action: onRemove == null
+          ? null
+          : IconButton(
+              tooltip: "Abwesenheit löschen",
+              icon: const Icon(Icons.delete_outline_rounded),
+              onPressed: () async {
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text("Abwesenheit löschen?"),
+                    content: Text("$range wird aus dem Register entfernt."),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text("Abbrechen"),
+                      ),
+                      FilledButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text("Löschen"),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirmed == true) onRemove!();
+              },
             ),
-            divider,
-            if (absence.reasonTimestamp != null &&
-                absence.reasonSignature != null)
-              Text(
-                "${DateFormat("EE d.M.yyyy 'um' HH:mm", "de").format(absence.reasonTimestamp!)} als „${absence.reasonSignature}“ eingetragen",
-              ),
-            divider,
-            Text(justifiedString),
-          ],
-        ),
-      ),
     );
   }
 }
