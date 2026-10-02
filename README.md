@@ -1,28 +1,84 @@
-# Digitales Register
+<p align="center">
+  <img src="assets/icon/register_icon.png" width="140" alt="Register">
+</p>
 
-Inoffizielle App für das Digitale Register (http://xxxxxx.digitalesregister.it)
+<h1 align="center">Register</h1>
+
+<p align="center">
+  Eine moderne, inoffizielle App für das <b>Digitale Register</b> –<br>
+  Noten, Hausaufgaben, Stundenplan und Absenzen an einem Ort.
+</p>
+
+<p align="center">
+  <a href="https://github.com/kererleon/register-app/releases/latest"><b>⬇️ Neueste Version herunterladen</b></a>
+</p>
+
+---
+
+## Funktionen
+
+- **Heute** – laufende Stunde mit Restzeit, was heute und morgen fällig ist, nächste Tests auf einen Blick
+- **Noten** – Durchschnitt pro Fach und gesamt, dazu die **Noten-Prognose**: welche Note du im nächsten Test brauchst, um auf 6, 7 oder 8 zu kommen
+- **Test-Countdown & Lernplan** – Tests mit Countdown; ein Klick verteilt Lerneinheiten als Erinnerungen ins Register
+- **Absenzen** – im Voraus melden, entschuldigen und löschen, mit **Fehlstunden-Ampel** bis zur 25-%-Grenze
+- **Aufgaben verschieben** – auch Aufgaben von Lehrpersonen, als Erinnerung sichtbar auf allen Geräten und der Webseite
+- **Kalender** – Wochenansicht mit Markierung der laufenden Stunde und Profilbildern der Lehrpersonen
+- **Mitteilungen** – bei neuen Noten, Aufgaben, Benachrichtigungen und Supplenzen
+- **Zwei Designs** – *Holo* (futuristisch, clean) und *Brainrot* (laut, bunt, Meme-Style), umschaltbar in den Einstellungen
+- **Widgets für macOS** – Stundenplan, Tests & Aufgaben, Notendurchschnitt
 
 ## Installation
-### Android
-<a href='https://play.google.com/store/apps/details?id=it.digitalesregisterapp&pcampaignid=pcampaignidMKT-Other-global-all-co-prtnr-py-PartBadge-Mar2515-1'><img alt='Jetzt bei Google Play' src='https://play.google.com/intl/en_us/badges/static/images/badges/de_badge_web_generic.png' style="width: 250px;"/></a>
 
-### iOS / MacOS
-<a href="https://apps.apple.com/us/app/digitales-register/id1546447854?itsct=apps_box_badge&amp;itscg=30200" style="display: inline-block; overflow: hidden; border-radius: 13px; width: 250px; height: 83px;"><img src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/de-de?size=250x83&amp;releaseDate=1609200000&h=c0c347c2e3e174c681774abe55a01914" alt="Download on the App Store" style="border-radius: 13px; width: 250px; height: 83px;"></a>
+### Android
+1. [**Register-Android.apk**](https://github.com/kererleon/register-app/releases/latest) auf dem Handy herunterladen
+2. Datei öffnen und erlauben, dass der Browser **Apps aus unbekannten Quellen** installieren darf
+3. Installieren – Updates werden einfach über die alte Version installiert
 
 ### Windows
-<a target="_blank" href="https://www.microsoft.com/store/apps/9N3QQ0J3V0HQ">
-  <img alt="Microsoft Store badge logo" src="https://get.microsoft.com/images/de-de dark.svg" width="250">
-</a>
+1. [**Register-Windows.zip**](https://github.com/kererleon/register-app/releases/latest) herunterladen und **entpacken**
+2. `Register.exe` starten
+3. Falls SmartScreen warnt: *Weitere Informationen → Trotzdem ausführen*
 
-### Linux
-<a href='https://flathub.org/apps/details/io.github.mideb.digitales_register'><img width='240' alt='Download on Flathub' src='https://flathub.org/assets/badges/flathub-badge-en.png'/></a>
+### iPhone & Mac
+Für iOS und macOS gibt es keinen fertigen Download – Apple erlaubt das nur über den App Store.
+Du kannst die App aber selbst mit Xcode bauen (siehe unten) und mit einer kostenlosen Apple-ID
+auf deine eigenen Geräte installieren.
 
-## Run it from source
-* First, run `flutter packages run build_runner build` in your terminal to generate the necessary files.
-* Launch the app with `flutter run`. This will launch a debug build of the app. For a release build (which is faster), run `flutter run --release` instead.
+## Ohne Konto ausprobieren
 
-## Demo Mode
-If you want to use the app without having an actual account, select `Vinzentinum` as the school, `demo-user-6540` as the user and any password.
-You will be logged in to a (local) demo account that displays dummy data. Please note that some features
-may not work as usual and data might not be consistent. This feature was implemented to enable reviews from countries where `digitalesregister.it`
-is not accessible, allowing it to be made available in mobile app stores.
+Im **Demo-Modus** zeigt die App Beispieldaten:
+Schule `Vinzentinum`, Benutzer `demo-user-6540`, beliebiges Passwort.
+
+## Datenschutz
+
+- Die App spricht nur mit dem Server deiner Schule (`*.digitalesregister.it`) und lädt Profilbilder von der öffentlichen Webseite der Schule.
+- Zugangsdaten werden – wenn du „Angemeldet bleiben“ wählst – **nur verschlüsselt auf deinem Gerät** gespeichert.
+- Es gibt keine Werbung, kein Tracking und keinen eigenen Server.
+
+## Selbst bauen
+
+Voraussetzungen: [Flutter](https://flutter.dev) (stable), für iOS/macOS zusätzlich Xcode, für Android das Android SDK.
+
+```bash
+flutter pub get
+dart run build_runner build --delete-conflicting-outputs
+flutter run
+```
+
+Für iOS und macOS trägst du dein Apple-Entwicklerteam in eine lokale Datei ein, die nicht im Repository landet:
+
+```bash
+echo "DEVELOPMENT_TEAM = DEINE_TEAM_ID" > ios/Flutter/Team.xcconfig
+cp ios/Flutter/Team.xcconfig macos/Runner/Configs/Team.xcconfig
+```
+
+Android-APK und Windows-Version baut GitHub Actions automatisch bei jedem Push auf `main` und veröffentlicht sie als Release.
+
+## Herkunft & Lizenz
+
+Register basiert auf der App [**digitales_register**](https://github.com/miDeb/digitales_register) von
+Michael Debertol, die seit 2023 nicht mehr weiterentwickelt wird. Danke für die großartige Grundlage!
+
+Diese App ist **kein offizielles Produkt** des Digitalen Registers und steht in keiner Verbindung zu dessen Betreiber.
+
+Lizenziert unter der [GNU General Public License v3.0](LICENSE.txt).

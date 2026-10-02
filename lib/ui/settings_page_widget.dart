@@ -558,10 +558,10 @@ class _SettingsPageWidgetState extends State<SettingsPageWidget> {
           ListTile(
             leading: const Icon(Icons.code),
             trailing: const Icon(Icons.open_in_new),
-            title: const Text("Original-Quellcode"),
-            subtitle: const Text("github.com/miDeb/digitales_register"),
+            title: const Text("Quellcode & Downloads"),
+            subtitle: const Text("github.com/kererleon/register-app"),
             onTap: () => launchUrl(
-              Uri.parse("https://github.com/miDeb/digitales_register"),
+              Uri.parse("https://github.com/kererleon/register-app"),
             ),
           ),
           AboutListTile(
@@ -579,7 +579,10 @@ class _SettingsPageWidgetState extends State<SettingsPageWidget> {
             applicationName: "Register",
             applicationVersion: appVersion,
             aboutBoxChildren: [
-              const Text("Ein Client für das Digitale Register."),
+              const Text(
+                "Eine inoffizielle App für das Digitale Register. "
+                "Basiert auf digitales_register von Michael Debertol.",
+              ),
               Text.rich(
                 TextSpan(children: [
                   const TextSpan(text: "Entwickelt von "),

@@ -552,7 +552,8 @@ class _TeacherPhotoBackground extends StatelessWidget {
           children: [
             Positioned.fill(
               child: Image(
-                image: image,
+                // Tiles are small: decode the picture at that size only.
+                image: ResizeImage.resizeIfNeeded(240, null, image),
                 fit: BoxFit.cover,
                 alignment: const Alignment(0, -0.5),
                 errorBuilder: (_, __, ___) => const SizedBox(),

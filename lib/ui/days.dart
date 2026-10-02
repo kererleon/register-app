@@ -733,8 +733,7 @@ class _TimelinePainter extends CustomPainter {
       const Offset(x, nodeY),
       highlighted ? 11 : 8,
       Paint()
-        ..color = nodeColor.withValues(alpha: 0.5)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
+        ..color = nodeColor.withValues(alpha: 0.22),
     );
     canvas.drawCircle(
       const Offset(x, nodeY),

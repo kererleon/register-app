@@ -106,6 +106,10 @@ Future<void> main() async {
   );
 }
 
+/// The style the app was last built with, to rebuild everything only when it
+/// changes.
+AppStyle? _lastStyle;
+
 class RegisterApp extends StatelessWidget {
   const RegisterApp({
     super.key,
@@ -125,6 +129,8 @@ class RegisterApp extends StatelessWidget {
           builder: (context, style, _) {
             // Many widgets read the style's colors directly, so the whole
             // tree is rebuilt when the style changes.
+            if (style == _lastStyle) return _themedApp(context);
+            _lastStyle = style;
             WidgetsBinding.instance.addPostFrameCallback((_) {
               void rebuild(Element element) {
                 element.markNeedsBuild();

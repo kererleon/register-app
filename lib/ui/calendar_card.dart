@@ -318,7 +318,9 @@ class _TeacherPhoto extends StatelessWidget {
           child: CircleAvatar(
             radius: 34,
             backgroundColor: theme.colorScheme.surface,
-            foregroundImage: image,
+            foregroundImage: image == null
+                ? null
+                : ResizeImage.resizeIfNeeded(200, null, image),
             child: Text(
               teacher.lastName.isEmpty ? "?" : teacher.lastName[0],
               style: theme.textTheme.headlineSmall,

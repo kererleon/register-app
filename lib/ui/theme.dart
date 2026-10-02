@@ -190,7 +190,8 @@ ThemeData buildAppTheme(Brightness brightness, {TargetPlatform? platform}) {
     // Pages are drawn on top of an [AuroraBackdrop] (see [_BackdropTransitions]).
     scaffoldBackgroundColor: Colors.transparent,
     canvasColor: scheme.surface,
-    splashFactory: InkSparkle.splashFactory,
+    // InkSparkle runs a shader per tap; the classic ripple is much cheaper.
+    splashFactory: InkRipple.splashFactory,
     visualDensity: VisualDensity.standard,
     appBarTheme: AppBarTheme(
       backgroundColor: scheme.surface.withValues(alpha: dark ? 0.55 : 0.7),
@@ -661,11 +662,7 @@ class StatusPill extends StatelessWidget {
               ],
               Text(
                 label.toUpperCase(),
-                style: GoogleFonts.bangers(
-                  fontSize: 13,
-                  letterSpacing: 1,
-                  color: Colors.black,
-                ),
+                style: _stickerLabelStyle,
               ),
             ],
           ),
@@ -737,3 +734,9 @@ class SectionLabel extends StatelessWidget {
     );
   }
 }
+
+final _stickerLabelStyle = GoogleFonts.bangers(
+  fontSize: 13,
+  letterSpacing: 1,
+  color: Colors.black,
+);

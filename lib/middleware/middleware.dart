@@ -53,7 +53,6 @@ import 'package:dr/utc_date_time.dart';
 import 'package:dr/util.dart';
 import 'package:dr/widget_export.dart';
 import 'package:dr/wrapper.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart' hide Action, Notification;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:intl/intl.dart';
@@ -259,7 +258,6 @@ Future<void> _load(MiddlewareApi<AppState, AppStateBuilder, AppActions> api,
     }
   }
 
-  await _checkShowUnmaintainedAlert();
 
   final user = getString(login["user"]);
   final pass = getString(login["pass"]);
@@ -713,67 +711,3 @@ Future<bool?> askShouldOverwriteFile(String fileName) async {
   );
 }
 
-Future<void> _checkShowUnmaintainedAlert() async {
-  final appDirectory = await getApplicationSupportDirectory();
-  final file = File("${appDirectory.path}/unmaintainedAlertShown");
-  if (file.existsSync()) {
-    return;
-  }
-
-  // A version of this app stored this file to the applications documents directory,
-  // which is Documents/ for desktop. The directory was therefore fixed, but we should
-  // still check for the file in the old location.
-  final legacyFile = File(
-      "${(await getApplicationDocumentsDirectory()).path}/unmaintainedAlertShown");
-  if (legacyFile.existsSync()) {
-    // create the file in the correct location
-    file.createSync();
-    return;
-  }
-
-  final isBeforeJuly2023 = DateTime.now().isBefore(DateTime(2023, 7));
-
-  await showDialog<void>(
-    context: navigatorKey!.currentContext!,
-    builder: (context) {
-      return InfoDialog(
-        title: const Text("Hi!"),
-        content: Text.rich(
-          TextSpan(
-            text:
-                "Wie Du vielleicht weißt, ist diese App ein Hobbyprojekt von mir. Nachdem ich ${isBeforeJuly2023 ? "dieses Jahr maturiere" : "2023 maturiert habe"}, "
-                "werde ich mich in Zukunft nicht mehr selbst um Fehlerbehebungen in der App kümmern können, "
-                "auch wenn sie wahrscheinlich noch weiter funktionieren wird.\n\n"
-                "${isBeforeJuly2023 ? "Ich hoffe, die App war euch bisher eine Hilfe. " : ""}Für Interessierte: ",
-            children: [
-              TextSpan(
-                text: "github.com/mideb/digitales_register",
-                style: const TextStyle(color: Colors.blue),
-                recognizer: TapGestureRecognizer()
-                  ..onTap = () {
-                    launchUrl(
-                      Uri.parse("https://github.com/mideb/digitales_register"),
-                      mode: LaunchMode.externalApplication,
-                    );
-                  },
-              ),
-              const TextSpan(
-                  text: ".\n\n"
-                      "Die offizielle Seite (digitalesregister.it) ist davon natürlich nicht betroffen!\n\n"
-                      "Danke nochmal an alle, die diese App in den letzten Jahren genutzt haben.\n\n"
-                      "Michael")
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("OK"),
-          ),
-        ],
-      );
-    },
-  );
-
-  await file.create();
-}

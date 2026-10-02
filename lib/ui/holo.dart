@@ -25,9 +25,19 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 /// Monospace style for dates, hours and numbers.
-TextStyle mono(TextStyle? base, {FontWeight? weight}) => isBrainrot
-    ? GoogleFonts.bangers(textStyle: base, letterSpacing: 1.1)
-    : GoogleFonts.jetBrainsMono(textStyle: base, fontWeight: weight);
+TextStyle mono(TextStyle? base, {FontWeight? weight}) {
+  // Looking up a Google font is not free and this runs for every label in
+  // long lists, so the font part is created once per look and weight.
+  final font = _monoFonts.putIfAbsent(
+    (isBrainrot, weight),
+    () => isBrainrot
+        ? GoogleFonts.bangers(letterSpacing: 1.1)
+        : GoogleFonts.jetBrainsMono(fontWeight: weight),
+  );
+  return (base ?? const TextStyle()).merge(font);
+}
+
+final _monoFonts = <(bool, FontWeight?), TextStyle>{};
 
 /// Color for a grade on the 1–10 scale used in South Tyrol.
 Color gradeColor(double? grade) {
@@ -149,20 +159,13 @@ class HoloPanel extends StatelessWidget {
             color:
                 scheme.surfaceContainer.withValues(alpha: dark ? 0.68 : 0.85),
             borderRadius: BorderRadius.circular(radius),
+            // No blurred shadows here: panels fill long scrolling lists, and
+            // blurring each of them every frame makes scrolling stutter.
             border: Border.all(
               color: highlighted
                   ? scheme.secondary.withValues(alpha: 0.6)
                   : scheme.outlineVariant,
             ),
-            boxShadow: [
-              if (highlighted || accent != null)
-                BoxShadow(
-                  color: (highlighted ? scheme.secondary : accent!)
-                      .withValues(alpha: dark ? 0.18 : 0.12),
-                  blurRadius: 24,
-                  spreadRadius: -8,
-                ),
-            ],
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(radius),
@@ -184,12 +187,12 @@ class HoloPanel extends StatelessWidget {
                             borderRadius: const BorderRadius.horizontal(
                               right: Radius.circular(4),
                             ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: accent!.withValues(alpha: 0.8),
-                                blurRadius: 10,
+                            border: Border(
+                              right: BorderSide(
+                                color: accent!.withValues(alpha: 0.35),
+                                width: 2,
                               ),
-                            ],
+                            ),
                           ),
                         ),
                       ),
@@ -349,17 +352,18 @@ class _RingPainter extends CustomPainter {
       transform: const GradientRotation(-math.pi / 2),
     ).createShader(rect);
     if (glow) {
+      // A wide, faint stroke instead of a blur: looks like a glow but costs
+      // almost nothing to draw.
       canvas.drawArc(
         rect,
         -math.pi / 2,
         sweep,
         false,
         Paint()
-          ..color = color.withValues(alpha: 0.55)
+          ..color = color.withValues(alpha: 0.22)
           ..style = PaintingStyle.stroke
-          ..strokeWidth = stroke + 2
-          ..strokeCap = StrokeCap.round
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5),
+          ..strokeWidth = stroke * 2.4
+          ..strokeCap = StrokeCap.round,
       );
     }
     canvas.drawArc(
@@ -411,13 +415,6 @@ class NeonCheck extends StatelessWidget {
                         onTap == null ? scheme.outlineVariant : scheme.outline,
                     width: 1.6,
                   ),
-            boxShadow: [
-              if (value)
-                BoxShadow(
-                  color: AppColors.violet.withValues(alpha: 0.6),
-                  blurRadius: 12,
-                ),
-            ],
           ),
           child: AnimatedOpacity(
             duration: const Duration(milliseconds: 180),
@@ -519,9 +516,6 @@ class SubjectGlyph extends StatelessWidget {
         color: color.withValues(alpha: 0.16),
         borderRadius: BorderRadius.circular(size * 0.3),
         border: Border.all(color: color.withValues(alpha: 0.7), width: 1.4),
-        boxShadow: [
-          BoxShadow(color: color.withValues(alpha: 0.35), blurRadius: 14),
-        ],
       ),
       alignment: Alignment.center,
       child: Text(
