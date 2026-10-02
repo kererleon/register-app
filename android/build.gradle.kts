@@ -29,14 +29,6 @@ subprojects {
                 }
             }
         }
-        // Old plugins compile against outdated Android versions that their
-        // own dependencies no longer accept.
-        if (!state.executed) {
-            afterEvaluate {
-                val sdk = android.compileSdkVersion?.removePrefix("android-")?.toIntOrNull()
-                if (sdk == null || sdk < 36) android.compileSdkVersion(36)
-            }
-        }
     }
 }
 

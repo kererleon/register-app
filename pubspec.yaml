@@ -84,7 +84,6 @@ dev_dependencies:
   build_runner: ^2.1.10
   built_value_generator: ^8.0.2
   flutter_launcher_icons: ^0.14.4
-  flutter_native_splash: ^2.1.6
   flutter_test:
     sdk: flutter
   golden_toolkit: ^0.15.0
@@ -106,6 +105,9 @@ flutter_launcher_icons:
     generate: true
     icon_size: 256
 
+# Splash screen settings. The native files are already generated; to change
+# them, add flutter_native_splash as a dev dependency and run
+# `dart run flutter_native_splash:create`.
 flutter_native_splash:
   color: "0A0E1A"
   image: "assets/icon/splash.png"
