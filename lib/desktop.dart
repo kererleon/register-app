@@ -48,6 +48,11 @@ secure_storage.FlutterSecureStorage getFlutterSecureStorage() {
 class DesktopSecureStorage implements secure_storage.FlutterSecureStorage {
   Future<Box<String>> hiveBox = getEncryptedBox();
   DesktopSecureStorage();
+
+  // Newer versions of FlutterSecureStorage added listeners and platform checks
+  // that the app does not use; they are not supported on the desktop.
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
   static Future<Box<String>> getEncryptedBox() async {
     final applicationDocumentDirectory = await getApplicationSupportDirectory();
     final homeDirectory =

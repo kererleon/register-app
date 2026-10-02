@@ -47,7 +47,7 @@ dependencies:
   flutter_local_notifications: ^22.3.1
   flutter_localizations:
     sdk: flutter
-  flutter_secure_storage: ^8.0.0
+  flutter_secure_storage: ^9.2.4
   flutter_svg: ^1.0.3
   flutter_widget_from_html_core: ^0.8.5+3
   fuzzy: ^0.4.0-nullsafety.0
