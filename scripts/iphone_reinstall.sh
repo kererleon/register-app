@@ -51,8 +51,17 @@ if [[ -z "$DEVICE" ]]; then
 fi
 
 # Only build when the iPhone can be reached right now (cable or Wi-Fi).
-if ! xcrun devicectl device info details --device "$DEVICE" >/dev/null 2>&1; then
-  echo "iPhone gerade nicht erreichbar, versuche es beim nächsten Lauf erneut."
+# Asking for its details opens the connection; the tunnel must then be up.
+xcrun devicectl device info details --device "$DEVICE" >/dev/null 2>&1
+TUNNEL=$(xcrun devicectl list devices --json-output /dev/stdout 2>/dev/null |
+  python3 -c '
+import json, sys
+for d in json.load(sys.stdin).get("result", {}).get("devices", []):
+    if d["identifier"] == sys.argv[1]:
+        print(d.get("connectionProperties", {}).get("tunnelState", ""))
+' "$DEVICE")
+if [[ "$TUNNEL" != "connected" ]]; then
+  echo "iPhone gerade nicht erreichbar ($TUNNEL), versuche es beim nächsten Lauf erneut."
   exit 0
 fi
 echo "iPhone: $DEVICE ($UDID)"
