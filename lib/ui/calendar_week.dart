@@ -133,9 +133,12 @@ class _HoursChunk extends StatelessWidget {
           (n) {
             if (n.isOdd) return const Divider(height: 0);
             final hour = hours[n ~/ 2];
-            final subjectColor = subjectThemes[hour.subject] != null
-                ? Color(subjectThemes[hour.subject]!.color)
-                : scheme.primary;
+            // The clean look stays neutral instead of using subject colors.
+            final subjectColor = isClean
+                ? scheme.outline
+                : subjectThemes[hour.subject] != null
+                    ? Color(subjectThemes[hour.subject]!.color)
+                    : scheme.primary;
             return HourWidget(
               hour: hour,
               subjectNicks: subjectNicks,

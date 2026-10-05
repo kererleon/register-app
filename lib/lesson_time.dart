@@ -43,9 +43,18 @@ final ValueNotifier<DateTime> minuteTicker = _startTicker();
 
 ValueNotifier<DateTime> _startTicker() {
   final notifier = ValueNotifier(DateTime.now());
-  Timer.periodic(const Duration(seconds: 30), (_) {
-    final n = DateTime.now();
-    if (n.minute != notifier.value.minute) notifier.value = n;
-  });
+  // Wake up exactly once per minute, right after the minute changes, instead
+  // of polling: fewer wake-ups save battery.
+  void scheduleNext() {
+    final now = DateTime.now();
+    final next = DateTime(now.year, now.month, now.day, now.hour, now.minute)
+        .add(const Duration(minutes: 1, milliseconds: 50));
+    Timer(next.difference(now), () {
+      notifier.value = DateTime.now();
+      scheduleNext();
+    });
+  }
+
+  scheduleNext();
   return notifier;
 }
