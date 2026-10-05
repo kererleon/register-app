@@ -86,20 +86,16 @@ dev_dependencies:
   flutter_launcher_icons: ^0.14.4
   flutter_test:
     sdk: flutter
-  golden_toolkit: ^0.15.0
   lint: ^2.1.2
-  matcher: ^0.12.10-nullsafety.3
-  msix: ^3.6.1
-  quiver: ^3.0.0-nullsafety.3
 
 flutter_launcher_icons:
-  image_path: "assets/icon/register_icon.png"
+  image_path: "branding/register_icon.png"
   # Android: the launcher shapes the full-bleed background itself (circle,
   # squircle, ...); older launchers get the pre-rounded icon.
   android: "launcher_icon"
-  image_path_android: "assets/icon/register_icon_rounded.png"
-  adaptive_icon_background: "assets/icon/android_adaptive_background.png"
-  adaptive_icon_foreground: "assets/icon/android_adaptive_foreground.png"
+  image_path_android: "branding/register_icon_rounded.png"
+  adaptive_icon_background: "branding/android_adaptive_background.png"
+  adaptive_icon_foreground: "branding/android_adaptive_foreground.png"
   adaptive_icon_foreground_inset: 0
   ios: true
   remove_alpha_ios: true
@@ -108,7 +104,7 @@ flutter_launcher_icons:
   # Windows does not round app icons, so the icon brings its own corners.
   windows:
     generate: true
-    image_path: "assets/icon/register_icon_rounded.png"
+    image_path: "branding/register_icon_rounded.png"
     icon_size: 256
 
 # Splash screen settings. The native files are already generated; to change
@@ -116,10 +112,10 @@ flutter_launcher_icons:
 # `dart run flutter_native_splash:create`.
 flutter_native_splash:
   color: "0A0E1A"
-  image: "assets/icon/splash.png"
+  image: "branding/splash.png"
   android_12:
     color: "0A0E1A"
-    image: "assets/icon/splash.png"
+    image: "branding/splash.png"
 
 # For information on the generic Dart part of this file, see the
 # following page: https://www.dartlang.org/tools/pub/pubspec
@@ -158,12 +154,3 @@ flutter:
   # For details regarding fonts from package dependencies,
   # see https://flutter.io/custom-fonts/#from-packages
 
-msix_config:
-  display_name: Register
-  publisher_display_name: Michael Debertol
-  identity_name: 2097MichaelDebertol.DigitalesRegister
-  publisher: CN=2508760A-808B-4829-867A-4DB53593750E
-  msix_version: 8.2.15.0
-  logo_path: assets/icon/register_icon.png
-  architecture: x64
-  capabilities: "internetClient"
