@@ -1,0 +1,5 @@
+#include "../../Flutter/Flutter-Debug.xcconfig"
+#include "Warnings.xcconfig"
+
+// Apple team for signing; local file, missing on other machines.
+#include? "Team.xcconfig"
