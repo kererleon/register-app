@@ -37,6 +37,11 @@ TextStyle mono(TextStyle? base, {FontWeight? weight}) {
           letterSpacing: 0.4,
         ),
       AppStyle.holo => GoogleFonts.jetBrainsMono(fontWeight: weight),
+      // The calm looks keep their own font, with even-width digits.
+      AppStyle.clean || AppStyle.glass => TextStyle(
+          fontWeight: weight ?? FontWeight.w600,
+          fontFeatures: const [FontFeature.tabularFigures()],
+        ),
     },
   );
   return (base ?? const TextStyle()).merge(font);
@@ -144,9 +149,72 @@ class HoloPanel extends StatelessWidget {
     );
   }
 
+  Widget _buildCalm(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final dark = scheme.brightness == Brightness.dark;
+    final radius = isGlass ? 22.0 : 12.0;
+    final decoration = isGlass
+        ? glassDecoration(dark, radius: radius).copyWith(
+            border: highlighted
+                ? Border.all(color: AppColors.violet.withValues(alpha: 0.7))
+                : null,
+          )
+        : BoxDecoration(
+            color: scheme.surfaceContainer,
+            borderRadius: BorderRadius.circular(radius),
+            border: Border.all(
+              color: highlighted ? AppColors.violet : scheme.outlineVariant,
+              width: highlighted ? 1.5 : 1,
+            ),
+          );
+    return Padding(
+      padding: margin,
+      child: DecoratedBox(
+        decoration: decoration,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(radius),
+          child: Material(
+            type: MaterialType.transparency,
+            child: InkWell(
+              onTap: onTap,
+              child: Stack(
+                children: [
+                  // The glass look keeps a small colored stripe for
+                  // subjects; the clean look stays without extra colors.
+                  if (isGlass && accent != null)
+                    Positioned(
+                      left: 0,
+                      top: 14,
+                      bottom: 14,
+                      child: Container(
+                        width: 4,
+                        decoration: BoxDecoration(
+                          color: accent,
+                          borderRadius: const BorderRadius.horizontal(
+                            right: Radius.circular(4),
+                          ),
+                        ),
+                      ),
+                    ),
+                  Padding(
+                    padding: isGlass && accent != null
+                        ? padding.add(const EdgeInsets.only(left: 6))
+                        : padding,
+                    child: child,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (isStickerStyle) return _buildSticker(context);
+    if (isClean || isGlass) return _buildCalm(context);
     final scheme = Theme.of(context).colorScheme;
     final dark = scheme.brightness == Brightness.dark;
     final brackets =
@@ -188,15 +256,15 @@ class HoloPanel extends StatelessWidget {
                         child: Container(
                           width: 3.5,
                           decoration: BoxDecoration(
-                            color: accent,
                             borderRadius: const BorderRadius.horizontal(
                               right: Radius.circular(4),
                             ),
-                            border: Border(
-                              right: BorderSide(
-                                color: accent!.withValues(alpha: 0.35),
-                                width: 2,
-                              ),
+                            // A soft edge without a blurred shadow.
+                            gradient: LinearGradient(
+                              colors: [
+                                accent!,
+                                accent!.withValues(alpha: 0.55),
+                              ],
                             ),
                           ),
                         ),
@@ -294,7 +362,7 @@ class NeonRing extends StatelessWidget {
           color: color,
           track: theme.colorScheme.outlineVariant,
           stroke: stroke,
-          glow: !crossedOut,
+          glow: !crossedOut && !isClean,
         ),
         child: Center(
           child: FittedBox(

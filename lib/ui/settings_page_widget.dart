@@ -1060,10 +1060,44 @@ class _StylePicker extends StatelessWidget {
                       emoji: "🇮🇱",
                     ),
                   ),
+                  SizedBox(
+                    width: width,
+                    child: const _StyleCard(
+                      style: AppStyle.clean,
+                      title: "Clean",
+                      subtitle: "Ruhig, modern, eine Akzentfarbe",
+                      colors: [
+                        Color(0xFF18181B),
+                        Color(0xFF2563EB),
+                        Color(0xFFE4E4E7),
+                      ],
+                      emoji: "○",
+                    ),
+                  ),
+                  SizedBox(
+                    width: width,
+                    child: const _StyleCard(
+                      style: AppStyle.glass,
+                      title: "Liquid Glass",
+                      subtitle: "Glas, Licht und weiche Farben",
+                      colors: [
+                        Color(0xFF1C2A4A),
+                        Color(0xFF0A84FF),
+                        Color(0xFFBF5AF2),
+                      ],
+                      emoji: "◐",
+                    ),
+                  ),
                 ],
               );
             },
           ),
+          if (isClean) ...[
+            const SizedBox(height: 16),
+            const HudLabel("Akzentfarbe"),
+            const SizedBox(height: 10),
+            const _AccentPicker(),
+          ],
         ],
       ),
     );
@@ -1164,6 +1198,87 @@ class _StyleCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// The accent color of the clean look: presets and a custom color.
+class _AccentPicker extends StatelessWidget {
+  const _AccentPicker();
+
+  static const _presets = [
+    Color(0xFF2563EB),
+    Color(0xFF7C3AED),
+    Color(0xFFDB2777),
+    Color(0xFFDC2626),
+    Color(0xFFEA580C),
+    Color(0xFFCA8A04),
+    Color(0xFF16A34A),
+    Color(0xFF0D9488),
+    Color(0xFF0891B2),
+    Color(0xFF52525B),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final current = cleanAccent.value;
+    final isPreset = _presets.any((c) => c.toARGB32() == current.toARGB32());
+    Widget swatch(Color color, {Widget? child, VoidCallback? onTap}) {
+      final selected = color.toARGB32() == current.toARGB32();
+      return Semantics(
+        button: true,
+        selected: selected,
+        child: InkResponse(
+          onTap: onTap ?? () => setCleanAccent(color),
+          radius: 24,
+          child: Container(
+            width: 36,
+            height: 36,
+            padding: const EdgeInsets.all(3),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: selected
+                    ? Theme.of(context).colorScheme.onSurface
+                    : Colors.transparent,
+                width: 2,
+              ),
+            ),
+            child: Container(
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              alignment: Alignment.center,
+              child: child,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Wrap(
+      spacing: 6,
+      runSpacing: 6,
+      children: [
+        for (final color in _presets) swatch(color),
+        swatch(
+          isPreset
+              ? Theme.of(context).colorScheme.surfaceContainerHigh
+              : current,
+          child: Icon(
+            isPreset ? Icons.add_rounded : Icons.colorize_rounded,
+            size: 18,
+            color: isPreset
+                ? Theme.of(context).colorScheme.onSurface
+                : Colors.white,
+          ),
+          onTap: () async {
+            final picked = await showDialog<Color>(
+              context: context,
+              builder: (context) => _ColorPicker(initialColor: current),
+            );
+            if (picked != null) await setCleanAccent(picked);
+          },
+        ),
+      ],
     );
   }
 }

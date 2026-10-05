@@ -18,6 +18,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
+import 'package:flutter/foundation.dart' show defaultTargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -30,36 +31,54 @@ enum AppStyle {
   /// Loud meme look: neon pink, toxic lime, comic type and sticker cards.
   brainrot,
 
-  /// Blue and white like the flag of Israel, with Rubik type, stars of David
-  /// and Israeli everyday slang. Uses the clean holo panels.
+  /// Blue and white like the flag of Israel, with stickers and slang.
   israel,
+
+  /// Calm and neutral: greys and a single accent color the user chooses.
+  clean,
+
+  /// Inspired by Apple's Liquid Glass: translucent panels with light edges
+  /// on a soft, colorful background.
+  glass,
 }
 
 /// The current look. Changing it rebuilds the whole app (see [setAppStyle]).
 final appStyle = ValueNotifier(AppStyle.holo);
 
+/// The accent color of the clean look, chosen in the settings.
+final cleanAccent = ValueNotifier(const Color(0xFF2563EB));
+
+/// Changes whenever the look or the accent color changes; the app rebuilds
+/// everything then (see main.dart).
+final themeRevision = ValueNotifier(0);
+
 bool get isBrainrot => appStyle.value == AppStyle.brainrot;
 bool get isIsrael => appStyle.value == AppStyle.israel;
+bool get isClean => appStyle.value == AppStyle.clean;
+bool get isGlass => appStyle.value == AppStyle.glass;
 
 /// The meme looks use thick sticker cards with hard shadows.
 bool get isStickerStyle => isBrainrot || isIsrael;
 
 /// Picks the text for the current look. Without an [israel] text, the
-/// israel look uses the holo text.
+/// israel look uses the holo text; the calm looks always do.
 String br(String holo, String brainrot, [String? israel]) =>
     switch (appStyle.value) {
       AppStyle.brainrot => brainrot,
       AppStyle.israel => israel ?? holo,
-      AppStyle.holo => holo,
+      _ => holo,
     };
 
 const _styleKey = "appStyle";
+const _accentKey = "cleanAccent";
 
 Future<void> loadAppStyle() async {
   try {
     final prefs = await SharedPreferences.getInstance();
     final stored = prefs.getString(_styleKey);
     if (stored != null) appStyle.value = AppStyle.values.byName(stored);
+    final accent = prefs.getInt(_accentKey);
+    if (accent != null) cleanAccent.value = Color(accent);
   } on Object {
     // Keep the default look.
   }
@@ -67,49 +86,88 @@ Future<void> loadAppStyle() async {
 
 Future<void> setAppStyle(AppStyle style) async {
   appStyle.value = style;
+  themeRevision.value++;
   final prefs = await SharedPreferences.getInstance();
   await prefs.setString(_styleKey, style.name);
 }
 
-Color _pick(int holo, int brainrot, int israel) => Color(
+Future<void> setCleanAccent(Color color) async {
+  cleanAccent.value = color;
+  themeRevision.value++;
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setInt(_accentKey, color.toARGB32());
+}
+
+Color _pick(int holo, int brainrot, int israel, int clean, int glass) => Color(
       switch (appStyle.value) {
         AppStyle.holo => holo,
         AppStyle.brainrot => brainrot,
         AppStyle.israel => israel,
+        AppStyle.clean => clean,
+        AppStyle.glass => glass,
       },
     );
 
+/// A darker shade of [c], for text and buttons on light backgrounds.
+Color _deeper(Color c) {
+  final hsl = HSLColor.fromColor(c);
+  return hsl.withLightness((hsl.lightness - 0.12).clamp(0.0, 1.0)).toColor();
+}
+
 /// Colors of the current look. "violet" and "cyan" are the two accent roles:
 /// hot pink and toxic lime in the brainrot look, flag blue and sky blue in
-/// the israel look.
+/// the israel look, and both the chosen accent in the clean look.
 class AppColors {
-  static Color get violet => _pick(0xFF7C5CFF, 0xFFFF2E93, 0xFF2F6BFF);
-  static Color get violetDeep => _pick(0xFF5B3DF5, 0xFFD1006E, 0xFF0038B8);
-  static Color get cyan => _pick(0xFF22D3EE, 0xFFB6FF00, 0xFF7CC4FF);
-  static Color get cyanDeep => _pick(0xFF0891B2, 0xFF4F7A00, 0xFF1F6FD1);
+  static Color get violet => isClean
+      ? cleanAccent.value
+      : _pick(0xFF7C5CFF, 0xFFFF2E93, 0xFF2F6BFF, 0, 0xFF0A84FF);
+  static Color get violetDeep => isClean
+      ? _deeper(cleanAccent.value)
+      : _pick(0xFF5B3DF5, 0xFFD1006E, 0xFF0038B8, 0, 0xFF0066D6);
+  static Color get cyan => isClean
+      ? cleanAccent.value
+      : _pick(0xFF22D3EE, 0xFFB6FF00, 0xFF7CC4FF, 0, 0xFF64D2FF);
+  static Color get cyanDeep => isClean
+      ? _deeper(cleanAccent.value)
+      : _pick(0xFF0891B2, 0xFF4F7A00, 0xFF1F6FD1, 0, 0xFF0A7FBF);
 
-  static Color get success => _pick(0xFF2DD4A3, 0xFF00FF85, 0xFF2DBE8C);
-  static Color get warning => _pick(0xFFF5B544, 0xFFFFE600, 0xFFF2B33D);
-  static Color get danger => _pick(0xFFFF5C7A, 0xFFFF3B30, 0xFFE5484D);
+  static Color get success =>
+      _pick(0xFF2DD4A3, 0xFF00FF85, 0xFF2DBE8C, 0xFF22A06B, 0xFF30D158);
+  static Color get warning =>
+      _pick(0xFFF5B544, 0xFFFFE600, 0xFFF2B33D, 0xFFD99A1F, 0xFFFF9F0A);
+  static Color get danger =>
+      _pick(0xFFFF5C7A, 0xFFFF3B30, 0xFFE5484D, 0xFFE5484D, 0xFFFF453A);
 
   // dark
-  static Color get night => _pick(0xFF0A0E1A, 0xFF14001F, 0xFF06102E);
-  static Color get nightSurface => _pick(0xFF111729, 0xFF23003A, 0xFF0C1A45);
+  static Color get night =>
+      _pick(0xFF0A0E1A, 0xFF14001F, 0xFF06102E, 0xFF0F0F10, 0xFF0B0C14);
+  static Color get nightSurface =>
+      _pick(0xFF111729, 0xFF23003A, 0xFF0C1A45, 0xFF18181B, 0xFF1C1D27);
   static Color get nightSurfaceHigh =>
-      _pick(0xFF182038, 0xFF320A52, 0xFF132558);
-  static Color get nightOutline => _pick(0xFF26304D, 0xFF7A2BC4, 0xFF24407F);
+      _pick(0xFF182038, 0xFF320A52, 0xFF132558, 0xFF222226, 0xFF262836);
+  static Color get nightOutline =>
+      _pick(0xFF26304D, 0xFF7A2BC4, 0xFF24407F, 0xFF2E2E33, 0xFF3A3C4C);
 
   // light
-  static Color get frost => _pick(0xFFF4F6FB, 0xFFFFF6B0, 0xFFF7FAFF);
+  static Color get frost =>
+      _pick(0xFFF4F6FB, 0xFFFFF6B0, 0xFFF7FAFF, 0xFFF6F6F7, 0xFFEEF1F8);
   static Color get frostSurfaceHigh =>
-      _pick(0xFFEAEEF8, 0xFFFFE94D, 0xFFE8EFFC);
-  static Color get frostOutline => _pick(0xFFD8DEEC, 0xFF111111, 0xFFC9D6F2);
-  static Color get ink => _pick(0xFF0E1426, 0xFF111111, 0xFF0A1A44);
+      _pick(0xFFEAEEF8, 0xFFFFE94D, 0xFFE8EFFC, 0xFFEDEDEF, 0xFFE4E8F2);
+  static Color get frostOutline =>
+      _pick(0xFFD8DEEC, 0xFF111111, 0xFFC9D6F2, 0xFFE2E2E5, 0xFFD3D9E6);
+  static Color get ink =>
+      _pick(0xFF0E1426, 0xFF111111, 0xFF0A1A44, 0xFF111113, 0xFF0B0C14);
 
   static LinearGradient get accentGradient => LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: isBrainrot ? [violet, warning, cyan] : [violet, cyan],
+        colors: isBrainrot
+            ? [violet, warning, cyan]
+            : isClean
+                ? [violet, violet]
+                : isGlass
+                    ? [violet, const Color(0xFF5E5CE6)]
+                    : [violet, cyan],
       );
 }
 
@@ -162,9 +220,22 @@ ThemeData buildAppTheme(Brightness brightness, {TargetPlatform? platform}) {
               ? GoogleFonts.rubikTextTheme(
                   ThemeData(brightness: brightness).textTheme,
                 )
-              : GoogleFonts.interTextTheme(
-                  ThemeData(brightness: brightness).textTheme,
-                ))
+              : isGlass && _applePlatform
+                  // The system font (San Francisco) on Apple devices.
+                  ? Typography.material2021(platform: defaultTargetPlatform)
+                      .englishLike
+                      .merge(
+                        brightness == Brightness.dark
+                            ? Typography.material2021(
+                                platform: defaultTargetPlatform,
+                              ).white
+                            : Typography.material2021(
+                                platform: defaultTargetPlatform,
+                              ).black,
+                      )
+                  : GoogleFonts.interTextTheme(
+                      ThemeData(brightness: brightness).textTheme,
+                    ))
       .apply(bodyColor: scheme.onSurface, displayColor: scheme.onSurface);
   TextStyle? display(TextStyle? s, {FontWeight weight = FontWeight.w600}) =>
       isBrainrot
@@ -179,11 +250,14 @@ ThemeData buildAppTheme(Brightness brightness, {TargetPlatform? platform}) {
                   fontWeight: FontWeight.w700,
                   letterSpacing: -0.2,
                 )
-              : GoogleFonts.sora(
-                  textStyle: s,
-                  fontWeight: weight,
-                  letterSpacing: -0.4,
-                );
+              : isClean || isGlass
+                  ? s?.copyWith(
+                      fontWeight: FontWeight.w600, letterSpacing: -0.3)
+                  : GoogleFonts.sora(
+                      textStyle: s,
+                      fontWeight: weight,
+                      letterSpacing: -0.4,
+                    );
   final textTheme = baseText.copyWith(
     displayLarge: display(baseText.displayLarge),
     displayMedium: display(baseText.displayMedium),
@@ -196,7 +270,13 @@ ThemeData buildAppTheme(Brightness brightness, {TargetPlatform? platform}) {
     labelSmall: baseText.labelSmall?.copyWith(letterSpacing: 0.8),
   );
 
-  final radius = isStickerStyle ? 8.0 : 18.0;
+  final radius = isStickerStyle
+      ? 8.0
+      : isClean
+          ? 12.0
+          : isGlass
+              ? 22.0
+              : 18.0;
   final outline = isStickerStyle
       ? BorderSide(color: dark ? AppColors.violet : AppColors.ink, width: 2)
       : BorderSide(color: scheme.outlineVariant);
@@ -214,7 +294,11 @@ ThemeData buildAppTheme(Brightness brightness, {TargetPlatform? platform}) {
     splashFactory: InkRipple.splashFactory,
     visualDensity: VisualDensity.standard,
     appBarTheme: AppBarTheme(
-      backgroundColor: scheme.surface.withValues(alpha: dark ? 0.55 : 0.7),
+      backgroundColor: isClean
+          ? scheme.surface
+          : scheme.surface.withValues(
+              alpha: isGlass ? (dark ? 0.35 : 0.45) : (dark ? 0.55 : 0.7),
+            ),
       foregroundColor: scheme.onSurface,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
@@ -224,7 +308,11 @@ ThemeData buildAppTheme(Brightness brightness, {TargetPlatform? platform}) {
       shape: Border(bottom: outline),
     ),
     cardTheme: CardThemeData(
-      color: scheme.surfaceContainer.withValues(alpha: dark ? 0.72 : 0.82),
+      color: isClean
+          ? scheme.surfaceContainer
+          : isGlass
+              ? Colors.white.withValues(alpha: dark ? 0.08 : 0.55)
+              : scheme.surfaceContainer.withValues(alpha: dark ? 0.72 : 0.82),
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -648,8 +736,39 @@ class _AuroraPainter extends CustomPainter {
     }
   }
 
+  /// Soft, colorful light behind the glass panels.
+  void _paintGlass(Canvas canvas, Size size) {
+    final shortest = size.shortestSide;
+    void blob(Offset c, double r, Color color) {
+      final rect = Rect.fromCircle(center: c, radius: r);
+      canvas.drawRect(
+        Offset.zero & size,
+        Paint()
+          ..shader = RadialGradient(
+            colors: [color, color.withValues(alpha: 0)],
+          ).createShader(rect),
+      );
+    }
+
+    final a = dark ? 0.55 : 0.45;
+    blob(Offset(size.width * 0.1, size.height * 0.08), shortest * 0.9,
+        const Color(0xFF0A84FF).withValues(alpha: a));
+    blob(Offset(size.width * 0.95, size.height * 0.3), shortest * 0.75,
+        const Color(0xFFBF5AF2).withValues(alpha: a * 0.8));
+    blob(Offset(size.width * 0.2, size.height * 0.75), shortest * 0.8,
+        const Color(0xFF64D2FF).withValues(alpha: a * 0.7));
+    blob(Offset(size.width * 0.85, size.height * 0.95), shortest * 0.7,
+        const Color(0xFFFF6482).withValues(alpha: a * 0.55));
+  }
+
   @override
   void paint(Canvas canvas, Size size) {
+    // The clean look has no decoration at all.
+    if (isClean) return;
+    if (isGlass) {
+      _paintGlass(canvas, size);
+      return;
+    }
     if (isBrainrot) {
       _paintBrainrot(canvas, size);
       return;
@@ -729,7 +848,7 @@ class GlowButton extends StatelessWidget {
           gradient: AppColors.accentGradient,
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
-            if (enabled)
+            if (enabled && !isClean)
               BoxShadow(
                 color: AppColors.violet.withValues(alpha: 0.45),
                 blurRadius: 24,
@@ -782,6 +901,26 @@ class GlowCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final dark = scheme.brightness == Brightness.dark;
+    if (isClean) {
+      return Container(
+        margin: margin,
+        padding: padding,
+        decoration: BoxDecoration(
+          color: scheme.surfaceContainer,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: scheme.outlineVariant),
+        ),
+        child: child,
+      );
+    }
+    if (isGlass) {
+      return Container(
+        margin: margin,
+        padding: padding,
+        decoration: glassDecoration(dark, radius: 26, strong: true),
+        child: child,
+      );
+    }
     if (isStickerStyle) {
       return Container(
         margin: margin.add(const EdgeInsets.only(right: 6, bottom: 6)),
@@ -922,6 +1061,8 @@ class SectionLabel extends StatelessWidget {
             const Text("💥 ", style: TextStyle(fontSize: 14))
           else if (isIsrael)
             const Text("🇮🇱 ", style: TextStyle(fontSize: 14))
+          else if (isClean)
+            const SizedBox()
           else ...[
             Container(
               width: 6,
@@ -959,3 +1100,37 @@ final _israelStickerLabelStyle = GoogleFonts.rubik(
   letterSpacing: 0.6,
   color: const Color(0xFF0A1A44),
 );
+
+bool get _applePlatform =>
+    defaultTargetPlatform == TargetPlatform.iOS ||
+    defaultTargetPlatform == TargetPlatform.macOS;
+
+/// A translucent "liquid glass" surface: a white gradient that is brightest
+/// at the top edge, and a hairline border. No blur, so it stays cheap in
+/// long lists. (Rounded borders must have one color, so the light edge comes
+/// from the gradient.)
+BoxDecoration glassDecoration(
+  bool dark, {
+  double radius = 22,
+  bool strong = false,
+}) {
+  final edge = dark ? (strong ? 0.24 : 0.18) : (strong ? 0.9 : 0.8);
+  final top = dark ? (strong ? 0.14 : 0.1) : (strong ? 0.7 : 0.58);
+  final bottom = dark ? (strong ? 0.06 : 0.04) : (strong ? 0.46 : 0.38);
+  return BoxDecoration(
+    borderRadius: BorderRadius.circular(radius),
+    gradient: LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      stops: const [0, 0.08, 1],
+      colors: [
+        Colors.white.withValues(alpha: edge),
+        Colors.white.withValues(alpha: top),
+        Colors.white.withValues(alpha: bottom),
+      ],
+    ),
+    border: Border.all(
+      color: Colors.white.withValues(alpha: dark ? 0.16 : 0.65),
+    ),
+  );
+}

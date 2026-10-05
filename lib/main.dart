@@ -80,6 +80,9 @@ Future<void> main() async {
     actions,
     middleware: middleware(),
   );
+  // Teacher photos and icons need far less than Flutter's default 100 MB
+  // image cache; a smaller cache helps devices with little memory.
+  PaintingBinding.instance.imageCache.maximumSizeBytes = 40 << 20;
   await loadAppStyle();
   await loadTeacherPhotoSetting();
   runApp(RegisterApp(store: store));
@@ -106,9 +109,9 @@ Future<void> main() async {
   );
 }
 
-/// The style the app was last built with, to rebuild everything only when it
-/// changes.
-AppStyle? _lastStyle;
+/// The theme revision the app was last built with, to rebuild everything
+/// only when the style or accent color changes.
+int? _lastRevision;
 
 class RegisterApp extends StatelessWidget {
   const RegisterApp({
@@ -125,12 +128,12 @@ class RegisterApp extends StatelessWidget {
       child: Listener(
         onPointerDown: (_) => store.actions.loginActions.updateLogout(),
         child: ValueListenableBuilder(
-          valueListenable: appStyle,
-          builder: (context, style, _) {
+          valueListenable: themeRevision,
+          builder: (context, revision, _) {
             // Many widgets read the style's colors directly, so the whole
-            // tree is rebuilt when the style changes.
-            if (style == _lastStyle) return _themedApp(context);
-            _lastStyle = style;
+            // tree is rebuilt when the style or accent color changes.
+            if (revision == _lastRevision) return _themedApp(context);
+            _lastRevision = revision;
             WidgetsBinding.instance.addPostFrameCallback((_) {
               void rebuild(Element element) {
                 element.markNeedsBuild();
