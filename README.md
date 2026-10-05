@@ -35,9 +35,12 @@
 3. Installieren – Updates werden einfach über die alte Version installiert
 
 ### Windows
-1. [**Register-Windows.zip**](https://github.com/kererleon/register-app/releases/latest) herunterladen und **entpacken**
-2. `Register.exe` starten
-3. Falls SmartScreen warnt: *Weitere Informationen → Trotzdem ausführen*
+1. [**Register-Setup.exe**](https://github.com/kererleon/register-app/releases/latest) herunterladen und starten
+2. Falls SmartScreen warnt: *Weitere Informationen → Trotzdem ausführen*
+3. Den Schritten folgen – Register landet im Startmenü (auf Wunsch auch auf dem Desktop), Administratorrechte sind nicht nötig
+4. Deinstallieren über *Einstellungen → Apps*
+
+Ohne Installation: **Register-Windows.zip** entpacken und `Register.exe` starten.
 
 ### iPhone & Mac
 Für iOS und macOS gibt es keinen fertigen Download – Apple erlaubt das nur über den App Store.
