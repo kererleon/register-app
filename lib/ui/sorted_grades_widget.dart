@@ -212,7 +212,7 @@ class _SubjectWidgetState extends State<SubjectWidget> {
                 ),
               if (average != null && average / 100 < passMark)
                 StatusPill(
-                  label: br("unter 6", "Ohio 🌽"),
+                  label: br("unter 6", "Ohio 🌽", "Oy vey · unter 6"),
                   color: AppColors.danger,
                   icon: Icons.warning_amber_rounded,
                 ),
@@ -495,11 +495,13 @@ class _ForecastPanelState extends State<_ForecastPanel> {
     final needed = roundUpToQuarter(forecast.required);
     final (headline, color) = switch (forecast.kind) {
       ForecastKind.safe => (
-          br("Schon sicher", "Schon safe, sigma 🗿"),
+          br("Schon sicher", "Schon safe, sigma 🗿",
+              "Schon sicher – Sababa! 👌"),
           AppColors.success
         ),
       ForecastKind.impossible => (
-          br("Mit einem Test nicht erreichbar", "Unmöglich, L + ratio 💀"),
+          br("Mit einem Test nicht erreichbar", "Unmöglich, L + ratio 💀",
+              "Oy vey – mit einem Test nicht erreichbar 😅"),
           AppColors.danger
         ),
       ForecastKind.reachable => (
@@ -518,7 +520,8 @@ class _ForecastPanelState extends State<_ForecastPanel> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          HudLabel(br("Was brauche ich?", "Was brauche ich? 🤔")),
+          HudLabel(br("Was brauche ich?", "Was brauche ich? 🤔",
+              "Was brauche ich? 🤔")),
           if (widget.nextTest != null) ...[
             const SizedBox(height: 8),
             Row(

@@ -1007,36 +1007,62 @@ class _StylePicker extends StatelessWidget {
         children: [
           const HudLabel("Stil der App"),
           const SizedBox(height: 10),
-          Row(
-            children: [
-              Expanded(
-                child: _StyleCard(
-                  style: AppStyle.holo,
-                  title: "Holo",
-                  subtitle: "Futuristisch, clean, leuchtend",
-                  colors: [
-                    Color(0xFF0A0E1A),
-                    Color(0xFF7C5CFF),
-                    Color(0xFF22D3EE)
-                  ],
-                  emoji: "✦",
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _StyleCard(
-                  style: AppStyle.brainrot,
-                  title: "Brainrot",
-                  subtitle: "Skibidi, sigma, no cap",
-                  colors: [
-                    Color(0xFF14001F),
-                    Color(0xFFFF2E93),
-                    Color(0xFFB6FF00)
-                  ],
-                  emoji: "💀",
-                ),
-              ),
-            ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              // Three cards in a row when there is room, else two per row.
+              final perRow = constraints.maxWidth >= 540 ? 3 : 2;
+              const gap = 12.0;
+              final width =
+                  (constraints.maxWidth - gap * (perRow - 1)) / perRow;
+              return Wrap(
+                spacing: gap,
+                runSpacing: gap,
+                children: [
+                  SizedBox(
+                    width: width,
+                    child: const _StyleCard(
+                      style: AppStyle.holo,
+                      title: "Holo",
+                      subtitle: "Futuristisch, clean, leuchtend",
+                      colors: [
+                        Color(0xFF0A0E1A),
+                        Color(0xFF7C5CFF),
+                        Color(0xFF22D3EE),
+                      ],
+                      emoji: "✦",
+                    ),
+                  ),
+                  SizedBox(
+                    width: width,
+                    child: const _StyleCard(
+                      style: AppStyle.brainrot,
+                      title: "Brainrot",
+                      subtitle: "Skibidi, sigma, no cap",
+                      colors: [
+                        Color(0xFF14001F),
+                        Color(0xFFFF2E93),
+                        Color(0xFFB6FF00),
+                      ],
+                      emoji: "💀",
+                    ),
+                  ),
+                  SizedBox(
+                    width: width,
+                    child: const _StyleCard(
+                      style: AppStyle.israel,
+                      title: "Israel",
+                      subtitle: "Shalom, Sababa, Yalla",
+                      colors: [
+                        Color(0xFF06102E),
+                        Color(0xFF0038B8),
+                        Color(0xFFFFFFFF),
+                      ],
+                      emoji: "🇮🇱",
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ],
       ),
@@ -1112,17 +1138,23 @@ class _StyleCard extends StatelessWidget {
               const SizedBox(height: 10),
               Text(
                 title,
-                style: style == AppStyle.brainrot
-                    ? GoogleFonts.bangers(
-                        fontSize: 22,
-                        color: Colors.white,
-                        letterSpacing: 1.2,
-                      )
-                    : GoogleFonts.sora(
+                style: style == AppStyle.israel
+                    ? GoogleFonts.rubik(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
                         color: Colors.white,
-                      ),
+                      )
+                    : style == AppStyle.brainrot
+                        ? GoogleFonts.bangers(
+                            fontSize: 22,
+                            color: Colors.white,
+                            letterSpacing: 1.2,
+                          )
+                        : GoogleFonts.sora(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
               ),
               Text(
                 subtitle,

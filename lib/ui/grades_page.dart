@@ -134,10 +134,14 @@ class _GradesOverview extends StatelessWidget {
                         average == null
                             ? "Noch keine Noten"
                             : average >= 6
-                                ? br("Alles im grünen Bereich",
-                                    "W Rizz, alles grün 🔥")
-                                : br("Unter der Genügend-Grenze",
-                                    "Kritisch, lock in 😭"),
+                                ? br(
+                                    "Alles im grünen Bereich",
+                                    "W Rizz, alles grün 🔥",
+                                    "Alles im grünen Bereich – Sababa! 👌")
+                                : br(
+                                    "Unter der Genügend-Grenze",
+                                    "Kritisch, lock in 😭",
+                                    "Oy vey – unter der Genügend-Grenze 😅"),
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: gradeColor(average),
                         ),

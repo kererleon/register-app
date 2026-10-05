@@ -143,7 +143,8 @@ class TodayPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: ResponsiveAppBar(title: Text(br("Heute", "Heute, no cap 💀"))),
+      appBar: ResponsiveAppBar(
+          title: Text(br("Heute", "Heute, no cap 💀", "Shalom! Heute 🇮🇱"))),
       body: ValueListenableBuilder(
         valueListenable: minuteTicker,
         builder: (context, _, __) => ListView(
@@ -151,13 +152,14 @@ class TodayPage extends StatelessWidget {
           children: [
             _NowCard(data: data, onShowCalendar: onShowCalendar),
             if (data.dueToday.isNotEmpty || data.dueTomorrow.isNotEmpty) ...[
-              SectionLabel(br("Fällig", "Fällig 😬")),
+              SectionLabel(br("Fällig", "Fällig 😬", "Fällig – yalla! ⏰")),
               for (final hw in data.dueToday)
                 _TaskRow(homework: hw, when: "Heute", urgent: true),
               for (final hw in data.dueTomorrow)
                 _TaskRow(homework: hw, when: "Morgen"),
             ],
-            SectionLabel(br("Tests & Schularbeiten", "Boss-Fights ⚔️")),
+            SectionLabel(br("Tests & Schularbeiten", "Boss-Fights ⚔️",
+                "Tests – yalla, lernen! 📚")),
             if (data.tests.isEmpty)
               HoloPanel(
                 child: Text(
@@ -175,7 +177,8 @@ class TodayPage extends StatelessWidget {
                 onCreateStudyPlan: onCreateStudyPlan,
               ),
             if (data.weakSubjects.isNotEmpty) ...[
-              SectionLabel(br("Achtung bei den Noten", "Ohio-Zone 🌽")),
+              SectionLabel(br("Achtung bei den Noten", "Ohio-Zone 🌽",
+                  "Oy vey, die Noten 😅")),
               for (final (subject, avg) in data.weakSubjects)
                 HoloPanel(
                   accent: AppColors.danger,
@@ -262,7 +265,8 @@ class _NowCard extends StatelessWidget {
       headline = "Stundenplan wird geladen";
       detail = "Sobald die Woche geladen ist, siehst du hier deine Stunden.";
     } else if (lessons.isEmpty) {
-      headline = br("Heute frei", "Heute frei, W 🏖️");
+      headline = br("Heute frei", "Heute frei, W 🏖️",
+          "Heute frei – ab an den Strand 🏖️");
       detail = "Kein Unterricht eingetragen.";
     } else if (current != null) {
       final left = current.timeSpans.last.to.difference(now).inMinutes;
@@ -276,9 +280,12 @@ class _NowCard extends StatelessWidget {
           ? "Beginnt in $inMin min"
           : "Beginnt um ${_time(next.timeSpans.first.from)}";
     } else if (over) {
-      headline = br("Schulschluss", "Schulschluss 🗿");
-      detail =
-          br("Für heute geschafft.", "Sigma grindset ✔️ Für heute geschafft.");
+      headline = br("Schulschluss", "Schulschluss 🗿",
+          "Schulschluss – Yalla, nach Hause! 🏠");
+      detail = br(
+          "Für heute geschafft.",
+          "Sigma grindset ✔️ Für heute geschafft.",
+          "Für heute geschafft – Sababa! 🏖️");
     } else {
       headline = "Heute";
       detail = "";
@@ -647,8 +654,14 @@ class _TargetChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final needed = roundUpToQuarter(forecast.required);
     final (text, color) = switch (forecast.kind) {
-      ForecastKind.safe => (br("sicher", "safe 🗿"), AppColors.success),
-      ForecastKind.impossible => (br("unmöglich", "L 💀"), AppColors.danger),
+      ForecastKind.safe => (
+          br("sicher", "safe 🗿", "sababa 👌"),
+          AppColors.success
+        ),
+      ForecastKind.impossible => (
+          br("unmöglich", "L 💀", "oy vey 😅"),
+          AppColors.danger
+        ),
       ForecastKind.reachable => (formatGradeSteps(needed), gradeColor(needed)),
     };
     return StatusPill(

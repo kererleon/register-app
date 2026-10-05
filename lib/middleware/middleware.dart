@@ -258,7 +258,6 @@ Future<void> _load(MiddlewareApi<AppState, AppStateBuilder, AppActions> api,
     }
   }
 
-
   final user = getString(login["user"]);
   final pass = getString(login["pass"]);
   final url = getString(login["url"]);
@@ -710,4 +709,3 @@ Future<bool?> askShouldOverwriteFile(String fileName) async {
     ),
   );
 }
-

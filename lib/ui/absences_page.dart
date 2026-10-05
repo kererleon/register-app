@@ -115,8 +115,10 @@ class AbsencesBody extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  br("Noch keine Absenzen",
-                      "Noch keine Absenzen, absolute Unit 💪"),
+                  br(
+                      "Noch keine Absenzen",
+                      "Noch keine Absenzen, absolute Unit 💪",
+                      "Noch keine Absenzen – Mazal tov! 🎉"),
                   style: theme.textTheme.titleLarge,
                   textAlign: TextAlign.center,
                 ),

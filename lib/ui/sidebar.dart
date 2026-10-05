@@ -127,7 +127,7 @@ class Sidebar extends StatelessWidget {
       selectedIconBox: Theme.of(context).colorScheme.primary.withAlpha(40),
       items: [
         CollapsibleItem(
-          text: br("Heute", "Heute 🗿"),
+          text: br("Heute", "Heute 🗿", "Heute 🇮🇱"),
           icon: Icons.bolt_rounded,
           isSelected: currentSelected == Pages.today,
           onPressed: showToday,
@@ -177,7 +177,7 @@ class Sidebar extends StatelessWidget {
         ),
         CollapsibleItem(
           hasDivider: true,
-          text: br("Abmelden", "Abmelden ✌️"),
+          text: br("Abmelden", "Abmelden ✌️", "Lehitraot 👋"),
           icon: Icons.logout,
           onPressed: logout,
         ),
