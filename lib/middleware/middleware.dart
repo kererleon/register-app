@@ -53,6 +53,7 @@ import 'package:dr/utc_date_time.dart';
 import 'package:dr/util.dart';
 import 'package:dr/widget_export.dart';
 import 'package:dr/wrapper.dart';
+import 'package:flutter/foundation.dart' show compute;
 import 'package:flutter/material.dart' hide Action, Notification;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:intl/intl.dart';
@@ -409,16 +410,16 @@ NextActionHandler _saveStateMiddleware(
                 wrapper.loginAddress,
               );
               _saveUnderway = false;
-              String toSave;
-              if (!state.settingsState.noDataSaving && !deletedData) {
-                toSave = json.encode(
-                  serializers.serialize(state),
-                );
-              } else {
-                toSave = json.encode(
-                  serializers.serialize(state.settingsState),
-                );
-              }
+              // Turning the whole state into JSON takes long once there is
+              // a lot of data; doing it in another isolate keeps the UI
+              // from stuttering.
+              final saveEverything =
+                  !state.settingsState.noDataSaving && !deletedData;
+              final settings = state.settingsState;
+              final toSave = await compute(
+                _encodeForStorage,
+                saveEverything ? state : settings,
+              );
               if (_lastSave == toSave && _lastUsernameSaved == user) return;
               _lastSave = toSave;
               _lastUsernameSaved = user;
@@ -435,6 +436,11 @@ NextActionHandler _saveStateMiddleware(
             }
           }
         };
+
+/// Runs in another isolate (see [compute]); top-level, so that nothing of the
+/// running app is sent along.
+String _encodeForStorage(Object state) =>
+    json.encode(serializers.serialize(state));
 
 String getStorageKey(String? user, String server) {
   // This is safe because the default Map in dart is a LinkedHashMap, which mantains

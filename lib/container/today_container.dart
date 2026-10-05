@@ -28,9 +28,12 @@ class TodayContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return StoreConnection<AppState, AppActions, AppState>(
-      connect: (state) => state,
-      builder: (context, state, actions) {
+    // Only the parts of the state the page shows: built_value objects
+    // compare by identity first, so unrelated actions skip the rebuild.
+    return StoreConnection<AppState, AppActions, _TodayInputs>(
+      connect: (state) => _TodayInputs(state),
+      builder: (context, inputs, actions) {
+        final state = inputs.state;
         return TodayPage(
           data: TodayData.from(state),
           noInternet: state.noInternet,
@@ -67,4 +70,32 @@ class TodayContainer extends StatelessWidget {
       },
     );
   }
+}
+
+class _TodayInputs {
+  final AppState state;
+  const _TodayInputs(this.state);
+
+  List<Object?> get _parts => [
+        state.dashboardState.allDays,
+        state.calendarState.days,
+        state.absencesState.statistic,
+        state.gradesState.subjects,
+        state.gradesState.semester,
+        state.settingsState.subjectNicks,
+        state.noInternet,
+      ];
+
+  @override
+  bool operator ==(Object other) {
+    if (other is! _TodayInputs) return false;
+    final a = _parts, b = other._parts;
+    for (var i = 0; i < a.length; i++) {
+      if (!identical(a[i], b[i]) && a[i] != b[i]) return false;
+    }
+    return true;
+  }
+
+  @override
+  int get hashCode => Object.hashAll(_parts);
 }
