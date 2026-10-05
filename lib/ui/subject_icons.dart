@@ -163,6 +163,25 @@ class SubjectIconPattern extends StatelessWidget {
   }
 }
 
+/// Laid-out icon glyphs, shared by all calendar tiles.
+final _glyphs = <(IconData, Color), TextPainter>{};
+
+TextPainter _glyph(IconData icon, Color color) => _glyphs.putIfAbsent(
+      (icon, color),
+      () => TextPainter(
+        text: TextSpan(
+          text: String.fromCharCode(icon.codePoint),
+          style: TextStyle(
+            fontFamily: icon.fontFamily,
+            package: icon.fontPackage,
+            fontSize: 16,
+            color: color,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout(),
+    );
+
 class _IconPatternPainter extends CustomPainter {
   final List<IconData> icons;
   final Color color;
@@ -184,18 +203,7 @@ class _IconPatternPainter extends CustomPainter {
       final offset = ((y / cell).floor().isOdd) ? cell / 2 : 0.0;
       for (var x = 2.0 - offset; x < size.width; x += cell) {
         final icon = icons[i++ % icons.length];
-        final painter = TextPainter(
-          text: TextSpan(
-            text: String.fromCharCode(icon.codePoint),
-            style: TextStyle(
-              fontFamily: icon.fontFamily,
-              package: icon.fontPackage,
-              fontSize: 16,
-              color: color,
-            ),
-          ),
-          textDirection: TextDirection.ltr,
-        )..layout();
+        final painter = _glyph(icon, color);
         canvas.save();
         canvas.translate(x + 8, y + 8);
         canvas.rotate((random.nextDouble() - 0.5) * 0.6);

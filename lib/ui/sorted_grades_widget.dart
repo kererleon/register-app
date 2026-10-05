@@ -266,11 +266,16 @@ class _SubjectWidgetState extends State<SubjectWidget> {
                 duration: const Duration(milliseconds: 200),
                 child: entries != null
                     ? Column(
-                        // we're using a UniqueKey here so that the framework
-                        // detects a change on every rebuild. There would be no
-                        // animations otherwise, as the Column as the direct child
-                        // of the AnimatedSwitcher always stays the same (just different children).
-                        key: UniqueKey(),
+                        // The key changes when the shown entries change, so the
+                        // AnimatedSwitcher animates then – and only then, not on
+                        // every unrelated rebuild of the app.
+                        key: ValueKey(
+                          Object.hash(
+                            Object.hashAll(entries),
+                            widget.sortByType,
+                            widget.showCancelled,
+                          ),
+                        ),
                         children: [
                           if (widget.sortByType)
                             ...Subject.sortByType(entries).entries.map(
