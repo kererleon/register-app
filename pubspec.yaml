@@ -94,15 +94,21 @@ dev_dependencies:
 
 flutter_launcher_icons:
   image_path: "assets/icon/register_icon.png"
+  # Android: the launcher shapes the full-bleed background itself (circle,
+  # squircle, ...); older launchers get the pre-rounded icon.
   android: "launcher_icon"
-  adaptive_icon_background: "#2E5CAA"
-  adaptive_icon_foreground: "assets/icon/register_icon_foreground.png"
+  image_path_android: "assets/icon/register_icon_rounded.png"
+  adaptive_icon_background: "assets/icon/android_adaptive_background.png"
+  adaptive_icon_foreground: "assets/icon/android_adaptive_foreground.png"
+  adaptive_icon_foreground_inset: 0
   ios: true
   remove_alpha_ios: true
   macos:
     generate: true
+  # Windows does not round app icons, so the icon brings its own corners.
   windows:
     generate: true
+    image_path: "assets/icon/register_icon_rounded.png"
     icon_size: 256
 
 # Splash screen settings. The native files are already generated; to change

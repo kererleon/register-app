@@ -62,13 +62,32 @@ jobs:
       - run: flutter pub get
       - run: dart run build_runner build --delete-conflicting-outputs
       - run: flutter build windows --release
-      - name: Package
+      - name: Add Visual C++ runtime
+        # Flutter apps need it; bundling it lets the app start on PCs that
+        # do not have the redistributable installed.
+        shell: pwsh
+        run: |
+          foreach ($dll in "msvcp140.dll", "vcruntime140.dll", "vcruntime140_1.dll") {
+            Copy-Item "C:\Windows\System32\$dll" build\windows\x64\runner\Release\
+          }
+      - name: Portable ZIP
         shell: pwsh
         run: Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath Register-Windows.zip
+      - name: Installer
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "C:\Program Files (x86)\Inno Setup 6\ISCC.exe")) {
+            choco install innosetup -y --no-progress
+          }
+          $version = ((Select-String -Path pubspec.yaml -Pattern '^version:\s*(.+)$').Matches[0].Groups[1].Value -split '\+')[0]
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "/DAppVersion=$version" windows\installer\register.iss
+          Copy-Item build\installer\Register-Setup.exe .
       - uses: actions/upload-artifact@v4
         with:
           name: windows
-          path: Register-Windows.zip
+          path: |
+            Register-Windows.zip
+            Register-Setup.exe
 
   release:
     needs: [android, windows]
@@ -83,8 +102,8 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           TAG="build-${{ github.run_number }}"
-          gh release create "$TAG" Register-Android.apk Register-Windows.zip \
+          gh release create "$TAG" Register-Android.apk Register-Setup.exe Register-Windows.zip \
             --target "${{ github.sha }}" \
             --title "Register $TAG" \
-            --notes "Automatisch gebaut aus $(echo ${{ github.sha }} | cut -c1-7). Android: Register-Android.apk installieren. Windows: Register-Windows.zip entpacken und Register.exe starten." \
+            --notes "Automatisch gebaut aus $(echo ${{ github.sha }} | cut -c1-7). Android: Register-Android.apk installieren. Windows: Register-Setup.exe ausführen (oder Register-Windows.zip entpacken und Register.exe starten)." \
             --latest
