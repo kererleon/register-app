@@ -492,7 +492,7 @@ class _LoginHeader extends StatelessWidget {
             br(
                 "Noten, Hausaufgaben und Absenzen an einem Ort",
                 "Noten, Hausaufgaben & Absenzen. No cap. 🧠🔥",
-                "Shalom! Noten, Hausaufgaben und Absenzen an einem Ort 🇮🇱"),
+                "Shalom achi! Noten, Hausaufgaben & Absenzen – yalla 🇮🇱"),
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyMedium
                 ?.copyWith(color: theme.colorScheme.onSurfaceVariant),

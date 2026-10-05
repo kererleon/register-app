@@ -41,6 +41,9 @@ final appStyle = ValueNotifier(AppStyle.holo);
 bool get isBrainrot => appStyle.value == AppStyle.brainrot;
 bool get isIsrael => appStyle.value == AppStyle.israel;
 
+/// The meme looks use thick sticker cards with hard shadows.
+bool get isStickerStyle => isBrainrot || isIsrael;
+
 /// Picks the text for the current look. Without an [israel] text, the
 /// israel look uses the holo text.
 String br(String holo, String brainrot, [String? israel]) =>
@@ -193,8 +196,8 @@ ThemeData buildAppTheme(Brightness brightness, {TargetPlatform? platform}) {
     labelSmall: baseText.labelSmall?.copyWith(letterSpacing: 0.8),
   );
 
-  final radius = isBrainrot ? 8.0 : 18.0;
-  final outline = isBrainrot
+  final radius = isStickerStyle ? 8.0 : 18.0;
+  final outline = isStickerStyle
       ? BorderSide(color: dark ? AppColors.violet : AppColors.ink, width: 2)
       : BorderSide(color: scheme.outlineVariant);
 
@@ -474,52 +477,174 @@ class _AuroraPainter extends CustomPainter {
     }
   }
 
-  void _paintIsrael(Canvas canvas, Size size) {
-    final blue = AppColors.violetDeep;
-    // The flag's two stripes.
-    final stripe = Paint()..color = blue.withValues(alpha: dark ? 0.55 : 0.85);
-    final h = size.height;
-    final t = math.max(10.0, h * 0.022);
-    canvas.drawRect(Rect.fromLTWH(0, h * 0.05, size.width, t), stripe);
-    canvas.drawRect(Rect.fromLTWH(0, h * 0.95 - t, size.width, t), stripe);
-    // A large, faint star in the middle.
+  /// The flag of Israel: white field, two blue stripes, star of David.
+  void _paintFlag(Canvas canvas, Rect r) {
+    const blue = Color(0xFF0038B8);
+    canvas.drawRect(r, Paint()..color = Colors.white);
+    final stripe = r.height * 0.15;
+    canvas.drawRect(
+      Rect.fromLTWH(r.left, r.top + r.height * 0.1, r.width, stripe),
+      Paint()..color = blue,
+    );
+    canvas.drawRect(
+      Rect.fromLTWH(
+          r.left, r.bottom - r.height * 0.1 - stripe, r.width, stripe),
+      Paint()..color = blue,
+    );
     _star(
       canvas,
-      size.center(Offset.zero),
-      size.shortestSide * 0.32,
+      r.center,
+      r.height * 0.2,
       Paint()
-        ..color = blue.withValues(alpha: dark ? 0.10 : 0.07)
+        ..color = blue
         ..style = PaintingStyle.stroke
-        ..strokeWidth = size.shortestSide * 0.02,
+        ..strokeWidth = r.height * 0.035
+        ..strokeJoin = StrokeJoin.miter,
     );
-    // Small stars and emojis, always in the same places.
-    final random = math.Random(5);
+  }
+
+  void _paintIsrael(Canvas canvas, Size size) {
+    final blue = AppColors.violetDeep;
+    final w = size.width, h = size.height;
+    // A big flag across the top, behind the app bar.
+    final flagHeight = math.min(170.0, math.max(120.0, h * 0.2));
+    _paintFlag(canvas, Rect.fromLTWH(0, 0, w, flagHeight));
+    // Soft fade from the flag into the page.
+    canvas.drawRect(
+      Rect.fromLTWH(0, flagHeight - 40, w, 60),
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            AppColors.night.withValues(alpha: 0),
+            dark ? AppColors.night : AppColors.frost,
+          ],
+        ).createShader(Rect.fromLTWH(0, flagHeight - 40, w, 60)),
+    );
+    // The bottom stripe of the flag.
+    canvas.drawRect(
+      Rect.fromLTWH(0, h - 14, w, 8),
+      Paint()..color = blue.withValues(alpha: dark ? 0.7 : 0.9),
+    );
+
+    final random = math.Random(9);
+    // Small stars and emojis.
     final small = Paint()
-      ..color = blue.withValues(alpha: dark ? 0.16 : 0.12)
+      ..color = blue.withValues(alpha: dark ? 0.22 : 0.16)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.6;
-    const emojis = ["🇮🇱", "🥙", "🌊", "☀️", "🐪", "🫓", "🍊", "🏖️"];
-    final count = (size.width * size.height / 30000).clamp(10, 60).round();
+      ..strokeWidth = 1.8;
+    const emojis = [
+      "🇮🇱",
+      "🥙",
+      "🧆",
+      "🫓",
+      "🌊",
+      "☀️",
+      "🐪",
+      "🍊",
+      "🏖️",
+      "🇮🇱",
+      "💙",
+      "🔥",
+    ];
+    final area = (h - flagHeight - 20).clamp(1, double.infinity).toDouble();
+    final count = (w * area / 26000).clamp(10, 70).round();
     for (var i = 0; i < count; i++) {
       final pos = Offset(
-        random.nextDouble() * size.width,
-        h * 0.08 + random.nextDouble() * h * 0.84,
+        random.nextDouble() * w,
+        flagHeight + random.nextDouble() * area,
       );
-      if (i.isEven) {
-        _star(canvas, pos, 9 + random.nextDouble() * 8, small);
+      if (i % 3 == 0) {
+        _star(canvas, pos, 8 + random.nextDouble() * 8, small);
       } else {
         final painter = TextPainter(
           text: TextSpan(
             text: emojis[random.nextInt(emojis.length)],
             style: TextStyle(
-              fontSize: 18 + random.nextDouble() * 12,
-              color: Colors.white.withValues(alpha: dark ? 0.18 : 0.35),
+              fontSize: 20 + random.nextDouble() * 14,
+              color: Colors.white.withValues(alpha: dark ? 0.22 : 0.4),
             ),
           ),
           textDirection: TextDirection.ltr,
         )..layout();
-        painter.paint(canvas, pos);
+        canvas.save();
+        canvas.translate(pos.dx, pos.dy);
+        canvas.rotate((random.nextDouble() - 0.5) * 0.6);
+        painter.paint(canvas, Offset.zero);
+        canvas.restore();
       }
+    }
+
+    // Meme stickers with Israeli slang.
+    const memes = [
+      "YALLA BALAGAN 🤯",
+      "SABABA ACHI 😎",
+      "HUMMUS > ALLES 🥙",
+      "TACHLES. 6 REICHT.",
+      "MA NISHMA? 👀",
+      "KAPARA ALECHA 💙",
+      "BESEDER? BESEDER.",
+      "YALLA BYE ✌️",
+      "ACHI, LERN MAL 📚",
+      "SHAKSHUKA TIME 🍳",
+      "SHALOM, TEST 👋",
+      "OY VEY, MATHE 😵",
+    ];
+    final stickerFont =
+        GoogleFonts.rubik(fontWeight: FontWeight.w900).fontFamily;
+    final stickers = (w * area / 90000).clamp(3, 14).round();
+    for (var i = 0; i < stickers; i++) {
+      final text = memes[(i * 5 + random.nextInt(memes.length)) % memes.length];
+      final painter = TextPainter(
+        text: TextSpan(
+          text: text,
+          style: TextStyle(
+            fontFamily: stickerFont,
+            fontWeight: FontWeight.w900,
+            fontSize: 13 + random.nextDouble() * 5,
+            color: blue.withValues(alpha: dark ? 0.55 : 0.5),
+            letterSpacing: 0.5,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      final pad = const EdgeInsets.symmetric(horizontal: 10, vertical: 6);
+      final box = Rect.fromLTWH(
+        0,
+        0,
+        painter.width + pad.horizontal,
+        painter.height + pad.vertical,
+      );
+      final pos = Offset(
+        random.nextDouble() * math.max(1, w - box.width),
+        flagHeight +
+            10 +
+            random.nextDouble() * math.max(1, area - box.height - 20),
+      );
+      canvas.save();
+      canvas.translate(pos.dx, pos.dy);
+      canvas.rotate((random.nextDouble() - 0.5) * 0.35);
+      final rrect = RRect.fromRectAndRadius(box, const Radius.circular(8));
+      canvas.drawRRect(
+        rrect.shift(const Offset(3, 3)),
+        Paint()..color = blue.withValues(alpha: dark ? 0.25 : 0.18),
+      );
+      canvas.drawRRect(
+        rrect,
+        Paint()
+          ..color = (dark ? Colors.white : Colors.white)
+              .withValues(alpha: dark ? 0.1 : 0.7),
+      );
+      canvas.drawRRect(
+        rrect,
+        Paint()
+          ..color = blue.withValues(alpha: dark ? 0.45 : 0.4)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5,
+      );
+      painter.paint(canvas, Offset(pad.left, pad.top));
+      canvas.restore();
     }
   }
 
@@ -657,7 +782,7 @@ class GlowCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final dark = scheme.brightness == Brightness.dark;
-    if (isBrainrot) {
+    if (isStickerStyle) {
       return Container(
         margin: margin.add(const EdgeInsets.only(right: 6, bottom: 6)),
         padding: const EdgeInsets.all(3),
@@ -723,7 +848,8 @@ class StatusPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (isBrainrot) {
+    if (isStickerStyle) {
+      final edge = isIsrael ? AppColors.ink : Colors.black;
       // A slightly tilted sticker.
       return Transform.rotate(
         angle: -0.05,
@@ -732,21 +858,21 @@ class StatusPill extends StatelessWidget {
           decoration: BoxDecoration(
             color: color,
             borderRadius: BorderRadius.circular(4),
-            border: Border.all(color: Colors.black, width: 1.5),
-            boxShadow: const [
-              BoxShadow(color: Colors.black, offset: Offset(2, 2)),
+            border: Border.all(color: edge, width: 1.5),
+            boxShadow: [
+              BoxShadow(color: edge, offset: const Offset(2, 2)),
             ],
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               if (icon != null) ...[
-                Icon(icon, size: 13, color: Colors.black),
+                Icon(icon, size: 13, color: edge),
                 const SizedBox(width: 3),
               ],
               Text(
                 label.toUpperCase(),
-                style: _stickerLabelStyle,
+                style: isIsrael ? _israelStickerLabelStyle : _stickerLabelStyle,
               ),
             ],
           ),
@@ -794,6 +920,8 @@ class SectionLabel extends StatelessWidget {
         children: [
           if (isBrainrot)
             const Text("💥 ", style: TextStyle(fontSize: 14))
+          else if (isIsrael)
+            const Text("🇮🇱 ", style: TextStyle(fontSize: 14))
           else ...[
             Container(
               width: 6,
@@ -823,4 +951,11 @@ final _stickerLabelStyle = GoogleFonts.bangers(
   fontSize: 13,
   letterSpacing: 1,
   color: Colors.black,
+);
+
+final _israelStickerLabelStyle = GoogleFonts.rubik(
+  fontSize: 12,
+  fontWeight: FontWeight.w800,
+  letterSpacing: 0.6,
+  color: const Color(0xFF0A1A44),
 );

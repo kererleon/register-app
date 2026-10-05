@@ -31,18 +31,18 @@ double? parseAbsencePercentage(String? value) =>
   if (percent < 10)
     return (
       AppColors.success,
-      br("Im grünen Bereich", "Chillig 😎", "Sababa 👌")
+      br("Im grünen Bereich", "Chillig 😎", "Sababa 😎")
     );
   if (percent < 18)
-    return (
-      AppColors.warning,
-      br("Aufpassen", "Sus 👀", "Aufpassen, chabibi 👀")
-    );
+    return (AppColors.warning, br("Aufpassen", "Sus 👀", "Achi, aufpassen 👀"));
   if (percent < absenceLimitPercent)
-    return (AppColors.danger, br("Kritisch", "Gefährlich 💀", "Oy vey! 😬"));
+    return (
+      AppColors.danger,
+      br("Kritisch", "Gefährlich 💀", "Oy vey! Balagan 😱")
+    );
   return (
     AppColors.danger,
-    br("Über der Grenze", "Game over 💀", "Über der Grenze 😬")
+    br("Über der Grenze", "Game over 💀", "Balagan total 😱")
   );
 }
 

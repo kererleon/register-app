@@ -395,7 +395,7 @@ class _DaysWidgetState extends State<DaysWidget> {
         ],
       ),
       homeAppBar: ResponsiveAppBar(
-        title: Text(br("Register", "Register 🧠🔥", "Register 🇮🇱")),
+        title: Text(br("Register", "Register 🧠🔥", "Register 🇮🇱 Yalla")),
         actions: <Widget>[
           if (widget.vm.noInternet)
             TextButton(
@@ -466,8 +466,8 @@ class DashboardHeader extends StatelessWidget {
           child: Center(
             child: HoloToggle(
               labels: [
-                br("Kommend", "Kommt noch 🔜"),
-                br("Vergangen", "Schon passiert 💀")
+                br("Kommend", "Kommt noch 🔜", "Kommt noch – yalla 🔜"),
+                br("Vergangen", "Schon passiert 💀", "Vergangen – Kapara 💙")
               ],
               selected: future ? 0 : 1,
               onChanged: (_) => onSwitchFuture(),

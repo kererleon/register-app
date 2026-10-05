@@ -118,7 +118,7 @@ class AbsencesBody extends StatelessWidget {
                   br(
                       "Noch keine Absenzen",
                       "Noch keine Absenzen, absolute Unit 💪",
-                      "Noch keine Absenzen – Mazal tov! 🎉"),
+                      "Noch keine Absenzen – Mazal tov achi! 🎉"),
                   style: theme.textTheme.titleLarge,
                   textAlign: TextAlign.center,
                 ),

@@ -127,7 +127,7 @@ class Sidebar extends StatelessWidget {
       selectedIconBox: Theme.of(context).colorScheme.primary.withAlpha(40),
       items: [
         CollapsibleItem(
-          text: br("Heute", "Heute 🗿", "Heute 🇮🇱"),
+          text: br("Heute", "Heute 🗿", "Heute 🇮🇱 Yalla"),
           icon: Icons.bolt_rounded,
           isSelected: currentSelected == Pages.today,
           onPressed: showToday,
@@ -136,48 +136,50 @@ class Sidebar extends StatelessWidget {
           CollapsibleItem(
             isSelected: currentSelected == Pages.homework,
             icon: Icons.assignment,
-            text: br("Hausaufgaben", "Hausaufgaben 😭"),
+            text: br(
+                "Hausaufgaben", "Hausaufgaben 😭", "Hausaufgaben 😩 Balagan"),
             onPressed: goHome,
           ),
         CollapsibleItem(
           onPressed: showGrades,
           isSelected: currentSelected == Pages.grades,
-          text: br("Noten", "Noten 📉"),
+          text: br("Noten", "Noten 📉", "Noten 📈 Tachles"),
           icon: Icons.grade,
         ),
         CollapsibleItem(
-            text: br("Absenzen", "Absenzen 🛌"),
+            text: br("Absenzen", "Absenzen 🛌", "Absenzen 🏖️ Matkot-Pause"),
             icon: Icons.hotel,
             isSelected: currentSelected == Pages.absences,
             onPressed: showAbsences),
         CollapsibleItem(
-          text: br("Kalender", "Kalender 🗓️"),
+          text: br("Kalender", "Kalender 🗓️", "Kalender 🗓️ Ma nishma"),
           icon: Icons.calendar_today,
           isSelected: currentSelected == Pages.calendar,
           onPressed: showCalendar,
         ),
         CollapsibleItem(
-          text: br("Zeugnis", "Zeugnis 📜"),
+          text: br("Zeugnis", "Zeugnis 📜", "Zeugnis 📜 Kapara"),
           icon: Icons.list,
           isSelected: currentSelected == Pages.certificate,
           onPressed: showCertificate,
         ),
         CollapsibleItem(
-          text: br("Mitteilungen", "Mitteilungen 📨"),
+          text: br("Mitteilungen", "Mitteilungen 📨", "Mitteilungen 📨 Achi?"),
           icon: Icons.message,
           isSelected: currentSelected == Pages.messages,
           onPressed: showMessages,
         ),
         CollapsibleItem(
           hasDivider: true,
-          text: br("Einstellungen", "Einstellungen ⚙️"),
+          text: br(
+              "Einstellungen", "Einstellungen ⚙️", "Einstellungen ⚙️ Beseder"),
           icon: Icons.settings,
           isSelected: currentSelected == Pages.settings,
           onPressed: showSettings,
         ),
         CollapsibleItem(
           hasDivider: true,
-          text: br("Abmelden", "Abmelden ✌️", "Lehitraot 👋"),
+          text: br("Abmelden", "Abmelden ✌️", "Yalla bye ✌️🇮🇱"),
           icon: Icons.logout,
           onPressed: logout,
         ),

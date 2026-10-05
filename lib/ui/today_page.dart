@@ -144,22 +144,23 @@ class TodayPage extends StatelessWidget {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: ResponsiveAppBar(
-          title: Text(br("Heute", "Heute, no cap 💀", "Shalom! Heute 🇮🇱"))),
+          title: Text(br("Heute", "Heute, no cap 💀", "Shalom achi! 🇮🇱"))),
       body: ValueListenableBuilder(
         valueListenable: minuteTicker,
         builder: (context, _, __) => ListView(
           padding: const EdgeInsets.only(bottom: 40),
           children: [
             _NowCard(data: data, onShowCalendar: onShowCalendar),
+            if (isIsrael) const _MemeOfTheDay(),
             if (data.dueToday.isNotEmpty || data.dueTomorrow.isNotEmpty) ...[
-              SectionLabel(br("Fällig", "Fällig 😬", "Fällig – yalla! ⏰")),
+              SectionLabel(br("Fällig", "Fällig 😬", "Fällig – yalla yalla ⏰")),
               for (final hw in data.dueToday)
                 _TaskRow(homework: hw, when: "Heute", urgent: true),
               for (final hw in data.dueTomorrow)
                 _TaskRow(homework: hw, when: "Morgen"),
             ],
             SectionLabel(br("Tests & Schularbeiten", "Boss-Fights ⚔️",
-                "Tests – yalla, lernen! 📚")),
+                "Tests – Yalla Balagan 🤯")),
             if (data.tests.isEmpty)
               HoloPanel(
                 child: Text(
@@ -178,7 +179,7 @@ class TodayPage extends StatelessWidget {
               ),
             if (data.weakSubjects.isNotEmpty) ...[
               SectionLabel(br("Achtung bei den Noten", "Ohio-Zone 🌽",
-                  "Oy vey, die Noten 😅")),
+                  "Oy vey, Balagan bei den Noten 😵")),
               for (final (subject, avg) in data.weakSubjects)
                 HoloPanel(
                   accent: AppColors.danger,
@@ -210,7 +211,8 @@ class TodayPage extends StatelessWidget {
                 ),
             ],
             if (data.absencePercent != null) ...[
-              SectionLabel(br("Fehlstunden", "Skip-Statistik 🛌")),
+              SectionLabel(
+                  br("Fehlstunden", "Skip-Statistik 🛌", "Fehlstunden 🏖️")),
               HoloPanel(
                 onTap: onShowAbsences,
                 child: Column(
@@ -266,12 +268,13 @@ class _NowCard extends StatelessWidget {
       detail = "Sobald die Woche geladen ist, siehst du hier deine Stunden.";
     } else if (lessons.isEmpty) {
       headline = br("Heute frei", "Heute frei, W 🏖️",
-          "Heute frei – ab an den Strand 🏖️");
+          "Heute frei – Sababa, ab zum Strand 🏖️");
       detail = "Kein Unterricht eingetragen.";
     } else if (current != null) {
       final left = current.timeSpans.last.to.difference(now).inMinutes;
       headline = data.subjectNicks.nick(current.subject);
-      detail = "${br("Läuft gerade", "Lock in 🔒")} · noch $left min"
+      detail =
+          "${br("Läuft gerade", "Lock in 🔒", "Tachles, lock in 🔒")} · noch $left min"
           "${current.rooms.isEmpty ? "" : " · ${current.rooms.join(", ")}"}";
     } else if (next != null) {
       final inMin = next.timeSpans.first.from.difference(now).inMinutes;
@@ -280,12 +283,12 @@ class _NowCard extends StatelessWidget {
           ? "Beginnt in $inMin min"
           : "Beginnt um ${_time(next.timeSpans.first.from)}";
     } else if (over) {
-      headline = br("Schulschluss", "Schulschluss 🗿",
-          "Schulschluss – Yalla, nach Hause! 🏠");
+      headline = br(
+          "Schulschluss", "Schulschluss 🗿", "Schulschluss – Yalla bye! 🏖️");
       detail = br(
           "Für heute geschafft.",
           "Sigma grindset ✔️ Für heute geschafft.",
-          "Für heute geschafft – Sababa! 🏖️");
+          "Yalla bye! Ab an den Strand 🏖️");
     } else {
       headline = "Heute";
       detail = "";
@@ -655,11 +658,11 @@ class _TargetChip extends StatelessWidget {
     final needed = roundUpToQuarter(forecast.required);
     final (text, color) = switch (forecast.kind) {
       ForecastKind.safe => (
-          br("sicher", "safe 🗿", "sababa 👌"),
+          br("sicher", "safe 🗿", "sababa 😎"),
           AppColors.success
         ),
       ForecastKind.impossible => (
-          br("unmöglich", "L 💀", "oy vey 😅"),
+          br("unmöglich", "L 💀", "oy vey 😵"),
           AppColors.danger
         ),
       ForecastKind.reachable => (formatGradeSteps(needed), gradeColor(needed)),
@@ -667,6 +670,83 @@ class _TargetChip extends StatelessWidget {
     return StatusPill(
       label: "Ø${target.toStringAsFixed(0)} → $text",
       color: color,
+    );
+  }
+}
+
+/// A daily Israeli-slang meme in the israel look; tap for the next one.
+class _MemeOfTheDay extends StatefulWidget {
+  const _MemeOfTheDay();
+
+  @override
+  State<_MemeOfTheDay> createState() => _MemeOfTheDayState();
+}
+
+class _MemeOfTheDayState extends State<_MemeOfTheDay> {
+  static const _memes = [
+    ("🥙", "Hummus > Mathe", "Wissenschaftlich bewiesen, achi."),
+    (
+      "🤯",
+      "Yalla Balagan",
+      "Mein Stundenplan, meine Hausaufgaben, mein Leben."
+    ),
+    ("😎", "Sababa", "Note 6. Reicht. Tachles."),
+    ("🍳", "Shakshuka Time", "Erst frühstücken, dann lernen. Beseder?"),
+    ("🏖️", "Matkot > Schule", "Pling. Plong. Pling. Plong."),
+    (
+      "👀",
+      "Ma nishma?",
+      "Ich nach dem Test, wenn jemand nach den Lösungen fragt."
+    ),
+    ("🥜", "Bamba-Pause", "Wichtigster Teil des Schultags."),
+    ("💙", "Kapara alecha", "An alle, die mir die Hausaufgaben schicken."),
+    ("😵", "Oy vey", "Die Schularbeit ist morgen?!"),
+    ("✌️", "Yalla bye", "Letzte Stunde vorbei, ich bin weg."),
+    ("🐪", "Langsam, achi", "Kamel-Tempo am Montagmorgen."),
+    ("🎤", "Eurovision-Energie", "So laut feiere ich jede bestandene Prüfung."),
+    ("☀️", "Tel-Aviv-Mood", "30 Grad im Kopf, 12 Grad im Klassenzimmer."),
+    ("📚", "Achi, lern mal", "– meine Eltern, jeden Tag."),
+    ("🧆", "Falafel-Logik", "Je mehr Lernzettel, desto mehr Snacks."),
+    ("🇮🇱", "Shalom, Test", "Wir sehen uns. Leider."),
+  ];
+
+  late int _index =
+      DateTime.now().difference(DateTime(2026)).inDays % _memes.length;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final (emoji, title, text) = _memes[_index];
+    return HoloPanel(
+      onTap: () => setState(() => _index = (_index + 1) % _memes.length),
+      child: Row(
+        children: [
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 250),
+            transitionBuilder: (child, animation) => RotationTransition(
+              turns: Tween(begin: -0.1, end: 0.0).animate(animation),
+              child: ScaleTransition(scale: animation, child: child),
+            ),
+            child: Text(
+              emoji,
+              key: ValueKey(_index),
+              style: const TextStyle(fontSize: 44),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const HudLabel("Meme des Tages · tippen für mehr"),
+                const SizedBox(height: 4),
+                Text(title, style: theme.textTheme.titleLarge),
+                Text(text, style: theme.textTheme.bodyMedium),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
