@@ -22,22 +22,33 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// The two looks of the app, switchable in the settings.
+/// The looks of the app, switchable in the settings.
 enum AppStyle {
   /// Night blue, violet and cyan with glowing HUD panels.
   holo,
 
   /// Loud meme look: neon pink, toxic lime, comic type and sticker cards.
   brainrot,
+
+  /// Blue and white like the flag of Israel, with Rubik type, stars of David
+  /// and Israeli everyday slang. Uses the clean holo panels.
+  israel,
 }
 
 /// The current look. Changing it rebuilds the whole app (see [setAppStyle]).
 final appStyle = ValueNotifier(AppStyle.holo);
 
 bool get isBrainrot => appStyle.value == AppStyle.brainrot;
+bool get isIsrael => appStyle.value == AppStyle.israel;
 
-/// Picks the text for the current look.
-String br(String holo, String brainrot) => isBrainrot ? brainrot : holo;
+/// Picks the text for the current look. Without an [israel] text, the
+/// israel look uses the holo text.
+String br(String holo, String brainrot, [String? israel]) =>
+    switch (appStyle.value) {
+      AppStyle.brainrot => brainrot,
+      AppStyle.israel => israel ?? holo,
+      AppStyle.holo => holo,
+    };
 
 const _styleKey = "appStyle";
 
@@ -57,51 +68,45 @@ Future<void> setAppStyle(AppStyle style) async {
   await prefs.setString(_styleKey, style.name);
 }
 
-/// Colors of the current look. "violet" and "cyan" are the two accent roles;
-/// in the brainrot look they are hot pink and toxic lime.
+Color _pick(int holo, int brainrot, int israel) => Color(
+      switch (appStyle.value) {
+        AppStyle.holo => holo,
+        AppStyle.brainrot => brainrot,
+        AppStyle.israel => israel,
+      },
+    );
+
+/// Colors of the current look. "violet" and "cyan" are the two accent roles:
+/// hot pink and toxic lime in the brainrot look, flag blue and sky blue in
+/// the israel look.
 class AppColors {
-  static bool get _b => isBrainrot;
+  static Color get violet => _pick(0xFF7C5CFF, 0xFFFF2E93, 0xFF2F6BFF);
+  static Color get violetDeep => _pick(0xFF5B3DF5, 0xFFD1006E, 0xFF0038B8);
+  static Color get cyan => _pick(0xFF22D3EE, 0xFFB6FF00, 0xFF7CC4FF);
+  static Color get cyanDeep => _pick(0xFF0891B2, 0xFF4F7A00, 0xFF1F6FD1);
 
-  static Color get violet =>
-      _b ? const Color(0xFFFF2E93) : const Color(0xFF7C5CFF);
-  static Color get violetDeep =>
-      _b ? const Color(0xFFD1006E) : const Color(0xFF5B3DF5);
-  static Color get cyan =>
-      _b ? const Color(0xFFB6FF00) : const Color(0xFF22D3EE);
-  static Color get cyanDeep =>
-      _b ? const Color(0xFF4F7A00) : const Color(0xFF0891B2);
-
-  static Color get success =>
-      _b ? const Color(0xFF00FF85) : const Color(0xFF2DD4A3);
-  static Color get warning =>
-      _b ? const Color(0xFFFFE600) : const Color(0xFFF5B544);
-  static Color get danger =>
-      _b ? const Color(0xFFFF3B30) : const Color(0xFFFF5C7A);
+  static Color get success => _pick(0xFF2DD4A3, 0xFF00FF85, 0xFF2DBE8C);
+  static Color get warning => _pick(0xFFF5B544, 0xFFFFE600, 0xFFF2B33D);
+  static Color get danger => _pick(0xFFFF5C7A, 0xFFFF3B30, 0xFFE5484D);
 
   // dark
-  static Color get night =>
-      _b ? const Color(0xFF14001F) : const Color(0xFF0A0E1A);
-  static Color get nightSurface =>
-      _b ? const Color(0xFF23003A) : const Color(0xFF111729);
+  static Color get night => _pick(0xFF0A0E1A, 0xFF14001F, 0xFF06102E);
+  static Color get nightSurface => _pick(0xFF111729, 0xFF23003A, 0xFF0C1A45);
   static Color get nightSurfaceHigh =>
-      _b ? const Color(0xFF320A52) : const Color(0xFF182038);
-  static Color get nightOutline =>
-      _b ? const Color(0xFF7A2BC4) : const Color(0xFF26304D);
+      _pick(0xFF182038, 0xFF320A52, 0xFF132558);
+  static Color get nightOutline => _pick(0xFF26304D, 0xFF7A2BC4, 0xFF24407F);
 
   // light
-  static Color get frost =>
-      _b ? const Color(0xFFFFF6B0) : const Color(0xFFF4F6FB);
+  static Color get frost => _pick(0xFFF4F6FB, 0xFFFFF6B0, 0xFFF7FAFF);
   static Color get frostSurfaceHigh =>
-      _b ? const Color(0xFFFFE94D) : const Color(0xFFEAEEF8);
-  static Color get frostOutline =>
-      _b ? const Color(0xFF111111) : const Color(0xFFD8DEEC);
-  static Color get ink =>
-      _b ? const Color(0xFF111111) : const Color(0xFF0E1426);
+      _pick(0xFFEAEEF8, 0xFFFFE94D, 0xFFE8EFFC);
+  static Color get frostOutline => _pick(0xFFD8DEEC, 0xFF111111, 0xFFC9D6F2);
+  static Color get ink => _pick(0xFF0E1426, 0xFF111111, 0xFF0A1A44);
 
   static LinearGradient get accentGradient => LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: _b ? [violet, warning, cyan] : [violet, cyan],
+        colors: isBrainrot ? [violet, warning, cyan] : [violet, cyan],
       );
 }
 
@@ -111,7 +116,9 @@ ThemeData buildAppTheme(Brightness brightness, {TargetPlatform? platform}) {
     brightness: brightness,
     primary: dark ? AppColors.violet : AppColors.violetDeep,
     onPrimary: Colors.white,
-    primaryContainer: dark ? const Color(0xFF2A2163) : const Color(0xFFE6E0FF),
+    primaryContainer: isIsrael
+        ? (dark ? const Color(0xFF102A6B) : const Color(0xFFDCE7FF))
+        : (dark ? const Color(0xFF2A2163) : const Color(0xFFE6E0FF)),
     onPrimaryContainer:
         dark ? const Color(0xFFE3DCFF) : const Color(0xFF1C1060),
     secondary: dark ? AppColors.cyan : AppColors.cyanDeep,
@@ -148,9 +155,13 @@ ThemeData buildAppTheme(Brightness brightness, {TargetPlatform? platform}) {
           ? GoogleFonts.comicNeueTextTheme(
               ThemeData(brightness: brightness).textTheme,
             )
-          : GoogleFonts.interTextTheme(
-              ThemeData(brightness: brightness).textTheme,
-            ))
+          : isIsrael
+              ? GoogleFonts.rubikTextTheme(
+                  ThemeData(brightness: brightness).textTheme,
+                )
+              : GoogleFonts.interTextTheme(
+                  ThemeData(brightness: brightness).textTheme,
+                ))
       .apply(bodyColor: scheme.onSurface, displayColor: scheme.onSurface);
   TextStyle? display(TextStyle? s, {FontWeight weight = FontWeight.w600}) =>
       isBrainrot
@@ -159,11 +170,17 @@ ThemeData buildAppTheme(Brightness brightness, {TargetPlatform? platform}) {
               fontWeight: FontWeight.w400,
               letterSpacing: 1.2,
             )
-          : GoogleFonts.sora(
-              textStyle: s,
-              fontWeight: weight,
-              letterSpacing: -0.4,
-            );
+          : isIsrael
+              ? GoogleFonts.rubik(
+                  textStyle: s,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.2,
+                )
+              : GoogleFonts.sora(
+                  textStyle: s,
+                  fontWeight: weight,
+                  letterSpacing: -0.4,
+                );
   final textTheme = baseText.copyWith(
     displayLarge: display(baseText.displayLarge),
     displayMedium: display(baseText.displayMedium),
@@ -443,10 +460,77 @@ class _AuroraPainter extends CustomPainter {
     }
   }
 
+  /// Two equilateral triangles: a star of David.
+  void _star(Canvas canvas, Offset c, double r, Paint paint) {
+    for (final start in [-math.pi / 2, math.pi / 2]) {
+      final path = Path();
+      for (var i = 0; i < 3; i++) {
+        final a = start + i * 2 * math.pi / 3;
+        final p = c + Offset(math.cos(a) * r, math.sin(a) * r);
+        i == 0 ? path.moveTo(p.dx, p.dy) : path.lineTo(p.dx, p.dy);
+      }
+      path.close();
+      canvas.drawPath(path, paint);
+    }
+  }
+
+  void _paintIsrael(Canvas canvas, Size size) {
+    final blue = AppColors.violetDeep;
+    // The flag's two stripes.
+    final stripe = Paint()..color = blue.withValues(alpha: dark ? 0.55 : 0.85);
+    final h = size.height;
+    final t = math.max(10.0, h * 0.022);
+    canvas.drawRect(Rect.fromLTWH(0, h * 0.05, size.width, t), stripe);
+    canvas.drawRect(Rect.fromLTWH(0, h * 0.95 - t, size.width, t), stripe);
+    // A large, faint star in the middle.
+    _star(
+      canvas,
+      size.center(Offset.zero),
+      size.shortestSide * 0.32,
+      Paint()
+        ..color = blue.withValues(alpha: dark ? 0.10 : 0.07)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = size.shortestSide * 0.02,
+    );
+    // Small stars and emojis, always in the same places.
+    final random = math.Random(5);
+    final small = Paint()
+      ..color = blue.withValues(alpha: dark ? 0.16 : 0.12)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.6;
+    const emojis = ["🇮🇱", "🥙", "🌊", "☀️", "🐪", "🫓", "🍊", "🏖️"];
+    final count = (size.width * size.height / 30000).clamp(10, 60).round();
+    for (var i = 0; i < count; i++) {
+      final pos = Offset(
+        random.nextDouble() * size.width,
+        h * 0.08 + random.nextDouble() * h * 0.84,
+      );
+      if (i.isEven) {
+        _star(canvas, pos, 9 + random.nextDouble() * 8, small);
+      } else {
+        final painter = TextPainter(
+          text: TextSpan(
+            text: emojis[random.nextInt(emojis.length)],
+            style: TextStyle(
+              fontSize: 18 + random.nextDouble() * 12,
+              color: Colors.white.withValues(alpha: dark ? 0.18 : 0.35),
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+        )..layout();
+        painter.paint(canvas, pos);
+      }
+    }
+  }
+
   @override
   void paint(Canvas canvas, Size size) {
     if (isBrainrot) {
       _paintBrainrot(canvas, size);
+      return;
+    }
+    if (isIsrael) {
+      _paintIsrael(canvas, size);
       return;
     }
     void glow(Offset center, double radius, Color color, double alpha) {

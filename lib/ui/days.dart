@@ -395,7 +395,7 @@ class _DaysWidgetState extends State<DaysWidget> {
         ],
       ),
       homeAppBar: ResponsiveAppBar(
-        title: Text(br("Register", "Register 🧠🔥")),
+        title: Text(br("Register", "Register 🧠🔥", "Register 🇮🇱")),
         actions: <Widget>[
           if (widget.vm.noInternet)
             TextButton(
@@ -732,8 +732,7 @@ class _TimelinePainter extends CustomPainter {
     canvas.drawCircle(
       const Offset(x, nodeY),
       highlighted ? 11 : 8,
-      Paint()
-        ..color = nodeColor.withValues(alpha: 0.22),
+      Paint()..color = nodeColor.withValues(alpha: 0.22),
     );
     canvas.drawCircle(
       const Offset(x, nodeY),

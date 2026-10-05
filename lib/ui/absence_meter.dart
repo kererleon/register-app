@@ -29,11 +29,21 @@ double? parseAbsencePercentage(String? value) =>
 /// Traffic light for the share of missed lessons.
 (Color, String) absenceLevel(double percent) {
   if (percent < 10)
-    return (AppColors.success, br("Im grünen Bereich", "Chillig 😎"));
-  if (percent < 18) return (AppColors.warning, br("Aufpassen", "Sus 👀"));
+    return (
+      AppColors.success,
+      br("Im grünen Bereich", "Chillig 😎", "Sababa 👌")
+    );
+  if (percent < 18)
+    return (
+      AppColors.warning,
+      br("Aufpassen", "Sus 👀", "Aufpassen, chabibi 👀")
+    );
   if (percent < absenceLimitPercent)
-    return (AppColors.danger, br("Kritisch", "Gefährlich 💀"));
-  return (AppColors.danger, br("Über der Grenze", "Game over 💀"));
+    return (AppColors.danger, br("Kritisch", "Gefährlich 💀", "Oy vey! 😬"));
+  return (
+    AppColors.danger,
+    br("Über der Grenze", "Game over 💀", "Über der Grenze 😬")
+  );
 }
 
 /// A bar from 0 to the 25 % limit with the student's current share.

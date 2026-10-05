@@ -489,8 +489,10 @@ class _LoginHeader extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            br("Noten, Hausaufgaben und Absenzen an einem Ort",
-                "Noten, Hausaufgaben & Absenzen. No cap. 🧠🔥"),
+            br(
+                "Noten, Hausaufgaben und Absenzen an einem Ort",
+                "Noten, Hausaufgaben & Absenzen. No cap. 🧠🔥",
+                "Shalom! Noten, Hausaufgaben und Absenzen an einem Ort 🇮🇱"),
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyMedium
                 ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
