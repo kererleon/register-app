@@ -29,15 +29,20 @@ TextStyle mono(TextStyle? base, {FontWeight? weight}) {
   // Looking up a Google font is not free and this runs for every label in
   // long lists, so the font part is created once per look and weight.
   final font = _monoFonts.putIfAbsent(
-    (isBrainrot, weight),
-    () => isBrainrot
-        ? GoogleFonts.bangers(letterSpacing: 1.1)
-        : GoogleFonts.jetBrainsMono(fontWeight: weight),
+    (appStyle.value, weight),
+    () => switch (appStyle.value) {
+      AppStyle.brainrot => GoogleFonts.bangers(letterSpacing: 1.1),
+      AppStyle.israel => GoogleFonts.rubik(
+          fontWeight: weight ?? FontWeight.w700,
+          letterSpacing: 0.4,
+        ),
+      AppStyle.holo => GoogleFonts.jetBrainsMono(fontWeight: weight),
+    },
   );
   return (base ?? const TextStyle()).merge(font);
 }
 
-final _monoFonts = <(bool, FontWeight?), TextStyle>{};
+final _monoFonts = <(AppStyle, FontWeight?), TextStyle>{};
 
 /// Color for a grade on the 1–10 scale used in South Tyrol.
 Color gradeColor(double? grade) {
@@ -141,7 +146,7 @@ class HoloPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (isBrainrot) return _buildSticker(context);
+    if (isStickerStyle) return _buildSticker(context);
     final scheme = Theme.of(context).colorScheme;
     final dark = scheme.brightness == Brightness.dark;
     final brackets =

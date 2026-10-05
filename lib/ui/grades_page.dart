@@ -137,11 +137,11 @@ class _GradesOverview extends StatelessWidget {
                                 ? br(
                                     "Alles im grünen Bereich",
                                     "W Rizz, alles grün 🔥",
-                                    "Alles im grünen Bereich – Sababa! 👌")
+                                    "Sababa, alles grün 🇮🇱")
                                 : br(
                                     "Unter der Genügend-Grenze",
                                     "Kritisch, lock in 😭",
-                                    "Oy vey – unter der Genügend-Grenze 😅"),
+                                    "Oy vey – yalla, lernen 😵"),
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: gradeColor(average),
                         ),

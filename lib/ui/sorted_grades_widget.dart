@@ -70,7 +70,7 @@ class SortedGradesWidget extends StatelessWidget {
             ],
           ),
         ),
-        SectionLabel(br("Fächer", "Fächer 📚")),
+        SectionLabel(br("Fächer", "Fächer 📚", "Fächer 📚 Tachles")),
         for (final s in vm.subjects)
           SubjectWidget(
             subject: s,
@@ -212,7 +212,7 @@ class _SubjectWidgetState extends State<SubjectWidget> {
                 ),
               if (average != null && average / 100 < passMark)
                 StatusPill(
-                  label: br("unter 6", "Ohio 🌽", "Oy vey · unter 6"),
+                  label: br("unter 6", "Ohio 🌽", "Oy vey 🫠 unter 6"),
                   color: AppColors.danger,
                   icon: Icons.warning_amber_rounded,
                 ),
@@ -501,12 +501,12 @@ class _ForecastPanelState extends State<_ForecastPanel> {
     final (headline, color) = switch (forecast.kind) {
       ForecastKind.safe => (
           br("Schon sicher", "Schon safe, sigma 🗿",
-              "Schon sicher – Sababa! 👌"),
+              "Sababa achi, schon sicher 😎"),
           AppColors.success
         ),
       ForecastKind.impossible => (
           br("Mit einem Test nicht erreichbar", "Unmöglich, L + ratio 💀",
-              "Oy vey – mit einem Test nicht erreichbar 😅"),
+              "Oy vey – nicht mal mit 10 😵"),
           AppColors.danger
         ),
       ForecastKind.reachable => (
@@ -526,7 +526,7 @@ class _ForecastPanelState extends State<_ForecastPanel> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           HudLabel(br("Was brauche ich?", "Was brauche ich? 🤔",
-              "Was brauche ich? 🤔")),
+              "Tachles: was brauche ich? 🤔")),
           if (widget.nextTest != null) ...[
             const SizedBox(height: 8),
             Row(
