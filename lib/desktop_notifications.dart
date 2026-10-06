@@ -40,7 +40,20 @@ const _darwin = DarwinNotificationDetails(
   presentList: true,
   presentSound: true,
 );
-const _details = NotificationDetails(macOS: _darwin, iOS: _darwin);
+const _android = AndroidNotificationDetails(
+  "register_updates",
+  "Neuigkeiten aus dem Register",
+  channelDescription:
+      "Neue Noten, Aufgaben, Mitteilungen und Änderungen im Stundenplan",
+  importance: Importance.high,
+  priority: Priority.high,
+);
+const _details = NotificationDetails(
+  macOS: _darwin,
+  iOS: _darwin,
+  android: _android,
+  windows: WindowsNotificationDetails(),
+);
 
 Future<void> _show(int id, String title, String body) async {
   if (!await _ensureInitialized()) return;
@@ -57,7 +70,8 @@ const _maxRemembered = 500;
 final _plugin = FlutterLocalNotificationsPlugin();
 bool _initialized = false;
 
-bool get desktopNotificationsSupported => Platform.isMacOS || Platform.isIOS;
+bool get desktopNotificationsSupported =>
+    Platform.isMacOS || Platform.isIOS || Platform.isAndroid || Platform.isWindows;
 
 Future<bool> _ensureInitialized() async {
   if (!desktopNotificationsSupported) return false;
@@ -65,8 +79,31 @@ Future<bool> _ensureInitialized() async {
   try {
     const darwin = DarwinInitializationSettings();
     await _plugin.initialize(
-      settings: const InitializationSettings(macOS: darwin, iOS: darwin),
+      settings: const InitializationSettings(
+        macOS: darwin,
+        iOS: darwin,
+        android: AndroidInitializationSettings("@mipmap/launcher_icon"),
+        windows: WindowsInitializationSettings(
+          appName: "Register",
+          appUserModelId: "kererleon.Register",
+          guid: "6f3c2a91-4d7e-4b8a-9c15-2e8f0d6a7b34",
+        ),
+      ),
     );
+    _initialized = true;
+    // ignore: avoid_catches_without_on_clauses
+  } catch (e) {
+    // Also errors: without a platform plugin (e.g. in tests) this throws one.
+    log("Notifications not available", error: e);
+    return false;
+  }
+  // Asking for permission needs a visible app; in the background it fails,
+  // which must not stop the notifications themselves.
+  try {
+    await _plugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.requestNotificationsPermission();
     await _plugin
         .resolvePlatformSpecificImplementation<
             MacOSFlutterLocalNotificationsPlugin>()
@@ -75,11 +112,10 @@ Future<bool> _ensureInitialized() async {
         .resolvePlatformSpecificImplementation<
             IOSFlutterLocalNotificationsPlugin>()
         ?.requestPermissions(alert: true, badge: true, sound: true);
-    _initialized = true;
-  } on Exception catch (e) {
-    log("Notifications not available", error: e);
+  } on Object catch (e) {
+    log("Could not ask for notification permission", error: e);
   }
-  return _initialized;
+  return true;
 }
 
 /// A key that changes whenever an entry is added or changed.
@@ -193,56 +229,179 @@ Future<void> notifyServerNotifications(AppState state) async {
 String _teacherNames(CalendarHour hour) =>
     hour.teachers.map((t) => "${t.firstName} ${t.lastName}").join(", ");
 
-/// Remembers who teaches each lesson and announces when that changes, e.g.
-/// because of a substitution ("Supplenz"). Only lessons from today on count.
+const _usualKey = "usualTeachers";
+const _notifiedLessonKey = "notifiedLessonChanges";
+
+Map<String, String> _readMap(SharedPreferences prefs, String key) {
+  final raw = prefs.getString(key);
+  return raw == null ? {} : Map<String, String>.from(jsonDecode(raw) as Map);
+}
+
+/// Who usually teaches a subject: the teacher seen in most of its lessons,
+/// once there are enough lessons to tell.
+String? _usualTeacher(Map<String, dynamic> counts) {
+  if (counts.isEmpty) return null;
+  final total = counts.values.fold<int>(0, (a, b) => a + (b as int));
+  final top = counts.entries.reduce((a, b) => (a.value as int) >= (b.value as int) ? a : b);
+  if (total < 3 || (top.value as int) / total < 0.6) return null;
+  return top.key;
+}
+
+/// Remembers every lesson and announces changes from today on: substitutions
+/// ("Supplenz"), a teacher other than the usual one, cancelled lessons, room
+/// changes and new lessons.
 Future<void> notifySubstitutions(
   AppState state,
   Iterable<UtcDateTime> dates,
 ) async {
   if (!desktopNotificationsSupported) return;
   final prefs = await SharedPreferences.getInstance();
-  final raw = prefs.getString(_lessonsKey);
-  final known = raw == null
-      ? <String, String>{}
-      : Map<String, String>.from(jsonDecode(raw) as Map);
+  final known = _readMap(prefs, _lessonsKey);
+  final firstRun = known.isEmpty;
+  final rawUsual = prefs.getString(_usualKey);
+  final usual = rawUsual == null
+      ? <String, Map<String, dynamic>>{}
+      : (jsonDecode(rawUsual) as Map).map(
+          (k, v) => MapEntry(k as String, Map<String, dynamic>.from(v as Map)),
+        );
+  final notified = {...?prefs.getStringList(_notifiedLessonKey)};
   final today = UtcDateTime.now().stripTime();
-  final changes = <String>[];
+  final changes = <(String, String, String)>[]; // (id, title, text)
+
   for (final date in dates) {
     final day = state.calendarState.days[date];
-    if (day == null || date.isBefore(today)) continue;
+    if (day == null) continue;
+    final dateKey = DateFormat("yyyy-MM-dd").format(date);
     final dayLabel = DateFormat("EE dd.MM.", "de").format(date);
+    final upcoming = !date.isBefore(today);
+    final present = <String>{};
     for (final hour in day.hours) {
-      final key = "${DateFormat("yyyy-MM-dd").format(date)}|${hour.fromHour}";
-      final now = "${hour.subject}|${_teacherNames(hour)}";
+      final key = "$dateKey|${hour.fromHour}";
+      present.add(key);
+      final teachers = _teacherNames(hour);
+      final rooms = hour.rooms.join(", ");
+      final now = "${hour.subject}|$teachers|$rooms";
       final before = known[key];
       known[key] = now;
-      if (before == null || before == now) continue;
-      final parts = before.split("|");
-      final oldSubject = parts.first;
-      final oldTeachers = parts.length > 1 ? parts[1] : "";
-      if (oldTeachers == _teacherNames(hour) && oldSubject == hour.subject) {
+      final where = "$dayLabel, ${hour.fromHour}. Stunde";
+
+      if (before == null) {
+        // Learn who usually teaches the subject.
+        final counts = usual.putIfAbsent(hour.subject, () => {});
+        for (final t in hour.teachers) {
+          final name = "${t.firstName} ${t.lastName}";
+          counts[name] = ((counts[name] as int?) ?? 0) + 1;
+        }
+        if (!upcoming || firstRun) continue;
+        final regular = _usualTeacher(usual[hour.subject]!);
+        if (regular != null &&
+            hour.teachers.isNotEmpty &&
+            !teachers.contains(regular)) {
+          changes.add((
+            "$key@sub@$teachers",
+            "Supplenz: ${hour.subject}",
+            "$where – $teachers statt $regular",
+          ));
+        }
         continue;
       }
-      changes.add(
-        "$dayLabel, ${hour.fromHour}. Stunde: "
-        "${oldSubject == hour.subject ? hour.subject : "$oldSubject → ${hour.subject}"} "
-        "– jetzt ${_teacherNames(hour).isEmpty ? "ohne Lehrperson" : _teacherNames(hour)}"
-        "${oldTeachers.isEmpty ? "" : " statt $oldTeachers"}",
-      );
+      if (!upcoming || before == now) continue;
+      final old = before.split("|");
+      final oldSubject = old[0];
+      final oldTeachers = old.length > 1 ? old[1] : "";
+      final oldRooms = old.length > 2 ? old[2] : "";
+      if (oldSubject != hour.subject) {
+        changes.add((
+          "$key@subject@$now",
+          "Stundenplan geändert",
+          "$where: ${hour.subject} statt $oldSubject"
+              "${teachers.isEmpty ? "" : " ($teachers)"}",
+        ));
+      } else if (oldTeachers != teachers) {
+        changes.add((
+          "$key@teacher@$now",
+          "Supplenz: ${hour.subject}",
+          "$where – ${teachers.isEmpty ? "ohne Lehrperson" : teachers}"
+              "${oldTeachers.isEmpty ? "" : " statt $oldTeachers"}",
+        ));
+      } else if (oldRooms != rooms && rooms.isNotEmpty) {
+        changes.add((
+          "$key@room@$now",
+          "Raumänderung: ${hour.subject}",
+          "$where – jetzt in $rooms${oldRooms.isEmpty ? "" : " statt $oldRooms"}",
+        ));
+      }
+    }
+    // Lessons that were there before and are gone now: cancelled.
+    final gone = known.keys
+        .where((k) => k.startsWith("$dateKey|") && !present.contains(k))
+        .toList();
+    for (final key in gone) {
+      final old = known.remove(key)!.split("|");
+      if (!upcoming || firstRun) continue;
+      final hourNo = key.split("|")[1];
+      changes.add((
+        "$key@gone",
+        "Stunde entfällt: ${old[0]}",
+        "$dayLabel, $hourNo. Stunde${old.length > 1 && old[1].isNotEmpty ? " (${old[1]})" : ""}",
+      ));
     }
   }
-  // Forget lessons that are over.
+
+  // Forget lessons that are long over.
   known.removeWhere((key, _) {
     final date = UtcDateTime.tryParse(key.split("|").first);
     return date == null ||
         date.isBefore(today.subtract(const Duration(days: 7)));
   });
+  final fresh = changes.where((c) => !notified.contains(c.$1)).toList();
+  notified.addAll(fresh.map((c) => c.$1));
+  final notifiedList = notified.toList();
   await prefs.setString(_lessonsKey, jsonEncode(known));
-  for (final change in changes.take(4)) {
-    await _show(change.hashCode, "Supplenz / Lehrerwechsel", change);
+  await prefs.setString(_usualKey, jsonEncode(usual));
+  await prefs.setStringList(
+    _notifiedLessonKey,
+    notifiedList.length > _maxRemembered
+        ? notifiedList.sublist(notifiedList.length - _maxRemembered)
+        : notifiedList,
+  );
+  for (final (id, title, text) in fresh.take(4)) {
+    await _show(id.hashCode, title, text);
   }
-  if (changes.length > 4) {
-    await _show(2, "${changes.length} Änderungen im Stundenplan",
-        "Öffne den Kalender in Register.");
+  if (fresh.length > 4) {
+    await _show(
+      2,
+      "${fresh.length} Änderungen im Stundenplan",
+      "Öffne den Kalender in Register.",
+    );
+  }
+}
+
+const _seenMessagesKey = "notifiedMessages";
+
+/// Announces messages ("Mitteilungen") that are unread and not announced yet.
+Future<void> notifyNewMessages(AppState state) async {
+  if (!desktopNotificationsSupported) return;
+  final messages = state.messagesState.messages;
+  final prefs = await SharedPreferences.getInstance();
+  final stored = prefs.getStringList(_seenMessagesKey);
+  final seen = {...?stored};
+  final fresh =
+      messages.where((m) => m.isNew && !seen.contains("${m.id}")).toList();
+  seen.addAll(messages.map((m) => "${m.id}"));
+  final list = seen.toList();
+  await prefs.setStringList(
+    _seenMessagesKey,
+    list.length > _maxRemembered
+        ? list.sublist(list.length - _maxRemembered)
+        : list,
+  );
+  if (stored == null || fresh.isEmpty) return;
+  for (final m in fresh.take(3)) {
+    await _show("message-${m.id}".hashCode, "Neue Mitteilung: ${m.subject}",
+        "Von ${m.fromName}");
+  }
+  if (fresh.length > 3) {
+    await _show(3, "${fresh.length} neue Mitteilungen", "Öffne Register, um sie zu lesen.");
   }
 }

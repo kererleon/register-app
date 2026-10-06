@@ -24,6 +24,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart'
     as secure_storage;
 import 'package:hive/hive.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // This file contains wrappers to make initial desktop compatibility easier.
 
@@ -39,7 +40,34 @@ secure_storage.FlutterSecureStorage getFlutterSecureStorage() {
       aOptions: secure_storage.AndroidOptions(
         encryptedSharedPreferences: true,
       ),
+      iOptions: _iosOptions,
     );
+  }
+}
+
+/// Readable after the first unlock since the iPhone was started, so the
+/// background check works while the phone is locked. Still encrypted.
+const _iosOptions = secure_storage.IOSOptions(
+  accessibility: secure_storage.KeychainAccessibility.first_unlock,
+);
+
+/// Moves keychain items saved with the old "only while unlocked" setting to
+/// [_iosOptions]. Runs once.
+Future<void> migrateIosKeychain() async {
+  if (!Platform.isIOS) return;
+  final prefs = await SharedPreferences.getInstance();
+  if (prefs.getBool("keychainMigrated") ?? false) return;
+  try {
+    const old = secure_storage.FlutterSecureStorage();
+    const updated = secure_storage.FlutterSecureStorage(iOptions: _iosOptions);
+    final items = await old.readAll();
+    for (final entry in items.entries) {
+      await old.delete(key: entry.key);
+      await updated.write(key: entry.key, value: entry.value);
+    }
+    await prefs.setBool("keychainMigrated", true);
+  } on Object {
+    // Try again on the next start.
   }
 }
 
