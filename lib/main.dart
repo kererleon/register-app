@@ -37,6 +37,7 @@ import 'package:dr/ui/grades_chart_page.dart';
 import 'package:dr/util.dart';
 import 'package:dr/teacher_photos.dart';
 import 'package:dr/ui/theme.dart';
+import 'package:dr/window_title_bar.dart';
 import 'package:dynamic_theme/dynamic_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_built_redux/flutter_built_redux.dart';
@@ -160,83 +161,86 @@ class RegisterApp extends StatelessWidget {
         }
         return buildAppTheme(brightness, platform: platform);
       },
-      themedWidgetBuilder: (context, theme) => MaterialApp(
-        localizationsDelegates: const [
-          GlobalCupertinoLocalizations.delegate,
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-        ],
-        supportedLocales: const [
-          Locale("de"),
-        ],
-        navigatorKey: navigatorKey,
-        scaffoldMessengerKey: scaffoldMessengerKey,
-        initialRoute: "/",
-        onGenerateRoute: (RouteSettings settings) {
-          final List<String> pathElements = settings.name!.split("/");
-          if (pathElements[0] != "") return null;
-          switch (pathElements[1]) {
-            case "":
-              return MaterialPageRoute<void>(
-                settings: settings,
-                builder: (_) => HomePage(),
-              );
-            case "login":
-              return MaterialPageRoute<void>(
-                settings: settings,
-                builder: (_) => LoginPage(),
-              );
-            case "request_pass_reset":
-              return MaterialPageRoute<void>(
-                settings: settings,
-                builder: (_) => RequestPassResetContainer(),
-              );
-            case "pass_reset":
-              return MaterialPageRoute<void>(
-                settings: settings,
-                builder: (_) => PassResetContainer(),
-              );
-            case "change_email":
-              return MaterialPageRoute<void>(
-                settings: settings,
-                builder: (_) => ChangeEmailContainer(),
-              );
-            case "profile":
-              return MaterialPageRoute<void>(
-                settings: settings,
-                builder: (_) => ProfileContainer(),
-              );
-            case "notifications":
-              return MaterialPageRoute<void>(
-                settings: settings,
-                builder: (_) => NotificationPageContainer(),
-                fullscreenDialog: true,
-              );
-            case "gradesChart":
-              return MaterialPageRoute<void>(
-                settings: settings,
-                builder: (_) => const GradesChartPage(),
-                fullscreenDialog: true,
-              );
-            case "gradeCalculator":
-              return MaterialPageRoute<void>(
-                settings: settings,
-                builder: (_) => const GradeCalculator(),
-                fullscreenDialog: true,
-              );
-            case "settings":
-              return MaterialPageRoute<void>(
-                settings: settings,
-                builder: (_) => SettingsPageContainer(),
-                fullscreenDialog: true,
-              );
-            default:
-              throw Exception("Unknown Route ${pathElements[1]}");
-          }
-        },
-        theme: theme,
-        debugShowCheckedModeBanner: false,
-      ),
+      themedWidgetBuilder: (context, theme) {
+        syncWindowTitleBar(theme);
+        return MaterialApp(
+          localizationsDelegates: const [
+            GlobalCupertinoLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+          ],
+          supportedLocales: const [
+            Locale("de"),
+          ],
+          navigatorKey: navigatorKey,
+          scaffoldMessengerKey: scaffoldMessengerKey,
+          initialRoute: "/",
+          onGenerateRoute: (RouteSettings settings) {
+            final List<String> pathElements = settings.name!.split("/");
+            if (pathElements[0] != "") return null;
+            switch (pathElements[1]) {
+              case "":
+                return MaterialPageRoute<void>(
+                  settings: settings,
+                  builder: (_) => HomePage(),
+                );
+              case "login":
+                return MaterialPageRoute<void>(
+                  settings: settings,
+                  builder: (_) => LoginPage(),
+                );
+              case "request_pass_reset":
+                return MaterialPageRoute<void>(
+                  settings: settings,
+                  builder: (_) => RequestPassResetContainer(),
+                );
+              case "pass_reset":
+                return MaterialPageRoute<void>(
+                  settings: settings,
+                  builder: (_) => PassResetContainer(),
+                );
+              case "change_email":
+                return MaterialPageRoute<void>(
+                  settings: settings,
+                  builder: (_) => ChangeEmailContainer(),
+                );
+              case "profile":
+                return MaterialPageRoute<void>(
+                  settings: settings,
+                  builder: (_) => ProfileContainer(),
+                );
+              case "notifications":
+                return MaterialPageRoute<void>(
+                  settings: settings,
+                  builder: (_) => NotificationPageContainer(),
+                  fullscreenDialog: true,
+                );
+              case "gradesChart":
+                return MaterialPageRoute<void>(
+                  settings: settings,
+                  builder: (_) => const GradesChartPage(),
+                  fullscreenDialog: true,
+                );
+              case "gradeCalculator":
+                return MaterialPageRoute<void>(
+                  settings: settings,
+                  builder: (_) => const GradeCalculator(),
+                  fullscreenDialog: true,
+                );
+              case "settings":
+                return MaterialPageRoute<void>(
+                  settings: settings,
+                  builder: (_) => SettingsPageContainer(),
+                  fullscreenDialog: true,
+                );
+              default:
+                throw Exception("Unknown Route ${pathElements[1]}");
+            }
+          },
+          theme: theme,
+          debugShowCheckedModeBanner: false,
+        );
+      },
     );
   }
 }

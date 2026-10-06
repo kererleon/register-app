@@ -81,19 +81,22 @@ class MessagesPage extends StatelessWidget {
                         ],
                       ),
                     ),
-                  ListView.builder(
-                    padding: const EdgeInsets.symmetric(vertical: 10),
-                    itemCount: state!.messages.length,
-                    itemBuilder: (context, i) {
-                      return MessageWidget(
-                        message: state!.messages[i],
-                        onOpenFile: onOpenFile,
-                        onMarkAsRead: onMarkAsRead,
-                        noInternet: noInternet,
-                        expand: state!.messages[i].id == state!.showMessage,
-                      );
-                    },
-                  ),
+                  LayoutBuilder(
+                      builder: (context, constraints) => ListView.builder(
+                            padding: readablePadding(constraints.maxWidth,
+                                const EdgeInsets.symmetric(vertical: 10)),
+                            itemCount: state!.messages.length,
+                            itemBuilder: (context, i) {
+                              return MessageWidget(
+                                message: state!.messages[i],
+                                onOpenFile: onOpenFile,
+                                onMarkAsRead: onMarkAsRead,
+                                noInternet: noInternet,
+                                expand:
+                                    state!.messages[i].id == state!.showMessage,
+                              );
+                            },
+                          )),
                 ],
               ),
             ),

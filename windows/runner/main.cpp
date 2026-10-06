@@ -26,7 +26,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
 
   FlutterWindow window(project);
   Win32Window::Point origin(10, 10);
-  Win32Window::Size size(1280, 720);
+  // Roughly tablet-sized: the app's layout looks best at this size.
+  Win32Window::Size size(1120, 780);
   if (!window.Create(L"Register", origin, size)) {
     return EXIT_FAILURE;
   }

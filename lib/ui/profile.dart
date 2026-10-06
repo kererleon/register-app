@@ -51,66 +51,72 @@ class Profile extends StatelessWidget {
                   ? const NoInternet()
                   : const CircularProgressIndicator(),
             )
-          : ListView(
-              padding: const EdgeInsets.only(bottom: 32),
-              children: <Widget>[
-                UserProfile(
-                  name: profileState.name!,
-                  username: profileState.username!,
-                  role: profileState.roleName!,
-                ),
-                const SectionLabel("Benachrichtigungen"),
-                HoloPanel(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: SwitchListTile.adaptive(
-                    secondary: Icon(
-                      Icons.mark_email_unread_outlined,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    title: const Text("Emails für Benachrichtigungen senden"),
-                    value: profileState.sendNotificationEmails!,
-                    onChanged: noInternet ? null : setSendNotificationEmails,
-                  ),
-                ),
-                const SectionLabel("Zugang"),
-                HoloPanel(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Column(
-                    children: [
-                      ListTile(
-                        leading: Icon(
-                          Icons.alternate_email_rounded,
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                        title: const Text("Email-Adresse ändern"),
-                        subtitle: Text(
-                          profileState.email!,
-                          style: mono(Theme.of(context).textTheme.bodySmall),
-                        ),
-                        trailing: const Icon(Icons.chevron_right_rounded),
-                        onTap: changeEmail,
-                        enabled: !noInternet,
+          : LayoutBuilder(
+              builder: (context, constraints) => ListView(
+                    padding: readablePadding(constraints.maxWidth,
+                        const EdgeInsets.only(bottom: 32)),
+                    children: <Widget>[
+                      UserProfile(
+                        name: profileState.name!,
+                        username: profileState.username!,
+                        role: profileState.roleName!,
                       ),
-                      Divider(
-                        indent: 16,
-                        endIndent: 16,
-                        color: Theme.of(context).colorScheme.outlineVariant,
-                      ),
-                      ListTile(
-                        leading: Icon(
-                          Icons.key_rounded,
-                          color: Theme.of(context).colorScheme.primary,
+                      const SectionLabel("Benachrichtigungen"),
+                      HoloPanel(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: SwitchListTile.adaptive(
+                          secondary: Icon(
+                            Icons.mark_email_unread_outlined,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          title: const Text(
+                              "Emails für Benachrichtigungen senden"),
+                          value: profileState.sendNotificationEmails!,
+                          onChanged:
+                              noInternet ? null : setSendNotificationEmails,
                         ),
-                        title: const Text("Passwort ändern"),
-                        trailing: const Icon(Icons.chevron_right_rounded),
-                        onTap: changePass,
-                        enabled: !noInternet,
+                      ),
+                      const SectionLabel("Zugang"),
+                      HoloPanel(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Column(
+                          children: [
+                            ListTile(
+                              leading: Icon(
+                                Icons.alternate_email_rounded,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                              title: const Text("Email-Adresse ändern"),
+                              subtitle: Text(
+                                profileState.email!,
+                                style:
+                                    mono(Theme.of(context).textTheme.bodySmall),
+                              ),
+                              trailing: const Icon(Icons.chevron_right_rounded),
+                              onTap: changeEmail,
+                              enabled: !noInternet,
+                            ),
+                            Divider(
+                              indent: 16,
+                              endIndent: 16,
+                              color:
+                                  Theme.of(context).colorScheme.outlineVariant,
+                            ),
+                            ListTile(
+                              leading: Icon(
+                                Icons.key_rounded,
+                                color: Theme.of(context).colorScheme.primary,
+                              ),
+                              title: const Text("Passwort ändern"),
+                              trailing: const Icon(Icons.chevron_right_rounded),
+                              onTap: changePass,
+                              enabled: !noInternet,
+                            ),
+                          ],
+                        ),
                       ),
                     ],
-                  ),
-                ),
-              ],
-            ),
+                  )),
     );
   }
 }

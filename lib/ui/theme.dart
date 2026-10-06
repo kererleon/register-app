@@ -1134,3 +1134,22 @@ BoxDecoration glassDecoration(
     ),
   );
 }
+
+/// Content is at most this wide on big screens (desktop, tablets).
+const maxContentWidth = 860.0;
+
+/// Side padding that keeps a list readable on wide screens: the content is
+/// centered and at most [maxContentWidth] wide, while the whole width still
+/// scrolls. Adds to [base].
+EdgeInsetsGeometry readablePadding(
+  double width, [
+  EdgeInsetsGeometry base = EdgeInsets.zero,
+]) {
+  final side = math.max(0.0, (width - maxContentWidth) / 2);
+  return base.add(EdgeInsets.symmetric(horizontal: side));
+}
+
+/// Whether the app shows the permanent sidebar (wide windows, see
+/// tabletLayoutBreakpoint in packages/responsive_scaffold).
+bool isWideLayout(BuildContext context) =>
+    MediaQuery.sizeOf(context).width > 720;

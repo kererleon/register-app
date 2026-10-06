@@ -163,6 +163,10 @@ class _SettingsPageWidgetState extends State<SettingsPageWidget> {
         title: Text("Einstellungen"),
       ),
       body: ListView(
+        // Readable width on wide windows.
+        padding: readablePadding(
+          MediaQuery.sizeOf(context).width - (isWideLayout(context) ? 260 : 0),
+        ),
         controller: controller,
         children: <Widget>[
           if (!widget.vm.demoMode) ...[

@@ -1,5 +1,32 @@
 #include "flutter_window.h"
 
+#include <dwmapi.h>
+#include <flutter/standard_method_codec.h>
+
+#pragma comment(lib, "dwmapi.lib")
+
+// Not in older SDK headers.
+#ifndef DWMWA_USE_IMMERSIVE_DARK_MODE
+#define DWMWA_USE_IMMERSIVE_DARK_MODE 20
+#endif
+#ifndef DWMWA_CAPTION_COLOR
+#define DWMWA_CAPTION_COLOR 35
+#endif
+
+namespace {
+
+int IntArgument(const flutter::EncodableMap& map, const char* key) {
+  auto it = map.find(flutter::EncodableValue(key));
+  if (it == map.end()) return 0;
+  if (const auto* value = std::get_if<int32_t>(&it->second)) return *value;
+  if (const auto* value = std::get_if<int64_t>(&it->second)) {
+    return static_cast<int>(*value);
+  }
+  return 0;
+}
+
+}  // namespace
+
 #include <optional>
 
 #include "flutter/generated_plugin_registrant.h"
@@ -25,6 +52,37 @@ bool FlutterWindow::OnCreate() {
     return false;
   }
   RegisterPlugins(flutter_controller_->engine());
+
+  // The app sends its background color, so the title bar matches its look
+  // (dark mode and caption color work on Windows 10 / 11 respectively).
+  window_channel_ =
+      std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
+          flutter_controller_->engine()->messenger(), "register/window",
+          &flutter::StandardMethodCodec::GetInstance());
+  window_channel_->SetMethodCallHandler(
+      [this](const flutter::MethodCall<flutter::EncodableValue>& call,
+             std::unique_ptr<flutter::MethodResult<flutter::EncodableValue>>
+                 result) {
+        if (call.method_name() != "setTitleBar") {
+          result->NotImplemented();
+          return;
+        }
+        const auto* args = std::get_if<flutter::EncodableMap>(call.arguments());
+        if (args == nullptr) {
+          result->Error("bad_arguments", "Expected a map");
+          return;
+        }
+        HWND hwnd = GetHandle();
+        BOOL dark = IntArgument(*args, "dark") != 0;
+        DwmSetWindowAttribute(hwnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &dark,
+                              sizeof(dark));
+        COLORREF caption =
+            RGB(IntArgument(*args, "r"), IntArgument(*args, "g"),
+                IntArgument(*args, "b"));
+        DwmSetWindowAttribute(hwnd, DWMWA_CAPTION_COLOR, &caption,
+                              sizeof(caption));
+        result->Success();
+      });
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
 
   flutter_controller_->engine()->SetNextFrameCallback([&]() {

@@ -19,6 +19,7 @@ import 'package:deleteable_tile/deleteable_tile.dart';
 import 'package:dr/data.dart';
 import 'package:dr/main.dart';
 import 'package:dr/ui/last_fetched_overlay.dart';
+import 'package:dr/ui/theme.dart';
 import 'package:dr/utc_date_time.dart';
 import 'package:dr/util.dart';
 import 'package:flutter/material.dart' hide Notification;
@@ -63,6 +64,8 @@ class NotificationPage extends StatelessWidget {
               : ListView.builder(
                   // For some reason the outgoing animation is not triggered if we don't add this key
                   key: const ValueKey("notifications list"),
+                  // Full-screen page: the window width is the list width.
+                  padding: readablePadding(MediaQuery.sizeOf(context).width),
                   itemCount: notifications.length + 1,
                   itemBuilder: (_, n) {
                     if (n == 0) {

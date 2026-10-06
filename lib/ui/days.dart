@@ -302,6 +302,11 @@ class _DaysWidgetState extends State<DaysWidget> {
         noInternet: widget.vm.noInternet,
         lastFetched: lastFetched,
         child: ListView.builder(
+          // Readable width on wide windows (the sidebar takes ~260 px there).
+          padding: readablePadding(
+            MediaQuery.sizeOf(context).width -
+                (isWideLayout(context) ? 260 : 0),
+          ),
           physics: const AlwaysScrollableScrollPhysics(),
           controller: controller,
           // Times two for the divider, minus one because there's no divider after the last item.
