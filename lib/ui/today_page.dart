@@ -147,89 +147,93 @@ class TodayPage extends StatelessWidget {
           title: Text(br("Heute", "Heute, no cap 💀", "Shalom achi! 🇮🇱"))),
       body: ValueListenableBuilder(
         valueListenable: minuteTicker,
-        builder: (context, _, __) => ListView(
-          padding: const EdgeInsets.only(bottom: 40),
-          children: [
-            _NowCard(data: data, onShowCalendar: onShowCalendar),
-            if (isIsrael) const _MemeOfTheDay(),
-            if (data.dueToday.isNotEmpty || data.dueTomorrow.isNotEmpty) ...[
-              SectionLabel(br("Fällig", "Fällig 😬", "Fällig – yalla yalla ⏰")),
-              for (final hw in data.dueToday)
-                _TaskRow(homework: hw, when: "Heute", urgent: true),
-              for (final hw in data.dueTomorrow)
-                _TaskRow(homework: hw, when: "Morgen"),
-            ],
-            SectionLabel(br("Tests & Schularbeiten", "Boss-Fights ⚔️",
-                "Tests – Yalla Balagan 🤯")),
-            if (data.tests.isEmpty)
-              HoloPanel(
-                child: Text(
-                  "Keine Tests in den nächsten 30 Tagen eingetragen.",
-                  style: theme.textTheme.bodyMedium,
-                ),
-              ),
-            for (final test in data.tests)
-              _TestCountdown(
-                test: test,
-                subject: data.testSubjects[test],
-                semester: data.semester,
-                today: data.today,
-                noInternet: noInternet,
-                onCreateStudyPlan: onCreateStudyPlan,
-              ),
-            if (data.weakSubjects.isNotEmpty) ...[
-              SectionLabel(br("Achtung bei den Noten", "Ohio-Zone 🌽",
-                  "Oy vey, Balagan bei den Noten 😵")),
-              for (final (subject, avg) in data.weakSubjects)
-                HoloPanel(
-                  accent: AppColors.danger,
-                  onTap: onShowGrades,
-                  child: Row(
-                    children: [
-                      NeonRing(
-                        value: avg,
-                        label: formatGradeSteps(avg),
-                        size: 44,
+        builder: (context, _, __) => LayoutBuilder(
+            builder: (context, constraints) => ListView(
+                  padding: readablePadding(
+                      constraints.maxWidth, const EdgeInsets.only(bottom: 40)),
+                  children: [
+                    _NowCard(data: data, onShowCalendar: onShowCalendar),
+                    if (isIsrael) const _MemeOfTheDay(),
+                    if (data.dueToday.isNotEmpty ||
+                        data.dueTomorrow.isNotEmpty) ...[
+                      SectionLabel(
+                          br("Fällig", "Fällig 😬", "Fällig – yalla yalla ⏰")),
+                      for (final hw in data.dueToday)
+                        _TaskRow(homework: hw, when: "Heute", urgent: true),
+                      for (final hw in data.dueTomorrow)
+                        _TaskRow(homework: hw, when: "Morgen"),
+                    ],
+                    SectionLabel(br("Tests & Schularbeiten", "Boss-Fights ⚔️",
+                        "Tests – Yalla Balagan 🤯")),
+                    if (data.tests.isEmpty)
+                      HoloPanel(
+                        child: Text(
+                          "Keine Tests in den nächsten 30 Tagen eingetragen.",
+                          style: theme.textTheme.bodyMedium,
+                        ),
                       ),
-                      const SizedBox(width: 14),
-                      Expanded(
+                    for (final test in data.tests)
+                      _TestCountdown(
+                        test: test,
+                        subject: data.testSubjects[test],
+                        semester: data.semester,
+                        today: data.today,
+                        noInternet: noInternet,
+                        onCreateStudyPlan: onCreateStudyPlan,
+                      ),
+                    if (data.weakSubjects.isNotEmpty) ...[
+                      SectionLabel(br("Achtung bei den Noten", "Ohio-Zone 🌽",
+                          "Oy vey, Balagan bei den Noten 😵")),
+                      for (final (subject, avg) in data.weakSubjects)
+                        HoloPanel(
+                          accent: AppColors.danger,
+                          onTap: onShowGrades,
+                          child: Row(
+                            children: [
+                              NeonRing(
+                                value: avg,
+                                label: formatGradeSteps(avg),
+                                size: 44,
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(subject.name,
+                                        style: theme.textTheme.titleMedium),
+                                    Text(
+                                      "Unter 6 – unter Noten siehst du, was du im nächsten Test brauchst.",
+                                      style: theme.textTheme.bodySmall,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const Icon(Icons.chevron_right_rounded),
+                            ],
+                          ),
+                        ),
+                    ],
+                    if (data.absencePercent != null) ...[
+                      SectionLabel(br("Fehlstunden", "Skip-Statistik 🛌",
+                          "Fehlstunden 🏖️")),
+                      HoloPanel(
+                        onTap: onShowAbsences,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(subject.name,
-                                style: theme.textTheme.titleMedium),
                             Text(
-                              "Unter 6 – unter Noten siehst du, was du im nächsten Test brauchst.",
-                              style: theme.textTheme.bodySmall,
+                              "${data.absencePercent!.toStringAsFixed(1).replaceAll(".", ",")} % der Unterrichtszeit",
+                              style: theme.textTheme.titleMedium,
                             ),
+                            const SizedBox(height: 10),
+                            AbsenceMeter(percent: data.absencePercent!),
                           ],
                         ),
                       ),
-                      const Icon(Icons.chevron_right_rounded),
                     ],
-                  ),
-                ),
-            ],
-            if (data.absencePercent != null) ...[
-              SectionLabel(
-                  br("Fehlstunden", "Skip-Statistik 🛌", "Fehlstunden 🏖️")),
-              HoloPanel(
-                onTap: onShowAbsences,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "${data.absencePercent!.toStringAsFixed(1).replaceAll(".", ",")} % der Unterrichtszeit",
-                      style: theme.textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 10),
-                    AbsenceMeter(percent: data.absencePercent!),
                   ],
-                ),
-              ),
-            ],
-          ],
-        ),
+                )),
       ),
     );
   }

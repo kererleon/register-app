@@ -76,17 +76,20 @@ class GradesPage extends StatelessWidget {
                     AnimatedLinearProgressIndicator(show: vm.loading),
                     RawLastFetchedOverlay(
                       message: vm.lastFetchedMessage,
-                      child: ListView(
-                        padding: const EdgeInsets.only(bottom: 48),
-                        children: <Widget>[
-                          if (vm.showAllSubjectsAverage || vm.showGradesDiagram)
-                            _GradesOverview(
-                              vm: vm,
-                              showGradesSettings: showGradesSettings,
-                            ),
-                          SortedGradesContainer(),
-                        ],
-                      ),
+                      child: LayoutBuilder(
+                          builder: (context, constraints) => ListView(
+                                padding: readablePadding(constraints.maxWidth,
+                                    const EdgeInsets.only(bottom: 48)),
+                                children: <Widget>[
+                                  if (vm.showAllSubjectsAverage ||
+                                      vm.showGradesDiagram)
+                                    _GradesOverview(
+                                      vm: vm,
+                                      showGradesSettings: showGradesSettings,
+                                    ),
+                                  SortedGradesContainer(),
+                                ],
+                              )),
                     ),
                   ],
                 ),

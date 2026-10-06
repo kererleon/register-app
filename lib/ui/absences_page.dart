@@ -99,55 +99,59 @@ class AbsencesBody extends StatelessWidget {
           : const Center(child: CircularProgressIndicator());
     }
     final theme = Theme.of(context);
-    return ListView(
-      padding: const EdgeInsets.only(bottom: 96),
-      children: <Widget>[
-        AbsencesStatisticWidget(stat: state.statistic!),
-        if (state.absences.isEmpty && state.futureAbsences.isEmpty)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(32, 48, 32, 0),
-            child: Column(
-              children: [
-                Icon(
-                  Icons.event_available_rounded,
-                  size: 48,
-                  color: theme.colorScheme.primary,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  br(
-                      "Noch keine Absenzen",
-                      "Noch keine Absenzen, absolute Unit 💪",
-                      "Noch keine Absenzen – Mazal tov achi! 🎉"),
-                  style: theme.textTheme.titleLarge,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  "Wenn du weißt, dass du fehlen wirst, melde es mit „Abwesenheit melden“ im Voraus.",
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                  textAlign: TextAlign.center,
+    return LayoutBuilder(
+        builder: (context, constraints) => ListView(
+              padding: readablePadding(
+                  constraints.maxWidth, const EdgeInsets.only(bottom: 96)),
+              children: <Widget>[
+                AbsencesStatisticWidget(stat: state.statistic!),
+                if (state.absences.isEmpty && state.futureAbsences.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(32, 48, 32, 0),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.event_available_rounded,
+                          size: 48,
+                          color: theme.colorScheme.primary,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          br(
+                              "Noch keine Absenzen",
+                              "Noch keine Absenzen, absolute Unit 💪",
+                              "Noch keine Absenzen – Mazal tov achi! 🎉"),
+                          style: theme.textTheme.titleLarge,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          "Wenn du weißt, dass du fehlen wirst, melde es mit „Abwesenheit melden“ im Voraus.",
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                if (state.futureAbsences.isNotEmpty)
+                  const SectionLabel("Im Voraus gemeldet"),
+                for (var i = 0; i < state.futureAbsences.length; i++)
+                  FutureAbsenceWidget(
+                    absence: state.futureAbsences[i],
+                    onRemove: onRemoveFuture == null
+                        ? null
+                        : () => onRemoveFuture!(i),
+                  ),
+                if (state.absences.isNotEmpty) const SectionLabel("Absenzen"),
+                ...List.generate(
+                  state.absences.length,
+                  (n) => AbsenceGroupContainer(
+                    group: state.absences.length - n - 1,
+                  ),
                 ),
               ],
-            ),
-          ),
-        if (state.futureAbsences.isNotEmpty)
-          const SectionLabel("Im Voraus gemeldet"),
-        for (var i = 0; i < state.futureAbsences.length; i++)
-          FutureAbsenceWidget(
-            absence: state.futureAbsences[i],
-            onRemove: onRemoveFuture == null ? null : () => onRemoveFuture!(i),
-          ),
-        if (state.absences.isNotEmpty) const SectionLabel("Absenzen"),
-        ...List.generate(
-          state.absences.length,
-          (n) => AbsenceGroupContainer(
-            group: state.absences.length - n - 1,
-          ),
-        ),
-      ],
-    );
+            ));
   }
 }
 
