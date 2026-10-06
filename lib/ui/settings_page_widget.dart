@@ -26,6 +26,7 @@ import 'package:dr/ui/network_protocol_page.dart';
 import 'package:dr/util.dart';
 import 'package:dynamic_theme/dynamic_theme.dart';
 import 'package:flutter/gestures.dart';
+import 'package:dr/custom_background.dart';
 import 'package:dr/teacher_photos.dart';
 import 'package:dr/ui/holo.dart';
 import 'package:dr/ui/theme.dart';
@@ -1102,6 +1103,10 @@ class _StylePicker extends StatelessWidget {
             const SizedBox(height: 10),
             const _AccentPicker(),
           ],
+          const SizedBox(height: 20),
+          const HudLabel("Eigenes Hintergrundbild"),
+          const SizedBox(height: 10),
+          const _BackgroundPicker(),
         ],
       ),
     );
@@ -1283,6 +1288,97 @@ class _AccentPicker extends StatelessWidget {
           },
         ),
       ],
+    );
+  }
+}
+
+/// Choose, darken or remove an own background picture.
+class _BackgroundPicker extends StatelessWidget {
+  const _BackgroundPicker();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AnimatedBuilder(
+      animation: Listenable.merge([customBackground, customBackgroundDim]),
+      builder: (context, _) {
+        final path = customBackground.value;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                if (path != null)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 12),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image(
+                        image: ResizeImage.resizeIfNeeded(
+                          160,
+                          null,
+                          FileImage(File(path)),
+                        ),
+                        width: 56,
+                        height: 56,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                FilledButton.tonalIcon(
+                  onPressed: () async {
+                    try {
+                      await pickCustomBackground();
+                    } on Exception {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              "Das Bild konnte nicht geladen werden. Prüfe, ob Register auf deine Fotos zugreifen darf.",
+                            ),
+                          ),
+                        );
+                      }
+                    }
+                  },
+                  icon: const Icon(Icons.wallpaper_rounded, size: 18),
+                  label: Text(path == null ? "Bild wählen" : "Anderes Bild"),
+                ),
+                if (path != null) ...[
+                  const SizedBox(width: 8),
+                  TextButton(
+                    onPressed: removeCustomBackground,
+                    child: const Text("Entfernen"),
+                  ),
+                ],
+              ],
+            ),
+            if (path != null) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Text("Abdunkeln", style: theme.textTheme.bodyMedium),
+                  Expanded(
+                    child: Slider(
+                      value: customBackgroundDim.value,
+                      min: 0.2,
+                      max: 0.9,
+                      divisions: 7,
+                      label: "${(customBackgroundDim.value * 100).round()} %",
+                      onChanged: (v) => customBackgroundDim.value = v,
+                      onChangeEnd: setCustomBackgroundDim,
+                    ),
+                  ),
+                ],
+              ),
+            ] else
+              Text(
+                "Das Bild bleibt nur auf diesem Gerät.",
+                style: theme.textTheme.bodySmall,
+              ),
+          ],
+        );
+      },
     );
   }
 }

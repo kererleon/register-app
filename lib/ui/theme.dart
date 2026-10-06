@@ -15,7 +15,10 @@
 // You should have received a copy of the GNU General Public License
 // along with digitales_register.  If not, see <http://www.gnu.org/licenses/>.
 
+import 'dart:io';
 import 'dart:math' as math;
+
+import 'package:dr/custom_background.dart';
 
 import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
 import 'package:flutter/foundation.dart' show defaultTargetPlatform;
@@ -496,8 +499,41 @@ class AuroraBackdrop extends StatelessWidget {
         children: [
           RepaintBoundary(
             child: IgnorePointer(
-              child: CustomPaint(
-                painter: _AuroraPainter(dark: dark, style: appStyle.value),
+              child: AnimatedBuilder(
+                animation: Listenable.merge(
+                  [customBackground, customBackgroundDim],
+                ),
+                builder: (context, _) {
+                  final path = customBackground.value;
+                  if (path == null) {
+                    return CustomPaint(
+                      painter:
+                          _AuroraPainter(dark: dark, style: appStyle.value),
+                    );
+                  }
+                  // The own picture replaces the style's pattern, toned down
+                  // so that text stays readable.
+                  final size = MediaQuery.sizeOf(context);
+                  final ratio = MediaQuery.devicePixelRatioOf(context);
+                  return Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Image(
+                        image: ResizeImage.resizeIfNeeded(
+                          (size.width * ratio).round(),
+                          null,
+                          FileImage(File(path)),
+                        ),
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const SizedBox(),
+                      ),
+                      ColoredBox(
+                        color: scheme.surface
+                            .withValues(alpha: customBackgroundDim.value),
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
           ),

@@ -35,6 +35,7 @@ import 'package:dr/reducer/reducer.dart';
 import 'package:dr/ui/grade_calculator.dart';
 import 'package:dr/ui/grades_chart_page.dart';
 import 'package:dr/util.dart';
+import 'package:dr/custom_background.dart';
 import 'package:dr/teacher_photos.dart';
 import 'package:dr/ui/theme.dart';
 import 'package:dr/window_title_bar.dart';
@@ -86,6 +87,7 @@ Future<void> main() async {
   PaintingBinding.instance.imageCache.maximumSizeBytes = 40 << 20;
   await loadAppStyle();
   await loadTeacherPhotoSetting();
+  await loadCustomBackground();
   runApp(RegisterApp(store: store));
   WidgetsBinding.instance.addPostFrameCallback(
     (_) async {
