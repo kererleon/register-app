@@ -441,11 +441,31 @@ class _SettingsPageWidgetState extends State<SettingsPageWidget> {
             builder: (context, bool show, _) => SwitchListTile.adaptive(
               title: const Text("Fotos der Lehrpersonen"),
               subtitle: const Text(
-                "Profilbilder in der Stunden-Detailkarte (im Brainrot-Stil auch als Hintergrund), von der Personen-Seite des Fallmerayer",
+                "Profilbilder in der Stunden-Detailkarte (im Brainrot-Stil auch als Hintergrund), von der Webseite deiner Schule",
               ),
               value: show,
               onChanged: setShowTeacherPhotos,
             ),
+          ),
+          ValueListenableBuilder(
+            valueListenable: showTeacherPhotos,
+            builder: (context, bool show, _) => !show
+                ? const SizedBox.shrink()
+                : ValueListenableBuilder(
+                    valueListenable: staffPageInUse,
+                    builder: (context, String? page, _) => ListTile(
+                      leading: const Icon(Icons.travel_explore_outlined),
+                      title: const Text("Seite mit den Fotos"),
+                      subtitle: Text(
+                        page ??
+                            "Noch nicht gefunden – öffne den Kalender oder trag die Seite selbst ein",
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      trailing: const Icon(Icons.edit_outlined),
+                      onTap: () => _editStaffPage(context),
+                    ),
+                  ),
           ),
           ExpansionTile(
             initiallyExpanded: widget.vm.showSubjectNicks,
@@ -1381,4 +1401,48 @@ class _BackgroundPicker extends StatelessWidget {
       },
     );
   }
+}
+
+Future<void> _editStaffPage(BuildContext context) async {
+  final controller = TextEditingController(
+    text: customStaffPage.value ?? staffPageInUse.value ?? "",
+  );
+  final result = await showDialog<String?>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text("Seite mit den Fotos"),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "Die Seite deiner Schule, auf der die Lehrpersonen mit Foto stehen. "
+            "Leer lassen, damit die App sie selbst sucht.",
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: controller,
+            autofocus: true,
+            keyboardType: TextInputType.url,
+            decoration: const InputDecoration(
+              hintText: "https://www.meine-schule.it/lehrpersonen/",
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, ""),
+          child: const Text("Automatisch suchen"),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, controller.text),
+          child: const Text("Speichern"),
+        ),
+      ],
+    ),
+  );
+  controller.dispose();
+  if (result == null) return; // dismissed
+  await setCustomStaffPage(result);
 }

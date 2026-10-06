@@ -128,6 +128,8 @@ Future<void> _showEditCalendarSubjectNicks(
     Action<void> action) async {
   await next(action);
   unawaited(navigatorKey!.currentState!.pushNamed("/settings"));
+  // Shows where the teacher photos come from (cached if possible).
+  unawaited(ensureTeacherPhotos(api.state.url));
 }
 
 Future<void> _showEditGradesAverageSettings(
@@ -135,6 +137,8 @@ Future<void> _showEditGradesAverageSettings(
     ActionHandler next,
     Action<void> action) async {
   unawaited(navigatorKey!.currentState!.pushNamed("/settings"));
+  // Shows where the teacher photos come from (cached if possible).
+  unawaited(ensureTeacherPhotos(api.state.url));
   await next(action);
 }
 
@@ -144,7 +148,7 @@ Future<void> _showCalendar(
     Action<void> action) async {
   scaffoldKey!.currentState!
       .selectContentWidget(CalendarContainer(), Pages.calendar);
-  unawaited(ensureTeacherPhotos());
+  unawaited(ensureTeacherPhotos(api.state.url));
   await api.actions.calendarActions.setCurrentMonday(toMonday(now));
 
   await next(action);
