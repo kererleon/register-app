@@ -71,6 +71,7 @@ dependencies:
   shared_preferences: ^2.0.15
   tuple: ^2.0.0
   url_launcher: ^6.1.0
+  workmanager: ^0.10.10
 
 dependency_overrides:
   win32: ^5.5.0

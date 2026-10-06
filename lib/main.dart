@@ -35,6 +35,7 @@ import 'package:dr/reducer/reducer.dart';
 import 'package:dr/ui/grade_calculator.dart';
 import 'package:dr/ui/grades_chart_page.dart';
 import 'package:dr/util.dart';
+import 'package:dr/background_check.dart';
 import 'package:dr/custom_background.dart';
 import 'package:dr/teacher_photos.dart';
 import 'package:dr/ui/theme.dart';
@@ -75,6 +76,7 @@ Future<void> main() async {
   navigatorKey = GlobalKey();
   scaffoldKey = GlobalKey();
   scaffoldMessengerKey = GlobalKey();
+  await migrateIosKeychain();
   secureStorage = getFlutterSecureStorage();
   final store = Store<AppState, AppStateBuilder, AppActions>(
     appReducerBuilder.build(),
@@ -89,6 +91,8 @@ Future<void> main() async {
   await loadTeacherPhotoSetting();
   await loadCustomBackground();
   runApp(RegisterApp(store: store));
+  // Look for news while the app is closed (Android, iPhone).
+  unawaited(registerBackgroundChecks());
   WidgetsBinding.instance.addPostFrameCallback(
     (_) async {
       binding.allowFirstFrame();

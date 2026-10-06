@@ -20,6 +20,7 @@ part of 'middleware.dart';
 final _messagesMiddleware =
     MiddlewareBuilder<AppState, AppStateBuilder, AppActions>()
       ..add(MessagesActionsNames.load, _loadMessages)
+      ..add(MessagesActionsNames.loaded, _announceMessages)
       ..add(MessagesActionsNames.markAsRead, _markAsRead)
       ..add(MessagesActionsNames.openFile, _openFile);
 
@@ -70,4 +71,12 @@ Future<void> _markAsRead(
     "api/message/markAsRead",
     args: {"messageId": action.payload},
   );
+}
+
+Future<void> _announceMessages(
+    MiddlewareApi<AppState, AppStateBuilder, AppActions> api,
+    ActionHandler next,
+    Action<List> action) async {
+  await next(action);
+  await notifyNewMessages(api.state);
 }

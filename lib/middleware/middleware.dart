@@ -295,6 +295,8 @@ Future<void> _refresh(MiddlewareApi<AppState, AppStateBuilder, AppActions> api,
   await Future.wait([
     api.actions.dashboardActions.load(api.state.dashboardState.future),
     api.actions.notificationsActions.load(),
+    // Also look for new messages, to announce them.
+    api.actions.messagesActions.load(),
   ]);
 }
 
@@ -462,7 +464,7 @@ Future<void> _writeToStorage(String key, String txt) async {
 
 Future<String?> _readFromStorage(String key) async {
   try {
-    return secureStorage.read(key: escapeKey(key));
+    return await secureStorage.read(key: escapeKey(key));
   } catch (e) {
     try {
       await secureStorage.deleteAll();
