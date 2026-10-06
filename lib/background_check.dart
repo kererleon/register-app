@@ -61,8 +61,13 @@ Future<void> registerBackgroundChecks() async {
       backgroundTaskId,
       // Android's minimum; iOS decides by itself how often it really runs.
       frequency: const Duration(minutes: 15),
-      constraints: Constraints(networkType: NetworkType.connected),
-      existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
+      // Saves battery: no checks without internet or on a low battery.
+      constraints: Constraints(
+        networkType: NetworkType.connected,
+        requiresBatteryNotLow: true,
+      ),
+      // "update" keeps the schedule but applies changed constraints.
+      existingWorkPolicy: ExistingPeriodicWorkPolicy.update,
     );
   } on Object catch (e) {
     log("Could not register background checks", error: e);
@@ -86,6 +91,9 @@ void backgroundDispatcher() {
 
 /// One check: log in, fetch, compare with the saved state, notify, save.
 Future<void> runBackgroundCheck() async {
+  // At night nobody needs a notification; skip the network work entirely.
+  final hour = DateTime.now().hour;
+  if (hour >= 22 || hour < 6) return;
   await initializeDateFormatting("de");
   final storage = getFlutterSecureStorage();
   final loginRaw = await storage.read(key: "login");
