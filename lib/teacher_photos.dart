@@ -111,7 +111,8 @@ const _commonPaths = [
 
 const _cachePrefix = "teacherPhotos_";
 const _showKey = "showTeacherPhotos";
-const _customPageKey = "customStaffPage";
+// Followed by the register host: every school has its own page.
+const _customPageKey = "customStaffPage_";
 const _maxAge = Duration(days: 7);
 // When no page was found, look again sooner, but not on every start.
 const _maxAgeNotFound = Duration(days: 3);
@@ -122,7 +123,8 @@ final teacherPhotos = ValueNotifier<Map<String, String>?>(null);
 /// Whether the calendar shows the photos (a setting).
 final showTeacherPhotos = ValueNotifier(true);
 
-/// A staff page entered in the settings; replaces the automatic search.
+/// A staff page entered in the settings for the current school; replaces
+/// the automatic search.
 final customStaffPage = ValueNotifier<String?>(null);
 
 /// The staff page the photos come from, or null if none was found.
@@ -135,7 +137,7 @@ Future<void> loadTeacherPhotoSetting() async {
   try {
     final prefs = await SharedPreferences.getInstance();
     showTeacherPhotos.value = prefs.getBool(_showKey) ?? true;
-    customStaffPage.value = prefs.getString(_customPageKey);
+    await _migrateCustomStaffPage(prefs);
     final custom = prefs.getString(_customKey);
     if (custom != null) {
       customTeacherImages.value =
@@ -149,6 +151,32 @@ Future<void> loadTeacherPhotoSetting() async {
   }
 }
 
+/// The page entered by hand used to apply to every school. Give it to the
+/// school it was entered for (the one whose cache used it) and drop it.
+Future<void> _migrateCustomStaffPage(SharedPreferences prefs) async {
+  const oldKey = "customStaffPage";
+  final old = prefs.getString(oldKey);
+  if (old == null) return;
+  String? owner;
+  int? ownerTime;
+  for (final key in prefs.getKeys()) {
+    if (!key.startsWith(_cachePrefix)) continue;
+    try {
+      final cache = jsonDecode(prefs.getString(key)!) as Map;
+      final time = cache["time"] as int;
+      // The first school that used it is the one it was entered for.
+      if (cache["custom"] == old && (ownerTime == null || time < ownerTime)) {
+        owner = key.substring(_cachePrefix.length);
+        ownerTime = time;
+      }
+    } on Object {
+      continue;
+    }
+  }
+  if (owner != null) await prefs.setString("$_customPageKey$owner", old);
+  await prefs.remove(oldKey);
+}
+
 Future<void> setShowTeacherPhotos(bool value) async {
   showTeacherPhotos.value = value;
   final prefs = await SharedPreferences.getInstance();
@@ -158,15 +186,17 @@ Future<void> setShowTeacherPhotos(bool value) async {
 
 /// Sets (or with null clears) the staff page entered by hand and reloads.
 Future<void> setCustomStaffPage(String? url) async {
+  final host = _schoolHost;
+  if (host == null) return;
   var page = url?.trim();
   if (page != null && page.isEmpty) page = null;
   if (page != null && !page.startsWith("http")) page = "https://$page";
   customStaffPage.value = page;
   final prefs = await SharedPreferences.getInstance();
   if (page == null) {
-    await prefs.remove(_customPageKey);
+    await prefs.remove("$_customPageKey$host");
   } else {
-    await prefs.setString(_customPageKey, page);
+    await prefs.setString("$_customPageKey$host", page);
   }
   await reloadTeacherPhotos();
 }
@@ -190,6 +220,8 @@ Future<void> ensureTeacherPhotos([String? schoolUrl]) async {
   if (host != null && host.isNotEmpty && host != _schoolHost) {
     _schoolHost = host;
     teacherPhotos.value = null;
+    staffPageInUse.value = null;
+    customStaffPage.value = null;
   }
   final school = _schoolHost;
   if (teacherPhotos.value != null ||
@@ -208,7 +240,8 @@ Future<void> ensureTeacherPhotos([String? schoolUrl]) async {
     } on Object {
       cached = null;
     }
-    final custom = customStaffPage.value;
+    final custom = prefs.getString("$_customPageKey$school");
+    customStaffPage.value = custom;
     if (cached != null && cached["custom"] == custom) {
       final photos = Map<String, String>.from(cached["photos"] as Map);
       final age = DateTime.now().difference(
@@ -221,6 +254,7 @@ Future<void> ensureTeacherPhotos([String? schoolUrl]) async {
       }
     }
     final client = http.Client();
+    _gotAnswer = false;
     String? page;
     var photos = <String, String>{};
     try {
@@ -246,6 +280,7 @@ Future<void> ensureTeacherPhotos([String? schoolUrl]) async {
     }
     staffPageInUse.value = photos.isEmpty ? null : page;
     teacherPhotos.value = photos;
+    if (photos.isEmpty && !_gotAnswer) return; // offline: try again next time
     await prefs.setString(
       cacheKey,
       jsonEncode({
@@ -262,11 +297,16 @@ Future<void> ensureTeacherPhotos([String? schoolUrl]) async {
   }
 }
 
+/// Whether any website answered during the current search. Without that
+/// the phone was offline, and "nothing found" must not be remembered.
+var _gotAnswer = false;
+
 Future<String?> _fetch(http.Client client, Uri url) async {
   try {
     final response = await client
         .get(url, headers: {"User-Agent": "Mozilla/5.0 (Register-App)"})
         .timeout(const Duration(seconds: 10));
+    _gotAnswer = true;
     if (response.statusCode != 200) return null;
     final type = response.headers["content-type"] ?? "text/html";
     if (!type.contains("html")) return null;

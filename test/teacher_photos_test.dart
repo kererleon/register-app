@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:dr/data.dart';
 import 'package:dr/teacher_photos.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   test('parses the staff page and matches names in either order', () {
@@ -71,6 +74,30 @@ void main() {
           ..lastName = "Augschöll"),
       ),
       isNotNull,
+    );
+  });
+
+  test('a page entered by hand belongs only to the school it was entered for',
+      () async {
+    const page = "https://www.mittelschule-brixen.it/personen/";
+    String cache(int time, String? custom) =>
+        jsonEncode({"time": time, "page": page, "custom": custom, "photos": {}});
+    SharedPreferences.setMockInitialValues({
+      "customStaffPage": page,
+      "teacherPhotos_mittelschule-brixen.digitalesregister.it": cache(1, page),
+      "teacherPhotos_fallmerayer.digitalesregister.it": cache(2, page),
+    });
+    await loadTeacherPhotoSetting();
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString("customStaffPage"), isNull);
+    expect(
+      prefs.getString(
+          "customStaffPage_mittelschule-brixen.digitalesregister.it"),
+      page,
+    );
+    expect(
+      prefs.getString("customStaffPage_fallmerayer.digitalesregister.it"),
+      isNull,
     );
   });
 }
