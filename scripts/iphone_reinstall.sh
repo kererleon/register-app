@@ -3,8 +3,11 @@
 #
 # Apps signed with a free Apple ID (Personal Team) stop working after 7 days.
 # This script is run daily by launchd (see com.webandgrow.register.reinstall
-# in ~/Library/LaunchAgents) and reinstalls the app when the last install is
-# at least MIN_DAYS old. The iPhone must be reachable (cable or same Wi-Fi).
+# in ~/Library/LaunchAgents) and reinstalls the app when its provisioning
+# profile expires within RENEW_DAYS (or the last install is MIN_DAYS old).
+# Profiles about to expire are deleted first, because Xcode keeps using a
+# still valid profile instead of making a new one.
+# The iPhone must be reachable (cable or same Wi-Fi).
 #
 # Usage: iphone_reinstall.sh [--force]
 
@@ -17,6 +20,16 @@ STATE_DIR="$HOME/Library/Application Support/RegisterInstaller"
 STAMP="$STATE_DIR/last_install"
 LOG="$HOME/Library/Logs/RegisterInstaller.log"
 MIN_DAYS=5
+RENEW_DAYS=2
+APP="build/ios_device/Build/Products/Release-iphoneos/Runner.app"
+PROFILES="$HOME/Library/Developer/Xcode/UserData/Provisioning Profiles"
+
+# Seconds until a provisioning profile expires (negative when expired).
+profile_left() {
+  local exp
+  exp=$(security cms -D -i "$1" 2>/dev/null | plutil -extract ExpirationDate raw - 2>/dev/null) || return 1
+  echo $(( $(date -j -u -f "%Y-%m-%dT%H:%M:%SZ" "$exp" +%s) - $(date +%s) ))
+}
 
 mkdir -p "$STATE_DIR"
 exec >>"$LOG" 2>&1
@@ -24,8 +37,9 @@ echo "=== $(date '+%Y-%m-%d %H:%M:%S') ==="
 
 if [[ "${1:-}" != "--force" && -f "$STAMP" ]]; then
   age_days=$(( ($(date +%s) - $(stat -f %m "$STAMP")) / 86400 ))
-  if (( age_days < MIN_DAYS )); then
-    echo "Letzte Installation vor $age_days Tagen, nichts zu tun."
+  left=$(profile_left "$PROJECT/$APP/embedded.mobileprovision" || echo 0)
+  if (( age_days < MIN_DAYS && left > RENEW_DAYS * 86400 )); then
+    echo "Letzte Installation vor $age_days Tagen, Profil noch $(( left / 3600 )) h gültig, nichts zu tun."
     exit 0
   fi
 fi
@@ -67,10 +81,20 @@ fi
 echo "iPhone: $DEVICE ($UDID)"
 
 cd "$PROJECT" || exit 1
+# Remove iOS profiles of this app that expire soon, so that xcodebuild has
+# to fetch fresh ones (free profiles last 7 days).
+for f in "$PROFILES"/*.mobileprovision(N); do
+  info=$(security cms -D -i "$f" 2>/dev/null) || continue
+  [[ "$info" == *com.webandgrow.register* ]] || continue
+  left=$(profile_left "$f") || continue
+  if (( left < RENEW_DAYS * 86400 )); then
+    echo "Profil läuft bald ab ($(( left / 3600 )) h), wird erneuert: $(basename "$f")"
+    rm -f "$f"
+  fi
+done
 # Flutter prepares the project; xcodebuild signs it. Only xcodebuild may
 # create provisioning profiles and register the iPhone with the Apple ID,
 # which free profiles need every week.
-APP="build/ios_device/Build/Products/Release-iphoneos/Runner.app"
 if ! flutter build ios --release --config-only ||
    ! xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner \
        -configuration Release -destination "id=$UDID" \
