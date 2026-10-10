@@ -1,5 +1,5 @@
 #!/bin/zsh
-# Re-signs and installs Register on the iPhone.
+# Re-signs and installs Register on the iPhone and the Mac.
 #
 # Apps signed with a free Apple ID (Personal Team) stop working after 7 days.
 # This script is run daily by launchd (see com.webandgrow.register.reinstall
@@ -35,6 +35,34 @@ mkdir -p "$STATE_DIR"
 exec >>"$LOG" 2>&1
 echo "=== $(date '+%Y-%m-%d %H:%M:%S') ==="
 
+# --- Mac: the app in /Applications has the same 7-day limit. ---
+MAC_APP="/Applications/Register.app"
+mac_left=$(profile_left "$MAC_APP/Contents/embedded.provisionprofile" || echo 0)
+if [[ -d "$MAC_APP" ]] && (( mac_left < RENEW_DAYS * 86400 )); then
+  echo "Mac: Profil noch $(( mac_left / 3600 )) h gültig, wird erneuert."
+  for f in "$PROFILES"/*.provisionprofile(N); do
+    info=$(security cms -D -i "$f" 2>/dev/null) || continue
+    [[ "$info" == *com.webandgrow.register* ]] || continue
+    left=$(profile_left "$f") || continue
+    (( left < RENEW_DAYS * 86400 )) && rm -f "$f"
+  done
+  if (cd "$PROJECT" && flutter build macos --release --config-only &&
+      cd macos && xcodebuild -workspace Runner.xcworkspace -scheme Runner \
+        -configuration Release -allowProvisioningUpdates \
+        -derivedDataPath ../build/macos -quiet); then
+    was_running=0
+    pgrep -x Register >/dev/null && was_running=1
+    osascript -e 'quit app "Register"' 2>/dev/null
+    sleep 2
+    ditto "$PROJECT/build/macos/Build/Products/Release/Register.app" "$MAC_APP" &&
+      echo "Mac: installiert."
+    (( was_running )) && open "$MAC_APP"
+  else
+    echo "Mac: Build fehlgeschlagen."
+  fi
+fi
+
+# --- iPhone ---
 if [[ "${1:-}" != "--force" && -f "$STAMP" ]]; then
   age_days=$(( ($(date +%s) - $(stat -f %m "$STAMP")) / 86400 ))
   left=$(profile_left "$PROJECT/$APP/embedded.mobileprovision" || echo 0)
