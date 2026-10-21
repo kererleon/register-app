@@ -198,7 +198,9 @@ class AbsencesStatisticWidget extends StatelessWidget {
                 shaderCallback: (rect) =>
                     AppColors.accentGradient.createShader(rect),
                 child: Text(
-                  stat.percentage != null ? "${stat.percentage} %" : "–",
+                  stat.percentage != null
+                      ? "${stat.percentage!.replaceAll(".", ",")} %"
+                      : "–",
                   style: theme.textTheme.displaySmall?.copyWith(
                     color: Colors.white,
                     fontFeatures: const [FontFeature.tabularFigures()],

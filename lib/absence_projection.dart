@@ -29,8 +29,8 @@ import 'package:dr/utc_date_time.dart';
 
 /// Absences measured against the whole school year.
 typedef AbsenceProjection = ({
-  /// Missed lessons that count for the limit.
-  int missed,
+  /// Missed lessons so far (from the register's share, so not whole).
+  double missed,
 
   /// Lessons of the whole year (held so far plus still to come).
   int totalLessons,
@@ -152,19 +152,18 @@ AbsenceProjection? _project(
   final perWeekday = lessonsPerWeekday(days);
   if (perWeekday.isEmpty) return null;
   final year = _schoolYearOf(today);
-  final missed = stat.counterForSchool ?? stat.counter ?? 0;
+  // The register gives no number of missed lessons (its counters count
+  // absences, not lessons), only their share of the lessons held so far.
+  // So the lessons held are counted from the calendar and the missed ones
+  // follow from the share.
   final percent = parseAbsencePercentage(stat.percentage) ?? 0;
-
-  // Lessons held so far: the register's share tells it exactly; without
-  // absences it says 0 %, then the calendar estimates it.
-  final heldSoFar = missed > 0 && percent > 0
-      ? (missed * 100 / percent).round()
-      : _lessonsBetween(
-          year,
-          year.start,
-          today.subtract(const Duration(days: 1)),
-          perWeekday,
-        );
+  final heldSoFar = _lessonsBetween(
+    year,
+    year.start,
+    today.subtract(const Duration(days: 1)),
+    perWeekday,
+  );
+  final missed = heldSoFar * percent / 100;
   final remaining = _lessonsBetween(year, today, year.end, perWeekday);
   final total = heldSoFar + remaining;
   if (total <= 0) return null;
@@ -172,7 +171,7 @@ AbsenceProjection? _project(
   return (
     missed: missed,
     totalLessons: total,
-    stillAllowed: max(0, allowed - missed),
+    stillAllowed: max(0, (allowed - missed).floor()),
     yearPercent: missed * 100 / total,
     end: year.end,
   );

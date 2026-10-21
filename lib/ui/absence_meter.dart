@@ -114,6 +114,10 @@ class AbsenceMeter extends StatelessWidget {
 
 String _decimal(double value) => value.toStringAsFixed(1).replaceAll(".", ",");
 
+/// Whole hours, but a little absence never shows as 0.
+String _hours(double value) =>
+    value > 0 && value < 1 ? "1" : value.round().toString();
+
 /// How many lessons may still be missed until the end of the school year,
 /// and the share of the whole year already missed.
 class AbsenceYearOutlook extends StatelessWidget {
@@ -168,7 +172,7 @@ class AbsenceYearOutlook extends StatelessWidget {
           padding: const EdgeInsets.only(left: 26),
           child: Text(
             "Aufs ganze Schuljahr: ${_decimal(p.yearPercent)} % "
-            "(${p.missed} von ~${p.totalLessons} Stunden)",
+            "(~${_hours(p.missed)} von ~${p.totalLessons} Stunden)",
             style: muted,
           ),
         ),
