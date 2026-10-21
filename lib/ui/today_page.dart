@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with digitales_register.  If not, see <http://www.gnu.org/licenses/>.
 
+import 'package:dr/absence_projection.dart';
 import 'package:dr/app_state.dart';
 import 'package:dr/data.dart';
 import 'package:dr/grade_forecast.dart';
@@ -40,6 +41,7 @@ class TodayData {
   final Map<UpcomingTest, Subject> testSubjects;
   final Semester semester;
   final double? absencePercent;
+  final AbsenceProjection? absenceProjection;
   final List<(Subject, double)> weakSubjects;
   final BuiltMapLike subjectNicks;
 
@@ -53,6 +55,7 @@ class TodayData {
     required this.testSubjects,
     required this.semester,
     required this.absencePercent,
+    this.absenceProjection,
     required this.weakSubjects,
     required this.subjectNicks,
   });
@@ -105,6 +108,11 @@ class TodayData {
       absencePercent: parseAbsencePercentage(
         state.absencesState.statistic?.percentage,
       ),
+      absenceProjection: switch (state.absencesState.statistic) {
+        final stat? =>
+          projectAbsences(stat, state.calendarState.days, DateTime.now()),
+        null => null,
+      },
       weakSubjects: weak,
       subjectNicks: BuiltMapLike(state.settingsState.subjectNicks.toMap()),
     );
@@ -228,6 +236,11 @@ class TodayPage extends StatelessWidget {
                             ),
                             const SizedBox(height: 10),
                             AbsenceMeter(percent: data.absencePercent!),
+                            if (data.absenceProjection
+                                case final projection?) ...[
+                              const SizedBox(height: 12),
+                              AbsenceYearOutlook(projection: projection),
+                            ],
                           ],
                         ),
                       ),
