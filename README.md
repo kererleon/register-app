@@ -20,7 +20,7 @@
 - **Heute** – laufende Stunde mit Restzeit, was heute und morgen fällig ist, nächste Tests auf einen Blick
 - **Noten** – Durchschnitt pro Fach und gesamt, dazu die **Noten-Prognose**: welche Note du im nächsten Test brauchst, um auf 6, 7 oder 8 zu kommen
 - **Test-Countdown & Lernplan** – Tests mit Countdown; ein Klick verteilt Lerneinheiten als Erinnerungen ins Register
-- **Absenzen** – im Voraus melden, entschuldigen und löschen, mit **Fehlstunden-Ampel** bis zur 25-%-Grenze
+- **Absenzen** – im Voraus melden, entschuldigen und löschen, mit **Fehlstunden-Ampel** bis zur 25-%-Grenze, dazu hochgerechnet aufs ganze Schuljahr: wie viele Stunden du bis Schulende noch fehlen darfst
 - **Aufgaben verschieben** – auch Aufgaben von Lehrpersonen, als Erinnerung sichtbar auf allen Geräten und der Webseite
 - **Kalender** – Wochenansicht mit Markierung der laufenden Stunde und Profilbildern der Lehrpersonen
 - **Mitteilungen** – bei neuen Noten, Aufgaben, Benachrichtigungen und Supplenzen

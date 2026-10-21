@@ -15,6 +15,9 @@
 // You should have received a copy of the GNU General Public License
 // along with digitales_register.  If not, see <http://www.gnu.org/licenses/>.
 
+import 'dart:math';
+
+import 'package:dr/absence_projection.dart';
 import 'package:dr/ui/holo.dart';
 import 'package:dr/ui/theme.dart';
 import 'package:flutter/material.dart';
@@ -108,3 +111,83 @@ class AbsenceMeter extends StatelessWidget {
     );
   }
 }
+
+String _decimal(double value) => value.toStringAsFixed(1).replaceAll(".", ",");
+
+/// How many lessons may still be missed until the end of the school year,
+/// and the share of the whole year already missed.
+class AbsenceYearOutlook extends StatelessWidget {
+  final AbsenceProjection projection;
+  const AbsenceYearOutlook({super.key, required this.projection});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final muted = theme.textTheme.bodySmall
+        ?.copyWith(color: theme.colorScheme.onSurfaceVariant);
+    final p = projection;
+    // Colour by how much of the year's allowance is used up.
+    final used = p.totalLessons == 0
+        ? 1.0
+        : 1 -
+            p.stillAllowed / max(1, p.totalLessons * absenceLimitPercent / 100);
+    final (color, _) = absenceLevel(used * absenceLimitPercent);
+    final end = "${p.end.day}. ${_months[p.end.month - 1]}";
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.event_available_outlined, size: 18, color: color),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(
+                      text: p.stillAllowed == 0
+                          ? br("Keine Fehlstunde mehr übrig",
+                              "0 Skips übrig 💀", "Keine Stunde mehr übrig 😱")
+                          : "${br("Noch", "Noch", "Noch")} ~${p.stillAllowed} "
+                              "${p.stillAllowed == 1 ? "Stunde" : "Stunden"} ",
+                      style: theme.textTheme.titleSmall?.copyWith(color: color),
+                    ),
+                    if (p.stillAllowed > 0)
+                      TextSpan(
+                        text: "fehlen bis Schulende ($end) erlaubt",
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Padding(
+          padding: const EdgeInsets.only(left: 26),
+          child: Text(
+            "Aufs ganze Schuljahr: ${_decimal(p.yearPercent)} % "
+            "(${p.missed} von ~${p.totalLessons} Stunden)",
+            style: muted,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+const _months = [
+  "Jänner",
+  "Februar",
+  "März",
+  "April",
+  "Mai",
+  "Juni",
+  "Juli",
+  "August",
+  "September",
+  "Oktober",
+  "November",
+  "Dezember",
+];

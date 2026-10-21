@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with digitales_register.  If not, see <http://www.gnu.org/licenses/>.
 
+import 'package:dr/absence_projection.dart';
 import 'package:dr/actions/absences_actions.dart';
 import 'package:dr/app_state.dart';
 import 'package:dr/container/absence_group_container.dart';
@@ -32,6 +33,7 @@ class AbsencesPage extends StatelessWidget {
   final AbsencesState state;
   final bool noInternet;
   final String? defaultSignature;
+  final AbsenceProjection? projection;
   final ValueChanged<AddFutureAbsencePayload> onAddFuture;
   final ValueChanged<int> onRemoveFuture;
 
@@ -40,6 +42,7 @@ class AbsencesPage extends StatelessWidget {
     required this.state,
     required this.noInternet,
     required this.defaultSignature,
+    this.projection,
     required this.onAddFuture,
     required this.onRemoveFuture,
   });
@@ -72,6 +75,7 @@ class AbsencesPage extends StatelessWidget {
         child: AbsencesBody(
           state: state,
           noInternet: noInternet,
+          projection: projection,
           onRemoveFuture: _canEdit ? onRemoveFuture : null,
         ),
       ),
@@ -82,12 +86,14 @@ class AbsencesPage extends StatelessWidget {
 class AbsencesBody extends StatelessWidget {
   final AbsencesState state;
   final bool noInternet;
+  final AbsenceProjection? projection;
   final ValueChanged<int>? onRemoveFuture;
 
   const AbsencesBody({
     super.key,
     required this.state,
     required this.noInternet,
+    this.projection,
     this.onRemoveFuture,
   });
 
@@ -104,7 +110,10 @@ class AbsencesBody extends StatelessWidget {
               padding: readablePadding(
                   constraints.maxWidth, const EdgeInsets.only(bottom: 96)),
               children: <Widget>[
-                AbsencesStatisticWidget(stat: state.statistic!),
+                AbsencesStatisticWidget(
+                  stat: state.statistic!,
+                  projection: projection,
+                ),
                 if (state.absences.isEmpty && state.futureAbsences.isEmpty)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(32, 48, 32, 0),
@@ -157,8 +166,13 @@ class AbsencesBody extends StatelessWidget {
 
 class AbsencesStatisticWidget extends StatelessWidget {
   final AbsenceStatistic stat;
+  final AbsenceProjection? projection;
 
-  const AbsencesStatisticWidget({super.key, required this.stat});
+  const AbsencesStatisticWidget({
+    super.key,
+    required this.stat,
+    this.projection,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -201,6 +215,10 @@ class AbsencesStatisticWidget extends StatelessWidget {
           if (parseAbsencePercentage(stat.percentage) != null) ...[
             const SizedBox(height: 14),
             AbsenceMeter(percent: parseAbsencePercentage(stat.percentage)!),
+          ],
+          if (projection case final projection?) ...[
+            const SizedBox(height: 14),
+            AbsenceYearOutlook(projection: projection),
           ],
           const SizedBox(height: 16),
           Wrap(

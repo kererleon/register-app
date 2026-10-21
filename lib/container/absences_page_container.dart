@@ -15,6 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with digitales_register.  If not, see <http://www.gnu.org/licenses/>.
 
+import 'package:dr/absence_projection.dart';
 import 'package:dr/actions/app_actions.dart';
 import 'package:dr/app_state.dart';
 import 'package:dr/ui/absences_page.dart';
@@ -26,21 +27,26 @@ class AbsencesPageContainer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StoreConnection<AppState, AppActions,
-        Tuple3<AbsencesState, bool, String?>>(
+        Tuple4<AbsencesState, bool, String?, AbsenceProjection?>>(
       builder: (context, vm, actions) {
         return AbsencesPage(
           state: vm.item1,
           noInternet: vm.item2,
           defaultSignature: vm.item3,
+          projection: vm.item4,
           onAddFuture: actions.absencesActions.addFuture.call,
           onRemoveFuture: actions.absencesActions.removeFuture.call,
         );
       },
       connect: (state) {
-        return Tuple3(
+        final stat = state.absencesState.statistic;
+        return Tuple4(
           state.absencesState,
           state.noInternet,
           state.config?.fullName,
+          stat == null
+              ? null
+              : projectAbsences(stat, state.calendarState.days, DateTime.now()),
         );
       },
     );
