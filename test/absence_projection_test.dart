@@ -43,17 +43,18 @@ void main() {
   });
 
   test('absences are projected onto the rest of the school year', () {
-    // 30 missed at 10 % -> 300 lessons held so far; from 21.10. on there
-    // are 835 lessons left (holidays excluded), checked by hand.
-    final p = projectAbsences(_stat(30, "10"), _week(), DateTime(2026, 10, 21))!;
-    expect(p.totalLessons, 300 + 835);
-    expect(p.stillAllowed, (1135 * 0.25).floor() - 30);
-    expect(p.yearPercent, closeTo(2.64, 0.01));
+    // Until 21.10. 186 lessons were held (from 7.9., holidays excluded) and
+    // 835 are left; both checked by hand. 0.7 % of 186 = 1.3 missed.
+    final p =
+        projectAbsences(_stat(0, "0.7"), _week(), DateTime(2026, 10, 21))!;
+    expect(p.totalLessons, 186 + 835);
+    expect(p.missed, closeTo(1.302, 0.001));
+    expect(p.stillAllowed, (1021 * 0.25 - 1.302).floor());
+    expect(p.yearPercent, closeTo(0.13, 0.01));
     expect(p.end, DateTime(2027, 6, 16));
   });
 
-  test('without absences the lessons held are estimated from the calendar',
-      () {
+  test('without absences all of the quarter is left', () {
     final p = projectAbsences(_stat(0, "0"), _week(), DateTime(2026, 10, 21))!;
     expect(p.totalLessons, 186 + 835);
     expect(p.stillAllowed, 255);
@@ -77,7 +78,8 @@ void main() {
     tester.view.physicalSize = const Size(320, 600);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
-    final p = projectAbsences(_stat(30, "10"), _week(), DateTime(2026, 10, 21))!;
+    final p =
+        projectAbsences(_stat(30, "10"), _week(), DateTime(2026, 10, 21))!;
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
