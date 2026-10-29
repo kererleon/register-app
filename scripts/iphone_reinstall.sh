@@ -2,7 +2,7 @@
 # Re-signs and installs Register on the iPhone and the Mac.
 #
 # Apps signed with a free Apple ID (Personal Team) stop working after 7 days.
-# This script is run daily by launchd (see com.webandgrow.register.reinstall
+# This script is run every hour by launchd (see com.webandgrow.register.reinstall
 # in ~/Library/LaunchAgents) and reinstalls the app when its provisioning
 # profile expires within RENEW_DAYS (or the last install is MIN_DAYS old).
 # Profiles about to expire are deleted first, because Xcode keeps using a
@@ -63,13 +63,52 @@ if [[ -d "$MAC_APP" ]] && (( mac_left < RENEW_DAYS * 86400 )); then
 fi
 
 # --- iPhone ---
-if [[ "${1:-}" != "--force" && -f "$STAMP" ]]; then
-  age_days=$(( ($(date +%s) - $(stat -f %m "$STAMP")) / 86400 ))
-  left=$(profile_left "$PROJECT/$APP/embedded.mobileprovision" || echo 0)
-  if (( age_days < MIN_DAYS && left > RENEW_DAYS * 86400 )); then
-    echo "Letzte Installation vor $age_days Tagen, Profil noch $(( left / 3600 )) h gültig, nichts zu tun."
-    exit 0
+# Signing does not need the iPhone, installing does. So the profile is
+# renewed in time even while the iPhone is locked, and the install follows
+# as soon as the iPhone can be reached (this script runs every hour).
+INSTALLED_EXPIRY="$STATE_DIR/installed_expiry"
+notify() {
+  osascript -e "display notification \"$1\" with title \"Register\"" 2>/dev/null
+}
+
+built_left=$(profile_left "$PROJECT/$APP/embedded.mobileprovision" || echo 0)
+need_build=0
+[[ "${1:-}" == "--force" ]] && need_build=1
+(( built_left < RENEW_DAYS * 86400 )) && need_build=1
+need_install=$need_build
+# A renewed app that could not be installed yet.
+[[ ! -f "$STAMP" || "$PROJECT/$APP/embedded.mobileprovision" -nt "$STAMP" ]] &&
+  need_install=1
+if (( ! need_build && ! need_install )); then
+  echo "iPhone: Profil noch $(( built_left / 3600 )) h gültig, nichts zu tun."
+  exit 0
+fi
+
+cd "$PROJECT" || exit 1
+if (( need_build )); then
+  # Remove iOS profiles of this app that expire soon, so that xcodebuild
+  # has to fetch fresh ones (free profiles last 7 days).
+  for f in "$PROFILES"/*.mobileprovision(N); do
+    info=$(security cms -D -i "$f" 2>/dev/null) || continue
+    [[ "$info" == *com.webandgrow.register* ]] || continue
+    left=$(profile_left "$f") || continue
+    if (( left < RENEW_DAYS * 86400 )); then
+      echo "Profil läuft bald ab ($(( left / 3600 )) h), wird erneuert: $(basename "$f")"
+      rm -f "$f"
+    fi
+  done
+  # Flutter prepares the project; xcodebuild signs it and creates the
+  # profile. The iPhone is already registered with the Apple ID, so a
+  # generic destination works without the iPhone being unlocked.
+  if ! flutter build ios --release --config-only ||
+     ! xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner \
+         -configuration Release -destination "generic/platform=iOS" \
+         -derivedDataPath build/ios_device \
+         -allowProvisioningUpdates build -quiet; then
+    echo "Build fehlgeschlagen."
+    exit 1
   fi
+  echo "iPhone: neu signiert, Profil bis $(security cms -D -i "$APP/embedded.mobileprovision" | plutil -extract ExpirationDate raw -)."
 fi
 
 # The paired physical iPhone (not a simulator).
@@ -82,59 +121,36 @@ for d in data.get("result", {}).get("devices", []):
     conn = d.get("connectionProperties", {})
     if hw.get("reality") != "simulated" and hw.get("platform") == "iOS" \
        and hw.get("deviceType") == "iPhone" and conn.get("pairingState") == "paired":
-        print(d["identifier"], hw.get("udid")); break
+        print(d["identifier"]); break
 ')
-UDID="${DEVICE#* }"
-DEVICE="${DEVICE%% *}"
 
-if [[ -z "$DEVICE" ]]; then
-  echo "Kein gekoppeltes iPhone gefunden."
-  exit 0
-fi
-
-# Only build when the iPhone can be reached right now (cable or Wi-Fi).
+# Only install when the iPhone can be reached right now (cable or Wi-Fi).
 # Asking for its details opens the connection; the tunnel must then be up.
-xcrun devicectl device info details --device "$DEVICE" >/dev/null 2>&1
-TUNNEL=$(xcrun devicectl list devices --json-output /dev/stdout 2>/dev/null |
-  python3 -c '
+TUNNEL=""
+if [[ -n "$DEVICE" ]]; then
+  xcrun devicectl device info details --device "$DEVICE" >/dev/null 2>&1
+  TUNNEL=$(xcrun devicectl list devices --json-output /dev/stdout 2>/dev/null |
+    python3 -c '
 import json, sys
 for d in json.load(sys.stdin).get("result", {}).get("devices", []):
     if d["identifier"] == sys.argv[1]:
         print(d.get("connectionProperties", {}).get("tunnelState", ""))
 ' "$DEVICE")
-if [[ "$TUNNEL" != "connected" ]]; then
-  echo "iPhone gerade nicht erreichbar ($TUNNEL), versuche es beim nächsten Lauf erneut."
-  exit 0
 fi
-echo "iPhone: $DEVICE ($UDID)"
-
-cd "$PROJECT" || exit 1
-# Remove iOS profiles of this app that expire soon, so that xcodebuild has
-# to fetch fresh ones (free profiles last 7 days).
-for f in "$PROFILES"/*.mobileprovision(N); do
-  info=$(security cms -D -i "$f" 2>/dev/null) || continue
-  [[ "$info" == *com.webandgrow.register* ]] || continue
-  left=$(profile_left "$f") || continue
-  if (( left < RENEW_DAYS * 86400 )); then
-    echo "Profil läuft bald ab ($(( left / 3600 )) h), wird erneuert: $(basename "$f")"
-    rm -f "$f"
+if [[ "$TUNNEL" != "connected" ]]; then
+  echo "iPhone gerade nicht erreichbar (${TUNNEL:-nicht gefunden}), Installation beim nächsten Lauf."
+  # Warn only when the app on the iPhone stops working within a day.
+  installed=$(cat "$INSTALLED_EXPIRY" 2>/dev/null || echo 0)
+  if (( installed - $(date +%s) < 86400 )); then
+    notify "Register auf dem iPhone muss erneuert werden: iPhone entsperren und ins selbe WLAN wie den Mac (oder per Kabel)."
   fi
-done
-# Flutter prepares the project; xcodebuild signs it. Only xcodebuild may
-# create provisioning profiles and register the iPhone with the Apple ID,
-# which free profiles need every week.
-if ! flutter build ios --release --config-only ||
-   ! xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner \
-       -configuration Release -destination "id=$UDID" \
-       -derivedDataPath build/ios_device \
-       -allowProvisioningUpdates -allowProvisioningDeviceRegistration \
-       build -quiet; then
-  echo "Build fehlgeschlagen."
-  exit 1
+  exit 0
 fi
 
 if xcrun devicectl device install app --device "$DEVICE" "$APP"; then
   touch "$STAMP"
+  exp=$(security cms -D -i "$APP/embedded.mobileprovision" | plutil -extract ExpirationDate raw -)
+  date -j -u -f "%Y-%m-%dT%H:%M:%SZ" "$exp" +%s > "$INSTALLED_EXPIRY"
   echo "Installiert."
 else
   echo "Installation fehlgeschlagen."
