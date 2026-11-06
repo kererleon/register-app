@@ -35,6 +35,11 @@ mkdir -p "$STATE_DIR"
 exec >>"$LOG" 2>&1
 echo "=== $(date '+%Y-%m-%d %H:%M:%S') ==="
 
+notify() {
+  osascript -e "display notification \"$1\" with title \"Register\"" 2>/dev/null
+}
+FAILED_HINT="Register konnte nicht neu signiert werden. Meist hilft: Xcode öffnen → Einstellungen → Accounts → mit der Apple-ID anmelden."
+
 # --- Mac: the app in /Applications has the same 7-day limit. ---
 MAC_APP="/Applications/Register.app"
 mac_left=$(profile_left "$MAC_APP/Contents/embedded.provisionprofile" || echo 0)
@@ -59,6 +64,7 @@ if [[ -d "$MAC_APP" ]] && (( mac_left < RENEW_DAYS * 86400 )); then
     (( was_running )) && open "$MAC_APP"
   else
     echo "Mac: Build fehlgeschlagen."
+    notify "$FAILED_HINT"
   fi
 fi
 
@@ -67,9 +73,6 @@ fi
 # renewed in time even while the iPhone is locked, and the install follows
 # as soon as the iPhone can be reached (this script runs every hour).
 INSTALLED_EXPIRY="$STATE_DIR/installed_expiry"
-notify() {
-  osascript -e "display notification \"$1\" with title \"Register\"" 2>/dev/null
-}
 
 built_left=$(profile_left "$PROJECT/$APP/embedded.mobileprovision" || echo 0)
 need_build=0
@@ -85,32 +88,6 @@ if (( ! need_build && ! need_install )); then
 fi
 
 cd "$PROJECT" || exit 1
-if (( need_build )); then
-  # Remove iOS profiles of this app that expire soon, so that xcodebuild
-  # has to fetch fresh ones (free profiles last 7 days).
-  for f in "$PROFILES"/*.mobileprovision(N); do
-    info=$(security cms -D -i "$f" 2>/dev/null) || continue
-    [[ "$info" == *com.webandgrow.register* ]] || continue
-    left=$(profile_left "$f") || continue
-    if (( left < RENEW_DAYS * 86400 )); then
-      echo "Profil läuft bald ab ($(( left / 3600 )) h), wird erneuert: $(basename "$f")"
-      rm -f "$f"
-    fi
-  done
-  # Flutter prepares the project; xcodebuild signs it and creates the
-  # profile. The iPhone is already registered with the Apple ID, so a
-  # generic destination works without the iPhone being unlocked.
-  if ! flutter build ios --release --config-only ||
-     ! xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner \
-         -configuration Release -destination "generic/platform=iOS" \
-         -derivedDataPath build/ios_device \
-         -allowProvisioningUpdates build -quiet; then
-    echo "Build fehlgeschlagen."
-    exit 1
-  fi
-  echo "iPhone: neu signiert, Profil bis $(security cms -D -i "$APP/embedded.mobileprovision" | plutil -extract ExpirationDate raw -)."
-fi
-
 # The paired physical iPhone (not a simulator).
 DEVICE=$(xcrun devicectl list devices --json-output /dev/stdout 2>/dev/null |
   python3 -c '
@@ -121,8 +98,10 @@ for d in data.get("result", {}).get("devices", []):
     conn = d.get("connectionProperties", {})
     if hw.get("reality") != "simulated" and hw.get("platform") == "iOS" \
        and hw.get("deviceType") == "iPhone" and conn.get("pairingState") == "paired":
-        print(d["identifier"]); break
+        print(d["identifier"], hw.get("udid")); break
 ')
+UDID="${DEVICE#* }"
+DEVICE="${DEVICE%% *}"
 
 # Only install when the iPhone can be reached right now (cable or Wi-Fi).
 # Asking for its details opens the connection; the tunnel must then be up.
@@ -137,6 +116,40 @@ for d in json.load(sys.stdin).get("result", {}).get("devices", []):
         print(d.get("connectionProperties", {}).get("tunnelState", ""))
 ' "$DEVICE")
 fi
+# Only a connected iPhone can be registered while signing.
+[[ "$TUNNEL" == "connected" ]] || UDID=""
+
+if (( need_build )); then
+  # Remove iOS profiles of this app that expire soon, so that xcodebuild
+  # has to fetch fresh ones (free profiles last 7 days).
+  for f in "$PROFILES"/*.mobileprovision(N); do
+    info=$(security cms -D -i "$f" 2>/dev/null) || continue
+    [[ "$info" == *com.webandgrow.register* ]] || continue
+    left=$(profile_left "$f") || continue
+    if (( left < RENEW_DAYS * 86400 )); then
+      echo "Profil läuft bald ab ($(( left / 3600 )) h), wird erneuert: $(basename "$f")"
+      rm -f "$f"
+    fi
+  done
+  # Flutter prepares the project; xcodebuild signs it and creates the
+  # profile. With the iPhone at hand it is (re)registered with the Apple ID
+  # (the list of devices can be reset, e.g. after signing in again);
+  # otherwise a generic destination works while the iPhone is locked.
+  dest="generic/platform=iOS"
+  [[ -n "$UDID" ]] && dest="id=$UDID"
+  if ! flutter build ios --release --config-only ||
+     ! xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner \
+         -configuration Release -destination "$dest" \
+         -derivedDataPath build/ios_device \
+         -allowProvisioningUpdates -allowProvisioningDeviceRegistration \
+         build -quiet; then
+    echo "Build fehlgeschlagen."
+    notify "$FAILED_HINT"
+    exit 1
+  fi
+  echo "iPhone: neu signiert, Profil bis $(security cms -D -i "$APP/embedded.mobileprovision" | plutil -extract ExpirationDate raw -)."
+fi
+
 if [[ "$TUNNEL" != "connected" ]]; then
   echo "iPhone gerade nicht erreichbar (${TUNNEL:-nicht gefunden}), Installation beim nächsten Lauf."
   # Warn only when the app on the iPhone stops working within a day.
