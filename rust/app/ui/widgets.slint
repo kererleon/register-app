@@ -1,0 +1,202 @@
+import { Theme } from "theme.slint";
+
+// A rounded panel; glows slightly in the holo look.
+export component Card inherits Rectangle {
+    in property <bool> clickable: false;
+    in property <bool> highlight: false;
+    callback clicked();
+    background: touch.has-hover && clickable ? Theme.card-hover : Theme.card;
+    border-radius: Theme.radius;
+    border-width: 1px;
+    border-color: highlight ? Theme.accent : Theme.border;
+    drop-shadow-blur: Theme.dark ? (highlight ? 18px : 10px) : 6px;
+    drop-shadow-color: Theme.dark ? (highlight ? #4cc9ff55 : #00000060) : #1a224010;
+    drop-shadow-offset-y: Theme.dark ? 0px : 2px;
+    animate background { duration: 120ms; }
+    touch := TouchArea {
+        enabled: clickable;
+        mouse-cursor: clickable ? pointer : default;
+        clicked => { root.clicked(); }
+    }
+    @children
+}
+
+// Small upper-case caption above a section.
+export component SectionLabel inherits Text {
+    color: Theme.muted;
+    font-size: Theme.font-small;
+    font-weight: 700;
+    letter-spacing: 1.4px;
+}
+
+export component Pill inherits Rectangle {
+    in property <string> text;
+    in property <color> tint: Theme.accent;
+    height: 24px;
+    width: label.preferred-width + 20px;
+    border-radius: 12px;
+    background: tint.transparentize(82%);
+    border-width: 1px;
+    border-color: tint.transparentize(55%);
+    label := Text {
+        text: root.text;
+        color: root.tint;
+        font-size: Theme.font-small;
+        font-weight: 600;
+        vertical-alignment: center;
+        horizontal-alignment: center;
+    }
+}
+
+export component PrimaryButton inherits Rectangle {
+    in property <string> text;
+    in property <bool> enabled: true;
+    in property <bool> busy: false;
+    callback clicked();
+    height: 44px;
+    border-radius: 12px;
+    background: Theme.accent-gradient;
+    opacity: enabled ? (touch.pressed ? 0.8 : 1.0) : 0.45;
+    drop-shadow-blur: Theme.dark ? 16px : 4px;
+    drop-shadow-color: Theme.dark ? #4cc9ff50 : #00000020;
+    Text {
+        text: busy ? "…" : root.text;
+        color: Theme.on-accent;
+        font-size: Theme.font;
+        font-weight: 700;
+        vertical-alignment: center;
+        horizontal-alignment: center;
+    }
+    touch := TouchArea {
+        enabled: root.enabled && !root.busy;
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+export component GhostButton inherits Rectangle {
+    in property <string> text;
+    callback clicked();
+    height: 36px;
+    width: label.preferred-width + 28px;
+    border-radius: 10px;
+    background: touch.has-hover ? Theme.card-hover : transparent;
+    border-width: 1px;
+    border-color: Theme.border;
+    label := Text {
+        text: root.text;
+        color: Theme.text;
+        font-size: Theme.font;
+        vertical-alignment: center;
+        horizontal-alignment: center;
+    }
+    touch := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+// A text field in the app's style.
+export component Field inherits Rectangle {
+    in property <string> placeholder;
+    in property <bool> password: false;
+    in-out property <string> text <=> input.text;
+    callback accepted();
+    callback edited(string);
+    height: 46px;
+    border-radius: 12px;
+    background: Theme.bg-2;
+    border-width: 1px;
+    border-color: input.has-focus ? Theme.accent : Theme.border;
+    Text {
+        x: 14px;
+        text: root.placeholder;
+        visible: input.text == "";
+        color: Theme.faint;
+        font-size: Theme.font;
+        vertical-alignment: center;
+        height: parent.height;
+    }
+    input := TextInput {
+        x: 14px;
+        width: parent.width - 28px;
+        height: parent.height;
+        vertical-alignment: center;
+        color: Theme.text;
+        font-size: Theme.font;
+        input-type: root.password ? InputType.password : InputType.text;
+        single-line: true;
+        accepted => { root.accepted(); }
+        edited => { root.edited(self.text); }
+    }
+}
+
+// A bar from 0 to 100 %.
+export component Meter inherits Rectangle {
+    in property <float> fraction;
+    in property <color> tint: Theme.accent;
+    height: 8px;
+    border-radius: 4px;
+    background: Theme.border;
+    Rectangle {
+        x: 0;
+        width: parent.width * clamp(root.fraction, 0.02, 1.0);
+        height: parent.height;
+        border-radius: 4px;
+        background: @linear-gradient(90deg, root.tint.transparentize(40%) 0%, root.tint 100%);
+        drop-shadow-blur: Theme.dark ? 8px : 0px;
+        drop-shadow-color: root.tint.transparentize(40%);
+        animate width { duration: 400ms; easing: ease-out; }
+    }
+}
+
+// Shown while a page has nothing to show.
+export component EmptyState inherits VerticalLayout {
+    in property <string> icon: "✦";
+    in property <string> title;
+    in property <string> text;
+    alignment: center;
+    spacing: 8px;
+    padding: 40px;
+    Text {
+        text: root.icon;
+        font-size: 34px;
+        color: Theme.accent;
+        horizontal-alignment: center;
+    }
+    Text {
+        text: root.title;
+        font-size: Theme.font-big;
+        font-weight: 700;
+        color: Theme.text;
+        horizontal-alignment: center;
+    }
+    Text {
+        text: root.text;
+        font-size: Theme.font;
+        color: Theme.muted;
+        horizontal-alignment: center;
+        wrap: word-wrap;
+    }
+}
+
+export component PageTitle inherits HorizontalLayout {
+    in property <string> title;
+    in property <string> subtitle;
+    spacing: 12px;
+    VerticalLayout {
+        spacing: 2px;
+        Text {
+            text: root.title;
+            font-size: Theme.font-title;
+            font-weight: 800;
+            color: Theme.text;
+        }
+        if root.subtitle != "": Text {
+            text: root.subtitle;
+            font-size: Theme.font;
+            color: Theme.muted;
+        }
+    }
+    @children
+}

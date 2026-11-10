@@ -1,0 +1,332 @@
+import { Theme } from "theme.slint";
+import { AppData, HomeworkItem, Lesson, SubjectItem, MessageItem, AbsenceItem } from "data.slint";
+import { Card, SectionLabel, Pill, Meter, EmptyState, PageTitle, GhostButton } from "widgets.slint";
+import { ScrollView, Switch } from "std-widgets.slint";
+
+// Scrollable content, centred and not wider than is pleasant to read.
+export component Page inherits ScrollView {
+    in property <string> title;
+    in property <string> subtitle;
+    VerticalLayout {
+        padding: Theme.page-padding;
+        padding-bottom: Theme.narrow ? 90px : 32px;
+        HorizontalLayout {
+            alignment: center;
+            VerticalLayout {
+                width: min(860px, root.visible-width - 2 * Theme.page-padding);
+                spacing: Theme.gap;
+                PageTitle {
+                    title: root.title;
+                    subtitle: root.subtitle;
+                }
+                @children
+            }
+        }
+    }
+}
+
+component HomeworkRow inherits Rectangle {
+    in property <HomeworkItem> item;
+    min-height: row.preferred-height;
+    row := HorizontalLayout {
+        padding: 12px;
+        spacing: 12px;
+        Rectangle {
+            width: 4px;
+            border-radius: 2px;
+            background: item.is-test ? Theme.danger : (item.is-grade ? Theme.success : Theme.accent);
+        }
+        VerticalLayout {
+            spacing: 3px;
+            HorizontalLayout {
+                spacing: 8px;
+                if item.label != "": Text {
+                    text: item.label;
+                    color: Theme.accent;
+                    font-size: Theme.font-small;
+                    font-weight: 700;
+                    vertical-alignment: center;
+                }
+                if item.is-test: Pill {
+                    text: "Test";
+                    tint: Theme.danger;
+                }
+                Rectangle { }
+            }
+            Text {
+                text: item.title;
+                color: item.checked ? Theme.muted : Theme.text;
+                font-size: Theme.font;
+                font-weight: 600;
+                wrap: word-wrap;
+            }
+            if item.subtitle != "": Text {
+                text: item.subtitle;
+                color: Theme.muted;
+                font-size: Theme.font-small;
+                wrap: word-wrap;
+            }
+        }
+        if item.checkable: Rectangle {
+            width: 28px;
+            height: 28px;
+            y: 2px;
+            border-radius: 8px;
+            border-width: 2px;
+            border-color: item.checked ? Theme.success : Theme.border;
+            background: item.checked ? Theme.success.transparentize(75%) : transparent;
+            Text {
+                text: item.checked ? "✓" : "";
+                color: Theme.success;
+                font-size: 16px;
+                font-weight: 800;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+            TouchArea {
+                mouse-cursor: pointer;
+                clicked => { AppData.toggle-done(item.id, item.kind, !item.checked); }
+            }
+        }
+    }
+}
+
+component LessonRow inherits Rectangle {
+    in property <Lesson> lesson;
+    min-height: row.preferred-height;
+    border-radius: Theme.radius-small;
+    background: lesson.is-now ? Theme.accent.transparentize(85%) : transparent;
+    opacity: lesson.is-past ? 0.55 : 1.0;
+    row := HorizontalLayout {
+        padding: 10px;
+        spacing: 12px;
+        VerticalLayout {
+            width: 88px;
+            alignment: center;
+            Text {
+                text: lesson.hours;
+                color: lesson.is-now ? Theme.accent : Theme.muted;
+                font-size: Theme.font-small;
+                font-weight: 700;
+            }
+            Text {
+                text: lesson.time;
+                color: Theme.faint;
+                font-size: Theme.font-small;
+            }
+        }
+        VerticalLayout {
+            spacing: 2px;
+            alignment: center;
+            HorizontalLayout {
+                spacing: 8px;
+                Text {
+                    text: lesson.subject;
+                    color: Theme.text;
+                    font-size: Theme.font;
+                    font-weight: 700;
+                    vertical-alignment: center;
+                    overflow: elide;
+                }
+                if lesson.is-now: Pill {
+                    text: "Jetzt";
+                }
+                if lesson.has-test: Pill {
+                    text: "Test";
+                    tint: Theme.danger;
+                }
+                Rectangle { }
+            }
+            Text {
+                text: lesson.teachers + (lesson.rooms != "" ? "  ·  " + lesson.rooms : "");
+                color: Theme.muted;
+                font-size: Theme.font-small;
+                overflow: elide;
+            }
+            if lesson.note != "": Text {
+                text: lesson.note;
+                color: Theme.faint;
+                font-size: Theme.font-small;
+                wrap: word-wrap;
+            }
+        }
+    }
+}
+
+export component TodayPage inherits Page {
+    title: AppData.greeting;
+    subtitle: AppData.today-title;
+
+    if AppData.now-subject != "": Card {
+        highlight: true;
+        VerticalLayout {
+            padding: 18px;
+            spacing: 8px;
+            SectionLabel { text: "JETZT"; }
+            Text {
+                text: AppData.now-subject;
+                color: Theme.text;
+                font-size: 22px;
+                font-weight: 800;
+            }
+            Text {
+                text: AppData.now-detail;
+                color: Theme.muted;
+                font-size: Theme.font;
+            }
+            Meter { fraction: AppData.now-progress; }
+            if AppData.next-subject != "": Text {
+                text: "Danach: " + AppData.next-subject;
+                color: Theme.muted;
+                font-size: Theme.font-small;
+            }
+        }
+    }
+
+    SectionLabel { text: "HEUTE"; }
+    Card {
+        VerticalLayout {
+            padding: 6px;
+            if AppData.today-lessons.length == 0: EmptyState {
+                icon: "☾";
+                title: "Heute kein Unterricht";
+                text: "Genieß den freien Tag.";
+            }
+            for lesson in AppData.today-lessons: LessonRow { lesson: lesson; }
+        }
+    }
+
+    if AppData.tests.length > 0: SectionLabel { text: "NÄCHSTE TESTS"; }
+    if AppData.tests.length > 0: Card {
+        VerticalLayout {
+            padding: 6px;
+            for test in AppData.tests: HorizontalLayout {
+                padding: 10px;
+                spacing: 12px;
+                Rectangle {
+                    width: 52px;
+                    height: 52px;
+                    border-radius: 14px;
+                    background: (test.days <= 2 ? Theme.danger : Theme.accent).transparentize(82%);
+                    VerticalLayout {
+                        alignment: center;
+                        Text {
+                            text: test.days == 0 ? "!" : test.days;
+                            color: test.days <= 2 ? Theme.danger : Theme.accent;
+                            font-size: 20px;
+                            font-weight: 800;
+                            horizontal-alignment: center;
+                        }
+                        Text {
+                            text: test.days == 0 ? "heute" : (test.days == 1 ? "Tag" : "Tage");
+                            color: Theme.muted;
+                            font-size: 10px;
+                            horizontal-alignment: center;
+                        }
+                    }
+                }
+                VerticalLayout {
+                    alignment: center;
+                    spacing: 2px;
+                    Text {
+                        text: test.subject;
+                        color: Theme.accent;
+                        font-size: Theme.font-small;
+                        font-weight: 700;
+                    }
+                    Text {
+                        text: test.title;
+                        color: Theme.text;
+                        font-size: Theme.font;
+                        wrap: word-wrap;
+                    }
+                    Text {
+                        text: test.when;
+                        color: Theme.muted;
+                        font-size: Theme.font-small;
+                    }
+                }
+            }
+        }
+    }
+
+    if AppData.due-tomorrow.length > 0: SectionLabel { text: "FÜR MORGEN"; }
+    if AppData.due-tomorrow.length > 0: Card {
+        VerticalLayout {
+            for item in AppData.due-tomorrow: HomeworkRow { item: item; }
+        }
+    }
+
+    if AppData.absence-percent != "": SectionLabel { text: "FEHLSTUNDEN"; }
+    if AppData.absence-percent != "": Card {
+        VerticalLayout {
+            padding: 18px;
+            spacing: 8px;
+            HorizontalLayout {
+                Text {
+                    text: AppData.absence-percent + " der Unterrichtszeit";
+                    color: Theme.text;
+                    font-size: Theme.font-big;
+                    font-weight: 700;
+                }
+                Rectangle { }
+                Pill {
+                    text: AppData.absence-label;
+                    tint: AppData.absence-level == 0 ? Theme.success : (AppData.absence-level == 1 ? Theme.warning : Theme.danger);
+                }
+            }
+            Meter {
+                fraction: AppData.absence-fraction;
+                tint: AppData.absence-level == 0 ? Theme.success : (AppData.absence-level == 1 ? Theme.warning : Theme.danger);
+            }
+            if AppData.year-allowed != "": Text {
+                text: AppData.year-allowed;
+                color: Theme.text;
+                font-size: Theme.font;
+                wrap: word-wrap;
+            }
+        }
+    }
+}
+
+export component HomeworkPage inherits Page {
+    title: "Hausaufgaben";
+    subtitle: "Aufgaben, Tests und Erinnerungen";
+    HorizontalLayout {
+        alignment: end;
+        Switch {
+            text: "Vergangene zeigen";
+            checked: AppData.show-past;
+            toggled => { AppData.set-show-past(self.checked); }
+        }
+    }
+    if AppData.homework.length == 0: Card {
+        EmptyState {
+            icon: "✓";
+            title: "Nichts zu tun";
+            text: "Keine Einträge im Register.";
+        }
+    }
+    for day in AppData.homework: VerticalLayout {
+        spacing: 6px;
+        HorizontalLayout {
+            spacing: 8px;
+            SectionLabel {
+                text: day.title;
+                color: day.is-today ? Theme.accent : Theme.muted;
+            }
+            Text {
+                text: day.relative;
+                color: Theme.faint;
+                font-size: Theme.font-small;
+            }
+            Rectangle { }
+        }
+        Card {
+            highlight: day.is-today;
+            VerticalLayout {
+                for item in day.items: HomeworkRow { item: item; }
+            }
+        }
+    }
+}

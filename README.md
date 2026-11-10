@@ -27,6 +27,19 @@
 - **Zwei Designs** – *Holo* (futuristisch, clean) und *Brainrot* (laut, bunt, Meme-Style), umschaltbar in den Einstellungen
 - **Widgets für macOS** – Stundenplan, Tests & Aufgaben, Notendurchschnitt
 
+## Zwei Versionen
+
+| | **Register** (Flutter) | **Register Rust** |
+|---|---|---|
+| Download | [Neueste Version](https://github.com/kererleon/register-app/releases/latest) | [Releases „Register Rust“](https://github.com/kererleon/register-app/releases?q=rust-build) |
+| Plattformen | Android, Windows, iPhone, Mac | Android, Windows, Mac |
+| Funktionen | alle | Heute, Aufgaben, Noten mit Prognose, Kalender, Absenzen mit Jahres-Hochrechnung, Mitteilungen |
+| Designs | Holo, Brainrot, Israel, Clean, Liquid Glass | Holo (dunkel), Clean (hell, eigene Akzentfarbe) |
+| Download-Größe (Mac) | ca. 60 MB | ca. 14 MB |
+| Arbeitsspeicher | ca. 140 MB | ca. 95 MB |
+
+Die Rust-Version ist eine eigenständige Neuentwicklung (Ordner [`rust/`](rust)): kleiner, sparsamer und lädt alle Bereiche gleichzeitig. Beide Versionen können nebeneinander installiert werden.
+
 ## Installation
 
 ### Android

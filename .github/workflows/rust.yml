@@ -1,0 +1,122 @@
+name: Build & Release (Rust)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "rust/**"
+      - ".github/workflows/rust.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+defaults:
+  run:
+    working-directory: rust
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
+      - run: cargo test -p register-core
+
+  macos:
+    needs: test
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
+      - run: cargo build --release -p register
+      - run: ./packaging/macos/make_app.sh
+      - run: ditto -c -k --keepParent "target/Register Rust.app" Register-Rust-macOS.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: rust/Register-Rust-macOS.zip
+
+  windows:
+    needs: test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
+      - run: cargo build --release -p register
+      - name: Package
+        shell: pwsh
+        run: |
+          Copy-Item target\release\register.exe Register-Rust.exe
+          Compress-Archive -Path Register-Rust.exe -DestinationPath Register-Rust-Windows.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: |
+            rust/Register-Rust.exe
+            rust/Register-Rust-Windows.zip
+
+  android:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - run: cargo install cargo-apk --locked
+      - name: Signing key
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.jks"
+      - name: Build APK
+        env:
+          CARGO_APK_RELEASE_KEYSTORE: ${{ runner.temp }}/release.jks
+          CARGO_APK_RELEASE_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          export ANDROID_NDK_ROOT="$ANDROID_NDK_LATEST_HOME"
+          export ANDROID_HOME="$ANDROID_SDK_ROOT"
+          cargo apk build --release -p register --lib
+          cp target/release/apk/Register-Rust.apk Register-Rust-Android.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android
+          path: rust/Register-Rust-Android.apk
+
+  release:
+    needs: [macos, windows, android]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          TAG="rust-build-${{ github.run_number }}"
+          gh release create "$TAG" Register-Rust-Android.apk Register-Rust.exe Register-Rust-Windows.zip Register-Rust-macOS.zip \
+            --target "${{ github.sha }}" \
+            --title "Register Rust (build ${{ github.run_number }})" \
+            --notes "Die schnelle Rust-Version von Register – eigenständige App neben der Flutter-Version. Android: Register-Rust-Android.apk. Windows: Register-Rust.exe starten (keine Installation nötig). Mac: Register-Rust-macOS.zip entpacken, Rechtsklick → Öffnen." \
+            --latest=false

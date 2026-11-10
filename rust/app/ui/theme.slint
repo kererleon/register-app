@@ -1,0 +1,36 @@
+// Colours and sizes of the app. "Holo" is the dark, futuristic look;
+// "Clean" is light with one accent colour.
+
+export global Theme {
+    in-out property <bool> dark: true;
+    // Accent for the clean look (the holo look uses its own gradient).
+    in-out property <color> accent-choice: #5b6cff;
+    // True when the window is narrow (phone): bottom bar instead of a rail.
+    in-out property <bool> narrow: false;
+
+    out property <color> bg: dark ? #060a14 : #f3f5fa;
+    out property <color> bg-2: dark ? #0b1222 : #ffffff;
+    out property <color> card: dark ? #0e1629 : #ffffff;
+    out property <color> card-hover: dark ? #132039 : #f5f7ff;
+    out property <color> border: dark ? #1d2a47 : #e3e7f0;
+    out property <color> text: dark ? #e9eefc : #141a2b;
+    out property <color> muted: dark ? #8a96b8 : #5d667d;
+    out property <color> faint: dark ? #4e5a7a : #9aa3b8;
+    out property <color> accent: dark ? #4cc9ff : accent-choice;
+    out property <color> accent-2: dark ? #8b5cff : accent-choice.darker(20%);
+    out property <brush> accent-gradient: @linear-gradient(90deg, accent 0%, accent-2 100%);
+    out property <color> on-accent: dark ? #04101f : #ffffff;
+    out property <color> success: dark ? #3ee0a0 : #13a36b;
+    out property <color> warning: dark ? #ffc455 : #c98500;
+    out property <color> danger: dark ? #ff5c7a : #d63b55;
+    out property <color> glow: dark ? #4cc9ff40 : #00000000;
+
+    out property <length> radius: 16px;
+    out property <length> radius-small: 10px;
+    out property <length> gap: 12px;
+    out property <length> page-padding: narrow ? 14px : 24px;
+    out property <length> font-title: 26px;
+    out property <length> font-big: 18px;
+    out property <length> font: 14px;
+    out property <length> font-small: 12px;
+}

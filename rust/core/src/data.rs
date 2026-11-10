@@ -83,7 +83,7 @@ impl Data {
         });
 
         let mut report = RefreshReport::default();
-        let mut fail = |part: &'static str, e: Error, report: &mut RefreshReport| {
+        let fail = |part: &'static str, e: Error, report: &mut RefreshReport| {
             report.failed.push(part);
             report.error.get_or_insert(e);
         };

@@ -1,0 +1,579 @@
+import { Theme } from "theme.slint";
+import { AppData, Lesson, AbsenceItem } from "data.slint";
+import { Card, SectionLabel, Pill, Meter, EmptyState, GhostButton, PrimaryButton } from "widgets.slint";
+import { Page } from "pages.slint";
+import { Switch } from "std-widgets.slint";
+
+component Segment inherits Rectangle {
+    in property <[string]> options;
+    in property <int> selected;
+    callback chosen(int);
+    height: 36px;
+    border-radius: 10px;
+    background: Theme.bg-2;
+    border-width: 1px;
+    border-color: Theme.border;
+    HorizontalLayout {
+        padding: 3px;
+        spacing: 3px;
+        for option[i] in root.options: Rectangle {
+            border-radius: 8px;
+            background: i == root.selected ? Theme.accent : (ta.has-hover ? Theme.card-hover : transparent);
+            Text {
+                text: option;
+                color: i == root.selected ? Theme.on-accent : Theme.text;
+                font-size: Theme.font-small;
+                font-weight: 700;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+            ta := TouchArea {
+                mouse-cursor: pointer;
+                clicked => { root.chosen(i); }
+            }
+        }
+    }
+}
+
+export component GradesPage inherits Page {
+    title: "Noten";
+    subtitle: "Ø " + AppData.overall;
+    in-out property <int> open: -1;
+
+    Segment {
+        options: ["1. Semester", "2. Semester", "Ganzes Jahr"];
+        selected: AppData.semester;
+        chosen(i) => { AppData.set-semester(i); }
+    }
+
+    if AppData.subjects.length == 0: Card {
+        EmptyState {
+            icon: "◎";
+            title: "Noch keine Noten";
+            text: "Sobald Noten eingetragen sind, erscheinen sie hier.";
+        }
+    }
+
+    for subject[i] in AppData.subjects: Card {
+        clickable: true;
+        highlight: root.open == i;
+        clicked => {
+            if root.open == i {
+                root.open = -1;
+            } else {
+                root.open = i;
+                AppData.open-subject(subject.id);
+            }
+        }
+        VerticalLayout {
+            padding: 16px;
+            spacing: 10px;
+            HorizontalLayout {
+                spacing: 12px;
+                VerticalLayout {
+                    alignment: center;
+                    spacing: 2px;
+                    Text {
+                        text: subject.name;
+                        color: Theme.text;
+                        font-size: Theme.font;
+                        font-weight: 700;
+                        wrap: word-wrap;
+                    }
+                    Text {
+                        text: subject.count == 1 ? "1 Note" : subject.count + " Noten";
+                        color: Theme.muted;
+                        font-size: Theme.font-small;
+                    }
+                }
+                Rectangle {
+                    width: 64px;
+                    height: 44px;
+                    border-radius: 12px;
+                    background: (subject.average-value == 0 ? Theme.faint : (subject.average-value < 6 ? Theme.danger : (subject.average-value < 7 ? Theme.warning : Theme.success))).transparentize(82%);
+                    Text {
+                        text: subject.average;
+                        color: subject.average-value == 0 ? Theme.muted : (subject.average-value < 6 ? Theme.danger : (subject.average-value < 7 ? Theme.warning : Theme.success));
+                        font-size: 18px;
+                        font-weight: 800;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+            if subject.next-test != "": Text {
+                text: subject.next-test;
+                color: Theme.danger;
+                font-size: Theme.font-small;
+                wrap: word-wrap;
+            }
+            if subject.forecast != "": Text {
+                text: subject.forecast;
+                color: Theme.accent;
+                font-size: Theme.font-small;
+                wrap: word-wrap;
+            }
+            if root.open == i: VerticalLayout {
+                spacing: 4px;
+                Rectangle {
+                    height: 1px;
+                    background: Theme.border;
+                }
+                for grade in subject.grades: HorizontalLayout {
+                    padding-top: 6px;
+                    padding-bottom: 6px;
+                    spacing: 12px;
+                    Text {
+                        width: 52px;
+                        text: grade.value;
+                        color: grade.cancelled ? Theme.faint : Theme.accent;
+                        font-size: Theme.font-big;
+                        font-weight: 800;
+                        vertical-alignment: center;
+                    }
+                    VerticalLayout {
+                        spacing: 1px;
+                        Text {
+                            text: grade.title;
+                            color: grade.cancelled ? Theme.faint : Theme.text;
+                            font-size: Theme.font;
+                            wrap: word-wrap;
+                        }
+                        Text {
+                            text: grade.date + "  ·  " + grade.weight + (grade.cancelled ? "  ·  gestrichen" : "");
+                            color: Theme.muted;
+                            font-size: Theme.font-small;
+                        }
+                        if grade.detail != "": Text {
+                            text: grade.detail;
+                            color: Theme.faint;
+                            font-size: Theme.font-small;
+                            wrap: word-wrap;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+export component CalendarPage inherits Page {
+    title: "Kalender";
+    subtitle: AppData.week-title;
+    HorizontalLayout {
+        spacing: 8px;
+        GhostButton {
+            text: "‹ Woche";
+            clicked => { AppData.move-week(-1); }
+        }
+        GhostButton {
+            text: "Heute";
+            clicked => { AppData.move-week(0); }
+        }
+        GhostButton {
+            text: "Woche ›";
+            clicked => { AppData.move-week(1); }
+        }
+        Rectangle { }
+    }
+    for day in AppData.week: VerticalLayout {
+        spacing: 6px;
+        HorizontalLayout {
+            spacing: 8px;
+            SectionLabel {
+                text: day.title;
+                color: day.is-today ? Theme.accent : Theme.muted;
+            }
+            Text {
+                text: day.date;
+                color: Theme.faint;
+                font-size: Theme.font-small;
+            }
+            Rectangle { }
+        }
+        Card {
+            highlight: day.is-today;
+            VerticalLayout {
+                padding: 6px;
+                if day.lessons.length == 0: Text {
+                    text: "Kein Unterricht";
+                    color: Theme.muted;
+                    font-size: Theme.font;
+                    horizontal-alignment: center;
+                    height: 44px;
+                    vertical-alignment: center;
+                }
+                for lesson in day.lessons: HorizontalLayout {
+                    padding: 10px;
+                    spacing: 12px;
+                    opacity: lesson.is-past ? 0.55 : 1.0;
+                    VerticalLayout {
+                        width: 88px;
+                        alignment: center;
+                        Text {
+                            text: lesson.hours;
+                            color: lesson.is-now ? Theme.accent : Theme.muted;
+                            font-size: Theme.font-small;
+                            font-weight: 700;
+                        }
+                        Text {
+                            text: lesson.time;
+                            color: Theme.faint;
+                            font-size: Theme.font-small;
+                        }
+                    }
+                    VerticalLayout {
+                        alignment: center;
+                        spacing: 2px;
+                        HorizontalLayout {
+                            spacing: 8px;
+                            Text {
+                                text: lesson.subject;
+                                color: Theme.text;
+                                font-size: Theme.font;
+                                font-weight: 700;
+                                overflow: elide;
+                                vertical-alignment: center;
+                            }
+                            if lesson.is-now: Pill { text: "Jetzt"; }
+                            if lesson.has-test: Pill {
+                                text: "Test";
+                                tint: Theme.danger;
+                            }
+                            Rectangle { }
+                        }
+                        Text {
+                            text: lesson.teachers + (lesson.rooms != "" ? "  ·  " + lesson.rooms : "");
+                            color: Theme.muted;
+                            font-size: Theme.font-small;
+                            overflow: elide;
+                        }
+                        if lesson.note != "": Text {
+                            text: lesson.note;
+                            color: Theme.faint;
+                            font-size: Theme.font-small;
+                            wrap: word-wrap;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+component AbsenceRow inherits HorizontalLayout {
+    in property <AbsenceItem> item;
+    padding: 12px;
+    spacing: 12px;
+    Rectangle {
+        width: 4px;
+        border-radius: 2px;
+        background: item.level == 0 ? Theme.success : (item.level == 1 ? Theme.warning : Theme.danger);
+    }
+    VerticalLayout {
+        spacing: 2px;
+        Text {
+            text: item.title;
+            color: Theme.text;
+            font-size: Theme.font;
+            font-weight: 600;
+            wrap: word-wrap;
+        }
+        Text {
+            text: item.detail;
+            color: Theme.muted;
+            font-size: Theme.font-small;
+            wrap: word-wrap;
+        }
+    }
+    Pill {
+        y: 4px;
+        text: item.status;
+        tint: item.level == 0 ? Theme.success : (item.level == 1 ? Theme.warning : Theme.danger);
+    }
+}
+
+export component AbsencesPage inherits Page {
+    title: "Absenzen";
+    subtitle: AppData.absence-counts;
+    property <color> level-color: AppData.absence-level == 0 ? Theme.success : (AppData.absence-level == 1 ? Theme.warning : Theme.danger);
+
+    Card {
+        VerticalLayout {
+            padding: 20px;
+            spacing: 10px;
+            SectionLabel { text: "ABWESENHEIT"; }
+            HorizontalLayout {
+                spacing: 8px;
+                Text {
+                    text: AppData.absence-percent == "" ? "–" : AppData.absence-percent;
+                    color: Theme.accent;
+                    font-size: 40px;
+                    font-weight: 800;
+                }
+                VerticalLayout {
+                    alignment: end;
+                    padding-bottom: 9px;
+                    Text {
+                        text: "der Unterrichtszeit";
+                        color: Theme.muted;
+                        font-size: Theme.font;
+                    }
+                }
+                Rectangle { }
+            }
+            HorizontalLayout {
+                Pill {
+                    text: AppData.absence-label;
+                    tint: root.level-color;
+                }
+                Rectangle { }
+                Text {
+                    text: AppData.absence-left;
+                    color: Theme.muted;
+                    font-size: Theme.font-small;
+                    font-weight: 700;
+                    vertical-alignment: center;
+                }
+            }
+            Meter {
+                fraction: AppData.absence-fraction;
+                tint: root.level-color;
+            }
+            if AppData.year-allowed != "": VerticalLayout {
+                spacing: 3px;
+                padding-top: 6px;
+                HorizontalLayout {
+                    spacing: 8px;
+                    Image {
+                        source: @image-url("icons/calendar.svg");
+                        width: 18px;
+                        height: 18px;
+                        colorize: AppData.absence-level == 0 ? Theme.success : (AppData.absence-level == 1 ? Theme.warning : Theme.danger);
+                    }
+                    Text {
+                        text: AppData.year-allowed;
+                        color: Theme.text;
+                        font-size: Theme.font;
+                        font-weight: 600;
+                        wrap: word-wrap;
+                    }
+                }
+                Text {
+                    text: AppData.year-detail;
+                    color: Theme.muted;
+                    font-size: Theme.font-small;
+                    wrap: word-wrap;
+                }
+            }
+        }
+    }
+
+    if AppData.future-absences.length > 0: SectionLabel { text: "GEMELDET"; }
+    if AppData.future-absences.length > 0: Card {
+        VerticalLayout {
+            for item in AppData.future-absences: AbsenceRow { item: item; }
+        }
+    }
+
+    SectionLabel { text: "VERGANGENE ABSENZEN"; }
+    Card {
+        VerticalLayout {
+            if AppData.absences.length == 0: EmptyState {
+                icon: "✓";
+                title: "Keine Absenzen";
+                text: "Du hast bisher nichts verpasst.";
+            }
+            for item in AppData.absences: AbsenceRow { item: item; }
+        }
+    }
+}
+
+export component MessagesPage inherits Page {
+    title: "Mitteilungen";
+    subtitle: AppData.unread > 0 ? AppData.unread + " ungelesen" : "Alles gelesen";
+    in-out property <int> open: -1;
+
+    if AppData.notifications.length > 0: SectionLabel { text: "BENACHRICHTIGUNGEN"; }
+    for n in AppData.notifications: Card {
+        HorizontalLayout {
+            padding: 14px;
+            spacing: 12px;
+            Rectangle {
+                width: 8px;
+                height: 8px;
+                y: 6px;
+                border-radius: 4px;
+                background: Theme.accent;
+            }
+            VerticalLayout {
+                spacing: 2px;
+                Text {
+                    text: n.subject;
+                    color: Theme.text;
+                    font-size: Theme.font;
+                    font-weight: 600;
+                    wrap: word-wrap;
+                }
+                Text {
+                    text: n.text;
+                    color: Theme.muted;
+                    font-size: Theme.font-small;
+                    wrap: word-wrap;
+                }
+                Text {
+                    text: n.date;
+                    color: Theme.faint;
+                    font-size: Theme.font-small;
+                }
+            }
+        }
+    }
+
+    SectionLabel { text: "NACHRICHTEN"; }
+    if AppData.messages.length == 0: Card {
+        EmptyState {
+            icon: "✉";
+            title: "Keine Mitteilungen";
+            text: "";
+        }
+    }
+    for m[i] in AppData.messages: Card {
+        clickable: true;
+        highlight: m.unread;
+        clicked => {
+            root.open = root.open == i ? -1 : i;
+            if m.unread {
+                AppData.mark-read(m.id);
+            }
+        }
+        VerticalLayout {
+            padding: 16px;
+            spacing: 4px;
+            HorizontalLayout {
+                spacing: 8px;
+                Text {
+                    text: m.from;
+                    color: Theme.accent;
+                    font-size: Theme.font-small;
+                    font-weight: 700;
+                    overflow: elide;
+                }
+                Rectangle { }
+                Text {
+                    text: m.date;
+                    color: Theme.faint;
+                    font-size: Theme.font-small;
+                }
+            }
+            Text {
+                text: m.subject;
+                color: Theme.text;
+                font-size: Theme.font;
+                font-weight: m.unread ? 800 : 600;
+                wrap: word-wrap;
+            }
+            Text {
+                text: m.text;
+                color: Theme.muted;
+                font-size: Theme.font;
+                wrap: word-wrap;
+                height: root.open == i ? self.preferred-height : min(self.preferred-height, 40px);
+                overflow: elide;
+            }
+        }
+    }
+}
+
+export component SettingsPage inherits Page {
+    title: "Einstellungen";
+    subtitle: AppData.full-name;
+    property <[color]> accents: [#5b6cff, #12b886, #f76707, #e64980, #7950f2, #1c7ed6];
+
+    SectionLabel { text: "DESIGN"; }
+    Card {
+        VerticalLayout {
+            padding: 16px;
+            spacing: 14px;
+            Switch {
+                text: "Dunkles Holo-Design";
+                checked <=> Theme.dark;
+            }
+            if !Theme.dark: VerticalLayout {
+                spacing: 8px;
+                Text {
+                    text: "Akzentfarbe";
+                    color: Theme.muted;
+                    font-size: Theme.font-small;
+                }
+                HorizontalLayout {
+                    spacing: 10px;
+                    alignment: start;
+                    for c in root.accents: Rectangle {
+                        width: 34px;
+                        height: 34px;
+                        border-radius: 17px;
+                        background: c;
+                        border-width: Theme.accent-choice == c ? 3px : 0px;
+                        border-color: Theme.text;
+                        TouchArea {
+                            mouse-cursor: pointer;
+                            clicked => { Theme.accent-choice = c; }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    SectionLabel { text: "KONTO"; }
+    Card {
+        VerticalLayout {
+            padding: 16px;
+            spacing: 10px;
+            Text {
+                text: AppData.school;
+                color: Theme.text;
+                font-size: Theme.font;
+                wrap: word-wrap;
+            }
+            Text {
+                text: AppData.fetched;
+                color: Theme.muted;
+                font-size: Theme.font-small;
+            }
+            HorizontalLayout {
+                spacing: 8px;
+                alignment: start;
+                GhostButton {
+                    text: "Neu laden";
+                    clicked => { AppData.refresh(); }
+                }
+                GhostButton {
+                    text: "Abmelden";
+                    clicked => { AppData.logout(); }
+                }
+            }
+        }
+    }
+
+    SectionLabel { text: "ÜBER"; }
+    Card {
+        VerticalLayout {
+            padding: 16px;
+            spacing: 4px;
+            Text {
+                text: "Register · Rust-Version";
+                color: Theme.text;
+                font-size: Theme.font;
+                font-weight: 700;
+            }
+            Text {
+                text: "Inoffizielle App für das Digitale Register. Daten bleiben auf deinem Gerät, Zugangsdaten liegen verschlüsselt im Schlüsselbund.";
+                color: Theme.muted;
+                font-size: Theme.font-small;
+                wrap: word-wrap;
+            }
+        }
+    }
+}
