@@ -6,6 +6,10 @@ name: Build & Release
 on:
   push:
     branches: [main]
+    # The Rust version has its own workflow (rust.yml).
+    paths-ignore:
+      - "rust/**"
+      - ".github/workflows/rust.yml"
   workflow_dispatch:
 
 permissions:

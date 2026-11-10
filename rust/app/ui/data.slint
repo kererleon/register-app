@@ -1,0 +1,156 @@
+// What the Rust side shows: the data as display-ready text, and the actions
+// the pages can trigger.
+
+export struct HomeworkItem {
+    id: int,
+    kind: string,
+    title: string,
+    subtitle: string,
+    label: string,
+    is-test: bool,
+    is-grade: bool,
+    checkable: bool,
+    checked: bool,
+}
+
+export struct HomeworkDay {
+    title: string,
+    relative: string,
+    is-today: bool,
+    items: [HomeworkItem],
+}
+
+export struct GradeItem {
+    value: string,
+    title: string,
+    detail: string,
+    date: string,
+    weight: string,
+    cancelled: bool,
+}
+
+export struct SubjectItem {
+    id: int,
+    name: string,
+    average: string,
+    average-value: float,
+    count: int,
+    forecast: string,
+    grades: [GradeItem],
+    next-test: string,
+}
+
+export struct Lesson {
+    hours: string,
+    time: string,
+    subject: string,
+    teachers: string,
+    rooms: string,
+    note: string,
+    has-test: bool,
+    is-now: bool,
+    is-past: bool,
+}
+
+export struct WeekDay {
+    title: string,
+    date: string,
+    is-today: bool,
+    lessons: [Lesson],
+}
+
+export struct AbsenceItem {
+    title: string,
+    detail: string,
+    status: string,
+    level: int, // 0 ok, 1 open, 2 bad
+}
+
+export struct MessageItem {
+    id: int,
+    subject: string,
+    from: string,
+    date: string,
+    text: string,
+    unread: bool,
+}
+
+export struct SchoolItem {
+    name: string,
+    url: string,
+}
+
+export struct TestItem {
+    title: string,
+    subject: string,
+    when: string,
+    days: int,
+}
+
+export global AppData {
+    // --- login ---
+    in-out property <bool> logged-in: false;
+    in-out property <bool> busy: false;
+    in-out property <string> error;
+    in-out property <string> status;
+    in-out property <[SchoolItem]> schools;
+    in-out property <bool> two-factor: false;
+    callback search-schools(string);
+    callback login(string /* url */, string /* user */, string /* password */, bool /* remember */);
+    callback submit-two-factor(string);
+    callback logout();
+    callback refresh();
+
+    // --- user ---
+    in-out property <string> full-name;
+    in-out property <string> school;
+    in-out property <bool> demo: false;
+    in-out property <string> fetched;
+
+    // --- today ---
+    in-out property <string> greeting;
+    in-out property <string> today-title;
+    in-out property <string> now-subject;
+    in-out property <string> now-detail;
+    in-out property <float> now-progress;
+    in-out property <string> next-subject;
+    in-out property <[Lesson]> today-lessons;
+    in-out property <[HomeworkItem]> due-tomorrow;
+    in-out property <[TestItem]> tests;
+
+    // --- homework ---
+    in-out property <[HomeworkDay]> homework;
+    in-out property <bool> show-past: false;
+    callback toggle-done(int /* id */, string /* kind */, bool);
+    callback set-show-past(bool);
+
+    // --- grades ---
+    in-out property <[SubjectItem]> subjects;
+    in-out property <string> overall;
+    in-out property <int> semester: 2; // 0 first, 1 second, 2 both
+    callback set-semester(int);
+    callback open-subject(int);
+
+    // --- calendar ---
+    in-out property <[WeekDay]> week;
+    in-out property <string> week-title;
+    callback move-week(int);
+
+    // --- absences ---
+    in-out property <string> absence-percent;
+    in-out property <float> absence-fraction;
+    in-out property <int> absence-level;
+    in-out property <string> absence-label;
+    in-out property <string> absence-left;
+    in-out property <string> year-allowed;
+    in-out property <string> year-detail;
+    in-out property <string> absence-counts;
+    in-out property <[AbsenceItem]> absences;
+    in-out property <[AbsenceItem]> future-absences;
+
+    // --- messages ---
+    in-out property <[MessageItem]> messages;
+    in-out property <[MessageItem]> notifications;
+    in-out property <int> unread;
+    callback mark-read(int);
+}

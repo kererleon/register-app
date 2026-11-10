@@ -1,0 +1,220 @@
+import { Theme } from "theme.slint";
+import { AppData, HomeworkItem, HomeworkDay, GradeItem, SubjectItem, Lesson, WeekDay, AbsenceItem, MessageItem, SchoolItem, TestItem } from "data.slint";
+import { LoginPage } from "login.slint";
+import { TodayPage, HomeworkPage } from "pages.slint";
+import { GradesPage, CalendarPage, AbsencesPage, MessagesPage, SettingsPage } from "pages2.slint";
+
+export { Theme, AppData, HomeworkItem, HomeworkDay, GradeItem, SubjectItem, Lesson, WeekDay, AbsenceItem, MessageItem, SchoolItem, TestItem }
+
+struct NavEntry {
+    icon: image,
+    label: string,
+}
+
+component NavButton inherits Rectangle {
+    in property <NavEntry> entry;
+    in property <bool> selected;
+    in property <bool> compact;
+    in property <int> badge;
+    callback clicked();
+    height: compact ? 56px : 46px;
+    border-radius: 12px;
+    background: selected ? Theme.accent.transparentize(84%) : (ta.has-hover ? Theme.card-hover : transparent);
+    animate background { duration: 120ms; }
+    if !compact: HorizontalLayout {
+        padding-left: 14px;
+        padding-right: 14px;
+        spacing: 12px;
+        Image {
+            source: entry.icon;
+            width: 20px;
+            height: 20px;
+            y: (parent.height - self.height) / 2;
+            colorize: selected ? Theme.accent : Theme.muted;
+        }
+        Text {
+            text: entry.label;
+            color: selected ? Theme.text : Theme.muted;
+            font-size: Theme.font;
+            font-weight: selected ? 700 : 500;
+            vertical-alignment: center;
+        }
+        Rectangle { }
+        if badge > 0: Rectangle {
+            width: 22px;
+            height: 20px;
+            y: (parent.height - self.height) / 2;
+            border-radius: 10px;
+            background: Theme.danger;
+            Text {
+                text: badge;
+                color: white;
+                font-size: 11px;
+                font-weight: 800;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+        }
+    }
+    if compact: VerticalLayout {
+        alignment: center;
+        spacing: 2px;
+        HorizontalLayout {
+            alignment: center;
+            Image {
+                source: entry.icon;
+                width: 22px;
+                height: 22px;
+                colorize: selected ? Theme.accent : Theme.muted;
+            }
+        }
+        Text {
+            text: entry.label;
+            color: selected ? Theme.accent : Theme.muted;
+            font-size: 10px;
+            font-weight: selected ? 700 : 500;
+            horizontal-alignment: center;
+        }
+    }
+    ta := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+export component AppWindow inherits Window {
+    title: "Register";
+    icon: @image-url("../icon.png");
+    preferred-width: 1100px;
+    preferred-height: 760px;
+    min-width: 340px;
+    min-height: 480px;
+    background: Theme.bg;
+    default-font-size: Theme.font;
+    in-out property <int> page: 0;
+    property <[NavEntry]> nav: [
+        { icon: @image-url("icons/today.svg"), label: "Heute" },
+        { icon: @image-url("icons/tasks.svg"), label: "Aufgaben" },
+        { icon: @image-url("icons/grades.svg"), label: "Noten" },
+        { icon: @image-url("icons/calendar.svg"), label: "Kalender" },
+        { icon: @image-url("icons/absences.svg"), label: "Absenzen" },
+        { icon: @image-url("icons/messages.svg"), label: "Mitteilungen" },
+        { icon: @image-url("icons/settings.svg"), label: "Einstellungen" },
+    ];
+    // Phones show four pages below; the rest sit behind "Mehr".
+    property <[NavEntry]> nav-compact: [
+        { icon: @image-url("icons/today.svg"), label: "Heute" },
+        { icon: @image-url("icons/tasks.svg"), label: "Aufgaben" },
+        { icon: @image-url("icons/grades.svg"), label: "Noten" },
+        { icon: @image-url("icons/calendar.svg"), label: "Kalender" },
+        { icon: @image-url("icons/more.svg"), label: "Mehr" },
+    ];
+    property <bool> narrow: self.width < 720px;
+    changed narrow => { Theme.narrow = self.narrow; }
+    init => { Theme.narrow = self.narrow; }
+
+    if !AppData.logged-in: LoginPage {
+        width: 100%;
+        height: 100%;
+    }
+
+    if AppData.logged-in: HorizontalLayout {
+        if !root.narrow: Rectangle {
+            width: 230px;
+            background: Theme.bg-2;
+            VerticalLayout {
+                padding: 14px;
+                spacing: 4px;
+                Text {
+                    text: "Register";
+                    color: Theme.accent;
+                    font-size: 22px;
+                    font-weight: 800;
+                    height: 44px;
+                    vertical-alignment: center;
+                }
+                Text {
+                    text: AppData.full-name;
+                    color: Theme.muted;
+                    font-size: Theme.font-small;
+                    overflow: elide;
+                }
+                Rectangle { height: 14px; }
+                for entry[i] in root.nav: NavButton {
+                    entry: entry;
+                    selected: root.page == i;
+                    badge: i == 5 ? AppData.unread : 0;
+                    clicked => { root.page = i; }
+                }
+                Rectangle { }
+                if AppData.status != "": Text {
+                    text: AppData.status;
+                    color: Theme.faint;
+                    font-size: Theme.font-small;
+                    wrap: word-wrap;
+                }
+            }
+            Rectangle {
+                x: parent.width - 1px;
+                width: 1px;
+                background: Theme.border;
+            }
+        }
+        VerticalLayout {
+            Rectangle {
+                if root.page == 0: TodayPage { }
+                if root.page == 1: HomeworkPage { }
+                if root.page == 2: GradesPage { }
+                if root.page == 3: CalendarPage { }
+                if root.page == 4: AbsencesPage { }
+                if root.page == 5: MessagesPage { }
+                if root.page == 6: SettingsPage { }
+                // Status messages on phones.
+                if root.narrow && AppData.status != "": Rectangle {
+                    y: 6px;
+                    x: (parent.width - self.width) / 2;
+                    width: min(parent.width - 24px, status-text.preferred-width + 24px);
+                    height: 30px;
+                    border-radius: 15px;
+                    background: Theme.card;
+                    border-width: 1px;
+                    border-color: Theme.border;
+                    status-text := Text {
+                        text: AppData.status;
+                        color: Theme.muted;
+                        font-size: Theme.font-small;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                        overflow: elide;
+                    }
+                }
+            }
+            if root.narrow: Rectangle {
+                height: 66px;
+                background: Theme.bg-2;
+                Rectangle {
+                    y: 0;
+                    height: 1px;
+                    background: Theme.border;
+                }
+                HorizontalLayout {
+                    padding: 5px;
+                    spacing: 4px;
+                    for entry[i] in root.nav-compact: NavButton {
+                        entry: entry;
+                        compact: true;
+                        selected: i < 4 ? root.page == i : root.page >= 4;
+                        clicked => {
+                            if i < 4 {
+                                root.page = i;
+                            } else {
+                                // "Mehr" goes through absences, messages, settings.
+                                root.page = root.page >= 4 && root.page < 6 ? root.page + 1 : 4;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

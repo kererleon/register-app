@@ -1,0 +1,173 @@
+import { Theme } from "theme.slint";
+import { AppData } from "data.slint";
+import { Card, Field, PrimaryButton, GhostButton, SectionLabel } from "widgets.slint";
+import { CheckBox } from "std-widgets.slint";
+
+export component LoginPage inherits Rectangle {
+    property <string> school-name;
+    property <string> school-url;
+    property <bool> remember: true;
+    property <string> code;
+    background: Theme.bg;
+
+    // Soft glow behind the card.
+    Rectangle {
+        x: parent.width / 2 - 260px;
+        y: parent.height / 2 - 320px;
+        width: 520px;
+        height: 520px;
+        border-radius: 260px;
+        background: @radial-gradient(circle, Theme.accent.transparentize(Theme.dark ? 86% : 94%) 0%, transparent 70%);
+    }
+
+    VerticalLayout {
+        alignment: center;
+        padding: Theme.page-padding;
+        HorizontalLayout {
+            alignment: center;
+            Card {
+                width: min(440px, root.width - 2 * Theme.page-padding);
+                VerticalLayout {
+                    padding: 24px;
+                    spacing: 14px;
+                    Text {
+                        text: "Register";
+                        font-size: 32px;
+                        font-weight: 800;
+                        color: Theme.accent;
+                        horizontal-alignment: center;
+                    }
+                    Text {
+                        text: "Rust-Version · schnell & sparsam";
+                        font-size: Theme.font-small;
+                        color: Theme.muted;
+                        horizontal-alignment: center;
+                    }
+
+                    if !AppData.two-factor: VerticalLayout {
+                        spacing: 10px;
+                        SectionLabel { text: "SCHULE"; }
+                        if root.school-url == "": VerticalLayout {
+                            spacing: 6px;
+                            search := Field {
+                                placeholder: "Schule suchen, z. B. Fallmerayer";
+                                edited(t) => { AppData.search-schools(t); }
+                            }
+                            Rectangle {
+                                height: min(220px, AppData.schools.length * 40px);
+                                visible: AppData.schools.length > 0;
+                                border-radius: Theme.radius-small;
+                                border-width: 1px;
+                                border-color: Theme.border;
+                                clip: true;
+                                list := Flickable {
+                                    viewport-height: AppData.schools.length * 40px;
+                                    for school[i] in AppData.schools: Rectangle {
+                                        y: i * 40px;
+                                        height: 40px;
+                                        background: ta.has-hover ? Theme.card-hover : transparent;
+                                        Text {
+                                            x: 12px;
+                                            width: parent.width - 24px;
+                                            text: school.name;
+                                            color: Theme.text;
+                                            font-size: Theme.font;
+                                            vertical-alignment: center;
+                                            overflow: elide;
+                                        }
+                                        ta := TouchArea {
+                                            mouse-cursor: pointer;
+                                            clicked => {
+                                                root.school-name = school.name;
+                                                root.school-url = school.url;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if root.school-url != "": HorizontalLayout {
+                            spacing: 8px;
+                            Text {
+                                text: root.school-name;
+                                color: Theme.text;
+                                font-size: Theme.font;
+                                font-weight: 600;
+                                vertical-alignment: center;
+                                wrap: word-wrap;
+                            }
+                            GhostButton {
+                                text: "Ändern";
+                                clicked => {
+                                    root.school-url = "";
+                                    root.school-name = "";
+                                }
+                            }
+                        }
+
+                        SectionLabel { text: "ANMELDUNG"; }
+                        user := Field { placeholder: "Benutzername"; }
+                        pass := Field {
+                            placeholder: "Passwort";
+                            password: true;
+                            accepted => {
+                                AppData.login(root.school-url, user.text, pass.text, root.remember);
+                            }
+                        }
+                        CheckBox {
+                            text: "Angemeldet bleiben";
+                            checked <=> root.remember;
+                        }
+                        if AppData.error != "": Text {
+                            text: AppData.error;
+                            color: Theme.danger;
+                            font-size: Theme.font;
+                            wrap: word-wrap;
+                        }
+                        PrimaryButton {
+                            text: "Anmelden";
+                            busy: AppData.busy;
+                            enabled: root.school-url != "" && user.text != "" && pass.text != "";
+                            clicked => {
+                                AppData.login(root.school-url, user.text, pass.text, root.remember);
+                            }
+                        }
+                        HorizontalLayout {
+                            alignment: center;
+                            GhostButton {
+                                text: "Ohne Konto ausprobieren (Demo)";
+                                clicked => {
+                                    AppData.login("https://vinzentinum.digitalesregister.it", "demo-user-6540", "demo", false);
+                                }
+                            }
+                        }
+                    }
+
+                    if AppData.two-factor: VerticalLayout {
+                        spacing: 10px;
+                        Text {
+                            text: "Zweiter Faktor wird benötigt";
+                            color: Theme.text;
+                            font-size: Theme.font-big;
+                            font-weight: 700;
+                        }
+                        tfa := Field {
+                            placeholder: "Code";
+                            accepted => { AppData.submit-two-factor(tfa.text); }
+                        }
+                        if AppData.error != "": Text {
+                            text: AppData.error;
+                            color: Theme.danger;
+                            wrap: word-wrap;
+                        }
+                        PrimaryButton {
+                            text: "Bestätigen";
+                            busy: AppData.busy;
+                            clicked => { AppData.submit-two-factor(tfa.text); }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
