@@ -1,0 +1,373 @@
+{
+ "subjects": [
+  {
+   "subject": {
+    "id": 17,
+    "name": "Bewegung und Sport"
+   },
+   "absences": 0,
+   "grades": [
+    {
+     "grade": "9.00",
+     "weight": 100,
+     "date": "2022-10-11",
+     "type": "Sonstige Bewertung",
+     "typeId": 7,
+     "studentId": 6619,
+     "cancelled": 0,
+     "subjectId": 17,
+     "semester": 1,
+     "createdTimeStamp": "2022-10-17 12:34:12",
+     "cancelledTimeStamp": null,
+     "description": ""
+    }
+   ],
+   "averageSemester": 0,
+   "averageYear": 0,
+   "subjectId": 17,
+   "student": {
+    "id": 6619,
+    "firstName": "Michael",
+    "lastName": "Debertol"
+   },
+   "countCompetences": 0,
+   "countDescriptions": 0,
+   "countObservations": 1
+  },
+  {
+   "subject": {
+    "id": 6,
+    "name": "Deutsch"
+   },
+   "absences": 0,
+   "grades": [],
+   "averageSemester": 0,
+   "averageYear": 0,
+   "subjectId": 6,
+   "student": {
+    "id": 6619,
+    "firstName": "Michael",
+    "lastName": "Debertol"
+   },
+   "countCompetences": 0,
+   "countDescriptions": 0,
+   "countObservations": 0
+  },
+  {
+   "subject": {
+    "id": 8,
+    "name": "Englisch"
+   },
+   "absences": 0,
+   "grades": [
+    {
+     "grade": "9.50",
+     "weight": 100,
+     "date": "2022-10-03",
+     "type": "Schularbeit",
+     "typeId": 3,
+     "studentId": 6619,
+     "cancelled": 0,
+     "subjectId": 8,
+     "semester": 1,
+     "createdTimeStamp": "2022-10-12 23:49:08",
+     "cancelledTimeStamp": null,
+     "description": ""
+    }
+   ],
+   "averageSemester": 0,
+   "averageYear": 0,
+   "subjectId": 8,
+   "student": {
+    "id": 6619,
+    "firstName": "Michael",
+    "lastName": "Debertol"
+   },
+   "countCompetences": 0,
+   "countDescriptions": 0,
+   "countObservations": 0
+  },
+  {
+   "subject": {
+    "id": 24,
+    "name": "FÜ"
+   },
+   "absences": 0,
+   "grades": [],
+   "averageSemester": 0,
+   "averageYear": 0,
+   "subjectId": 24,
+   "student": {
+    "id": 6619,
+    "firstName": "Michael",
+    "lastName": "Debertol"
+   },
+   "countCompetences": 0,
+   "countDescriptions": 0,
+   "countObservations": 0
+  },
+  {
+   "subject": {
+    "id": 10,
+    "name": "Geschichte"
+   },
+   "absences": 0,
+   "grades": [
+    {
+     "grade": "9.75",
+     "weight": 50,
+     "date": "2022-10-07",
+     "type": "Testarbeit",
+     "typeId": 2,
+     "studentId": 6619,
+     "cancelled": 0,
+     "subjectId": 10,
+     "semester": 1,
+     "createdTimeStamp": "2022-10-18 12:09:50",
+     "cancelledTimeStamp": null,
+     "description": ""
+    }
+   ],
+   "averageSemester": 0,
+   "averageYear": 0,
+   "subjectId": 10,
+   "student": {
+    "id": 6619,
+    "firstName": "Michael",
+    "lastName": "Debertol"
+   },
+   "countCompetences": 0,
+   "countDescriptions": 0,
+   "countObservations": 0
+  },
+  {
+   "subject": {
+    "id": 106,
+    "name": "Gesellschaftliche Bildung"
+   },
+   "absences": 0,
+   "grades": [],
+   "averageSemester": 0,
+   "averageYear": 0,
+   "subjectId": 106,
+   "student": {
+    "id": 6619,
+    "firstName": "Michael",
+    "lastName": "Debertol"
+   },
+   "countCompetences": 0,
+   "countDescriptions": 0,
+   "countObservations": 0
+  },
+  {
+   "subject": {
+    "id": 20,
+    "name": "Griechisch"
+   },
+   "absences": 0,
+   "grades": [],
+   "averageSemester": 0,
+   "averageYear": 0,
+   "subjectId": 20,
+   "student": {
+    "id": 6619,
+    "firstName": "Michael",
+    "lastName": "Debertol"
+   },
+   "countCompetences": 0,
+   "countDescriptions": 0,
+   "countObservations": 0
+  },
+  {
+   "subject": {
+    "id": 7,
+    "name": "Italienisch"
+   },
+   "absences": 0,
+   "grades": [],
+   "averageSemester": 0,
+   "averageYear": 0,
+   "subjectId": 7,
+   "student": {
+    "id": 6619,
+    "firstName": "Michael",
+    "lastName": "Debertol"
+   },
+   "countCompetences": 0,
+   "countDescriptions": 0,
+   "countObservations": 0
+  },
+  {
+   "subject": {
+    "id": 103,
+    "name": "Kunstgeschichte"
+   },
+   "absences": 0,
+   "grades": [],
+   "averageSemester": 0,
+   "averageYear": 0,
+   "subjectId": 103,
+   "student": {
+    "id": 6619,
+    "firstName": "Michael",
+    "lastName": "Debertol"
+   },
+   "countCompetences": 0,
+   "countDescriptions": 0,
+   "countObservations": 0
+  },
+  {
+   "subject": {
+    "id": 19,
+    "name": "Latein"
+   },
+   "absences": 0,
+   "grades": [],
+   "averageSemester": 0,
+   "averageYear": 0,
+   "subjectId": 19,
+   "student": {
+    "id": 6619,
+    "firstName": "Michael",
+    "lastName": "Debertol"
+   },
+   "countCompetences": 0,
+   "countDescriptions": 0,
+   "countObservations": 0
+  },
+  {
+   "subject": {
+    "id": 13,
+    "name": "Mathematik"
+   },
+   "absences": 0,
+   "grades": [],
+   "averageSemester": 0,
+   "averageYear": 0,
+   "subjectId": 13,
+   "student": {
+    "id": 6619,
+    "firstName": "Michael",
+    "lastName": "Debertol"
+   },
+   "countCompetences": 0,
+   "countDescriptions": 0,
+   "countObservations": 0
+  },
+  {
+   "subject": {
+    "id": 22,
+    "name": "Naturwissenschaften"
+   },
+   "absences": 0,
+   "grades": [],
+   "averageSemester": 0,
+   "averageYear": 0,
+   "subjectId": 22,
+   "student": {
+    "id": 6619,
+    "firstName": "Michael",
+    "lastName": "Debertol"
+   },
+   "countCompetences": 0,
+   "countDescriptions": 0,
+   "countObservations": 0
+  },
+  {
+   "subject": {
+    "id": 21,
+    "name": "Philosophie"
+   },
+   "absences": 0,
+   "grades": [
+    {
+     "grade": "8.75",
+     "weight": 100,
+     "date": "2022-10-12",
+     "type": "Testarbeit",
+     "typeId": 2,
+     "studentId": 6619,
+     "cancelled": 0,
+     "subjectId": 21,
+     "semester": 1,
+     "createdTimeStamp": "2022-10-13 13:35:35",
+     "cancelledTimeStamp": null,
+     "description": ""
+    }
+   ],
+   "averageSemester": 0,
+   "averageYear": 0,
+   "subjectId": 21,
+   "student": {
+    "id": 6619,
+    "firstName": "Michael",
+    "lastName": "Debertol"
+   },
+   "countCompetences": 0,
+   "countDescriptions": 0,
+   "countObservations": 0
+  },
+  {
+   "subject": {
+    "id": 14,
+    "name": "Physik"
+   },
+   "absences": 0,
+   "grades": [],
+   "averageSemester": 0,
+   "averageYear": 0,
+   "subjectId": 14,
+   "student": {
+    "id": 6619,
+    "firstName": "Michael",
+    "lastName": "Debertol"
+   },
+   "countCompetences": 0,
+   "countDescriptions": 0,
+   "countObservations": 0
+  },
+  {
+   "subject": {
+    "id": 5,
+    "name": "Religion"
+   },
+   "absences": 0,
+   "grades": [],
+   "averageSemester": 0,
+   "averageYear": 0,
+   "subjectId": 5,
+   "student": {
+    "id": 6619,
+    "firstName": "Michael",
+    "lastName": "Debertol"
+   },
+   "countCompetences": 0,
+   "countDescriptions": 0,
+   "countObservations": 0
+  },
+  {
+   "subject": {
+    "id": 29,
+    "name": "Z-Klassenlehrerstunde"
+   },
+   "absences": 0,
+   "grades": [],
+   "averageSemester": 0,
+   "averageYear": 0,
+   "subjectId": 29,
+   "student": {
+    "id": 6619,
+    "firstName": "Michael",
+    "lastName": "Debertol"
+   },
+   "countCompetences": 0,
+   "countDescriptions": 0,
+   "countObservations": 0
+  }
+ ],
+ "averageSemester": "-",
+ "averageYear": "-",
+ "negativeSubjectsSemester": "-",
+ "negativeSubjectsYear": "-",
+ "showGrades": 2
+}

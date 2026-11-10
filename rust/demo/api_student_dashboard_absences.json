@@ -1,0 +1,104 @@
+{
+ "absences": [
+  {
+   "id": 1,
+   "justified": 1,
+   "reason": null,
+   "reason_signature": null,
+   "reason_timestamp": null,
+   "note": null,
+   "group": [
+    {
+     "date": "2026-11-08",
+     "hour": 3,
+     "minutes": 50,
+     "minutes_begin": 0,
+     "minutes_end": 0
+    },
+    {
+     "date": "2026-11-08",
+     "hour": 2,
+     "minutes": 50,
+     "minutes_begin": 0,
+     "minutes_end": 0
+    },
+    {
+     "date": "2026-11-08",
+     "hour": 1,
+     "minutes": 50,
+     "minutes_begin": 0,
+     "minutes_end": 0
+    }
+   ]
+  }
+ ],
+ "futureAbsences": [],
+ "canEdit": true,
+ "statistics": {
+  "counter": 1,
+  "counterForSchool": 0,
+  "percentage": "1.2",
+  "justified": 0,
+  "notJustified": 0,
+  "delayed": 0
+ },
+ "selfDeclarationsList": [
+  {
+   "id": 14,
+   "title": "SITUATION 0: Nichtgesundheitliche Gründe",
+   "text": "<p><strong>Erkl&auml;rung f&uuml;r die Wiederaufnahme in die Schulgemeinschaft bei Abwesenheit aus NICHT gesundheitlichen Gr&uuml;nden</strong></p>\n<p>&nbsp;</p>\n<p>Der/die Unterfertigte <strong>erkl&auml;rt</strong> zum Zweck der Wiederaufnahme in die Schulgemeinschaft im Sinne der diesbez&uuml;glich geltenden Gesetze und im Bewusstsein, dass jede Falscherkl&auml;rung nach dem Strafgesetzbuch und den einschl&auml;gigen Gesetzen (gem&auml;&szlig; Art. 46 des DPR Nr. 445/2000) bestraft wird, dass die Abwesenheit einem <strong>nichtgesundheitlichen Grund </strong>geschuldet war.</p>",
+   "version": "VER-2021-10-18",
+   "active": 0,
+   "inputmandatory": 0,
+   "inputexplain": null
+  },
+  {
+   "id": 19,
+   "title": "SITUATION 1: Krankheit bis zu 3 Schultage - nicht im Zusammenhang mit SARS CoV2",
+   "text": "<p><strong>Abwesenheit aus gesundheitlichen Gr&uuml;nden von drei Tagen oder weniger, die NICHT im Zusammenhang mit einer m&ouml;glichen SARS-CoV-2-Infektion steht (kein &auml;rztliches Attest erforderlich) </strong></p>\n<p>&nbsp;</p>\n<p>Der/die Unterfertigte <strong>erkl&auml;rt</strong> zum Zweck der Wiederaufnahme in die Schulgemeinschaft im Sinne der diesbez&uuml;glich geltenden Gesetze und im Bewusstsein, dass jede Falscherkl&auml;rung nach dem Strafgesetzbuch und den einschl&auml;gigen Gesetzen (gem&auml;&szlig; Art. 46 des DPR Nr. 445/2000) bestraft wird, dass die <strong>krankheitsbedingte</strong> Abwesenheit <strong>nicht mit Symptomen </strong><strong>einer m&ouml;glichen SARS-CoV-2-Infektion</strong> zusammenh&auml;ngt, sondern mit anderen nicht verd&auml;chtigen klinischen Zust&auml;nden.</p>",
+   "version": "VER-2021-10-18",
+   "active": 0,
+   "inputmandatory": 0,
+   "inputexplain": null
+  },
+  {
+   "id": 20,
+   "title": "SITUATION 2: Krankheit bis zu 3 Schultagen - mögliche Infektion mit SARS-CoV2",
+   "text": "<p><strong>Erkl&auml;rung f&uuml;r die Wiederaufnahme in die Schulgemeinschaft nach einer bis zu 3-t&auml;gigen Abwesenheit aus gesundheitlichen Gr&uuml;nden, die m&ouml;glicherweise in Verbindung mit einer SARS-CoV-2-Infektion stehen (kein &auml;rztliches Zeugnis erforderlich)</strong></p>\n<p>&nbsp;</p>\n<p>Der/die Unterfertigte <strong>erkl&auml;rt </strong>zum Zweck der Wiederaufnahme in die Schulgemeinschaft im Sinne der diesbez&uuml;glich geltenden Gesetze und im Bewusstsein, dass jede Falscherkl&auml;rung nach dem Strafgesetzbuch und den einschl&auml;gigen Gesetzen (gem&auml;&szlig; Art. 46 des DPR Nr. 445/2000) bestraft wird, dass <strong>(a)</strong> die unten angef&uuml;hrte &Auml;rztin / der unten angef&uuml;hrte <strong>Arzt</strong> <strong>konsultiert</strong> wurde, <strong>(b)</strong> die Erkrankung laut deren / dessen Einsch&auml;tzung <strong>nicht auf eine Infektion mit Sars-CoV-2</strong> zur&uuml;ckzuf&uuml;hren ist.</p>",
+   "version": "VER-2021-10-18",
+   "active": 0,
+   "inputmandatory": 1,
+   "inputexplain": "Name der Ärztin / des Arztes"
+  },
+  {
+   "id": 21,
+   "title": "SITUATION 3: Krankheit mehr als 3 Schultagen - mögliche Infektion mit SARS-CoV2",
+   "text": "<p><strong>Erkl&auml;rung f&uuml;r die Wiederaufnahme in die Schulgemeinschaft nach Abwesenheiten von mehr als 3 Schultagen aus gesundheitlichen Gr&uuml;nden, die auch auf eine m&ouml;gliche SARS-CoV-2-Infektion zur&uuml;ckzuf&uuml;hren sind</strong></p>\n<p>&nbsp;</p>\n<p>Der/die Unterfertigte <strong>erkl&auml;rt</strong> zum Zweck der Wiederaufnahme in die Schulgemeinschaft im Sinne der diesbez&uuml;glich geltenden Gesetze und im Bewusstsein, dass jede Falscherkl&auml;rung nach dem Strafgesetzbuch und den einschl&auml;gigen Gesetzen (gem&auml;&szlig; Art. 46 des DPR Nr. 445/2000) bestraft wird, dass die unten angef&uuml;hrte <strong>&Auml;rztin</strong> / der unten angef&uuml;hrte <strong>Arzt konsultiert</strong> und deren / dessen <strong>Anweisungen befolgt</strong> wurde. Zum Nachweis dieser Erkl&auml;rung wird dem Schulsekretariat (<a href=\"mailto:schule@vinzentinum.it\">schule@vinzentinum.it</a>) die <strong>&auml;rztliche Best&auml;tigung</strong> zugemailt.</p>",
+   "version": "VER-2021-10-11",
+   "active": 0,
+   "inputmandatory": 0,
+   "inputexplain": null
+  },
+  {
+   "id": 22,
+   "title": "SITUATION 4: Ende der Quarantäne",
+   "text": "<p>Der/die Unterfertigte <strong>beantragt</strong> die Wiederaufnahme in die schulische Einrichtung und &uuml;bermittelt zu diesem Zweck dem Schulsekretariat des Vinzentinums (<a href=\"mailto:schule@vinzentinum.it\">schule@vinzentinum.it</a>) die schriftliche <strong>Mitteilung</strong> der epidemiologischen &Uuml;berwachungseinheit &uuml;ber die <strong>Beendigung der Quarant&auml;ne</strong>.</p>",
+   "version": "VER-2021-10-18",
+   "active": 0,
+   "inputmandatory": 0,
+   "inputexplain": null
+  },
+  {
+   "id": 23,
+   "title": "SITUATION 5: Ende der Isolation",
+   "text": "<p>Der/die Unterfertigte <strong>beantragt</strong> die Wiederaufnahme in die schulische Einrichtung und &uuml;bermittelt zu diesem Zweck dem Schulsekretariat des Vinzentinums (<a href=\"mailto:schule@vinzentinum.it\">schule@vinzentinum.it</a>) die schriftliche <strong>Best&auml;tigung der Negativit&auml;t</strong>, die von der epidemiologischen &Uuml;berwachungseinheit ausgestellt wurde.</p>",
+   "version": "VER-2021-10-18",
+   "active": 0,
+   "inputmandatory": 0,
+   "inputexplain": null
+  }
+ ],
+ "selfDeclarationsActiveList": [],
+ "isAbsencesSelfDeclarationActive": false,
+ "isAbsencesSelfDeclarationMandatory": true
+}

@@ -1,0 +1,3148 @@
+{
+ "2026-11-09": {
+  "1": {
+   "1": {
+    "1": {
+     "isLesson": 1,
+     "lesson": {
+      "id": 3539,
+      "date": "2026-11-09",
+      "hour": 1,
+      "toHour": 2,
+      "timeStart": 24300,
+      "timeEnd": 27000,
+      "timeToEnd": 29700,
+      "timeStartObject": {
+       "h": "07",
+       "m": "45",
+       "ts": 24300,
+       "text": "07:45",
+       "html": "07<sup>45</sup>"
+      },
+      "timeEndObject": {
+       "h": "08",
+       "m": "30",
+       "ts": 27000,
+       "text": "08:30",
+       "html": "08<sup>30</sup>"
+      },
+      "timeToEndObject": {
+       "h": "09",
+       "m": "15",
+       "ts": 29700,
+       "text": "09:15",
+       "html": "09<sup>15</sup>"
+      },
+      "timeShowEnabled": true,
+      "classId": 60,
+      "className": "8K",
+      "classComment": "",
+      "description": "",
+      "note": "",
+      "lessonShow": true,
+      "teachers": [
+       {
+        "id": 5971,
+        "firstName": "Barbara",
+        "lastName": "Mitterrutzner"
+       }
+      ],
+      "teachersToNotify": [],
+      "teacherMyself": null,
+      "isAutoNotify": false,
+      "isLessonTypeNotifyOn": false,
+      "exp_lt_default": false,
+      "isSecretary": false,
+      "subject": {
+       "id": 8,
+       "name": "Englisch",
+       "lernfeld": 0,
+       "defaultLessonContent": "",
+       "defaultLessonContentType": 0
+      },
+      "homeworkExams": [],
+      "lessonContents": [
+       {
+        "id": 1672,
+        "name": "Writing conference formal email, post-it-note feedback about book so far, workbook exercises Unit 1, worksheet: Commonly mispronounced words",
+        "homework": 0,
+        "online": 0,
+        "deadlineStart": null,
+        "deadline": null,
+        "deadlineOvertime": null,
+        "hasLessonContentSubmissions": false,
+        "typeId": 1,
+        "typeName": "Fachunterricht",
+        "lessonContentSubmissions": [],
+        "lessonContentStudents": [],
+        "lessonContentStudentsPercentage": 100
+       }
+      ],
+      "rooms": [
+       {
+        "id": 13,
+        "name": "8"
+       }
+      ],
+      "readOnly": true,
+      "isSubstitute": 0,
+      "linkToPreviousHour": 0,
+      "linkedHours": [
+       {
+        "id": 3540,
+        "date": "2026-11-09",
+        "hour": 2,
+        "toHour": 2,
+        "timeStart": 27000,
+        "timeEnd": 29700,
+        "timeToEnd": 29700,
+        "timeStartObject": {
+         "h": "08",
+         "m": "30",
+         "ts": 27000,
+         "text": "08:30",
+         "html": "08<sup>30</sup>"
+        },
+        "timeEndObject": {
+         "h": "09",
+         "m": "15",
+         "ts": 29700,
+         "text": "09:15",
+         "html": "09<sup>15</sup>"
+        },
+        "timeToEndObject": {
+         "h": "09",
+         "m": "15",
+         "ts": 29700,
+         "text": "09:15",
+         "html": "09<sup>15</sup>"
+        },
+        "timeShowEnabled": true,
+        "classId": 60,
+        "className": "8K",
+        "classComment": "",
+        "description": "",
+        "note": "",
+        "lessonShow": true,
+        "teachers": [
+         {
+          "id": 5971,
+          "firstName": "Barbara",
+          "lastName": "Mitterrutzner"
+         }
+        ],
+        "teachersToNotify": [],
+        "teacherMyself": null,
+        "isAutoNotify": false,
+        "isLessonTypeNotifyOn": false,
+        "exp_lt_default": false,
+        "isSecretary": false,
+        "subject": {
+         "id": 8,
+         "name": "Englisch",
+         "lernfeld": 0,
+         "defaultLessonContent": "",
+         "defaultLessonContentType": 0
+        },
+        "homeworkExams": [],
+        "lessonContents": [],
+        "rooms": [
+         {
+          "id": 13,
+          "name": "8"
+         }
+        ],
+        "readOnly": true,
+        "isSubstitute": 0,
+        "linkToPreviousHour": 1,
+        "linkedHours": [],
+        "criticalObservations": [],
+        "missingStudents": [],
+        "students": [],
+        "grades": [],
+        "observations": [],
+        "absenceOpenAbsencesStudents": []
+       }
+      ],
+      "criticalObservations": [],
+      "missingStudents": [],
+      "students": [],
+      "grades": [],
+      "observations": [],
+      "absenceOpenAbsencesStudents": []
+     },
+     "hour": 1,
+     "linkedHoursCount": 1
+    },
+    "3": {
+     "isLesson": 1,
+     "lesson": {
+      "id": 2813,
+      "date": "2026-11-09",
+      "hour": 3,
+      "toHour": 4,
+      "timeStart": 30000,
+      "timeEnd": 32700,
+      "timeToEnd": 35700,
+      "timeStartObject": {
+       "h": "09",
+       "m": "20",
+       "ts": 30000,
+       "text": "09:20",
+       "html": "09<sup>20</sup>"
+      },
+      "timeEndObject": {
+       "h": "10",
+       "m": "05",
+       "ts": 32700,
+       "text": "10:05",
+       "html": "10<sup>05</sup>"
+      },
+      "timeToEndObject": {
+       "h": "10",
+       "m": "55",
+       "ts": 35700,
+       "text": "10:55",
+       "html": "10<sup>55</sup>"
+      },
+      "timeShowEnabled": true,
+      "classId": 60,
+      "className": "8K",
+      "classComment": "",
+      "description": "",
+      "note": "",
+      "lessonShow": true,
+      "teachers": [
+       {
+        "id": 1643,
+        "firstName": "Manuel",
+        "lastName": "Winkler"
+       }
+      ],
+      "teachersToNotify": [],
+      "teacherMyself": null,
+      "isAutoNotify": false,
+      "isLessonTypeNotifyOn": false,
+      "exp_lt_default": false,
+      "isSecretary": false,
+      "subject": {
+       "id": 14,
+       "name": "Physik",
+       "lernfeld": 0,
+       "defaultLessonContent": "",
+       "defaultLessonContentType": 0
+      },
+      "homeworkExams": [
+       {
+        "id": 1038,
+        "name": "1. Test 1. Semester",
+        "homework": 0,
+        "online": 0,
+        "deadlineStart": null,
+        "deadline": "2022-10-17 09:20:00",
+        "deadlineOvertime": null,
+        "hasGrades": false,
+        "hasGradeGroupSubmissions": false,
+        "typeId": 2,
+        "typeName": "Testarbeit",
+        "gradeGroupSubmissions": [],
+        "gradeGroupStudents": [],
+        "gradeGroupStudentsPercentage": 100
+       }
+      ],
+      "lessonContents": [
+       {
+        "id": 1642,
+        "name": "Test",
+        "homework": 0,
+        "online": 0,
+        "deadlineStart": null,
+        "deadline": null,
+        "deadlineOvertime": null,
+        "hasLessonContentSubmissions": false,
+        "typeId": 1,
+        "typeName": "Fachunterricht",
+        "lessonContentSubmissions": [],
+        "lessonContentStudents": [],
+        "lessonContentStudentsPercentage": 100
+       }
+      ],
+      "rooms": [],
+      "readOnly": true,
+      "isSubstitute": 0,
+      "linkToPreviousHour": 0,
+      "linkedHours": [
+       {
+        "id": 2814,
+        "date": "2026-11-09",
+        "hour": 4,
+        "toHour": 4,
+        "timeStart": 33000,
+        "timeEnd": 35700,
+        "timeToEnd": 35700,
+        "timeStartObject": {
+         "h": "10",
+         "m": "10",
+         "ts": 33000,
+         "text": "10:10",
+         "html": "10<sup>10</sup>"
+        },
+        "timeEndObject": {
+         "h": "10",
+         "m": "55",
+         "ts": 35700,
+         "text": "10:55",
+         "html": "10<sup>55</sup>"
+        },
+        "timeToEndObject": {
+         "h": "10",
+         "m": "55",
+         "ts": 35700,
+         "text": "10:55",
+         "html": "10<sup>55</sup>"
+        },
+        "timeShowEnabled": true,
+        "classId": 60,
+        "className": "8K",
+        "classComment": "",
+        "description": "",
+        "note": "",
+        "lessonShow": true,
+        "teachers": [
+         {
+          "id": 1643,
+          "firstName": "Manuel",
+          "lastName": "Winkler"
+         }
+        ],
+        "teachersToNotify": [],
+        "teacherMyself": null,
+        "isAutoNotify": false,
+        "isLessonTypeNotifyOn": false,
+        "exp_lt_default": false,
+        "isSecretary": false,
+        "subject": {
+         "id": 14,
+         "name": "Physik",
+         "lernfeld": 0,
+         "defaultLessonContent": "",
+         "defaultLessonContentType": 0
+        },
+        "homeworkExams": [],
+        "lessonContents": [],
+        "rooms": [],
+        "readOnly": true,
+        "isSubstitute": 0,
+        "linkToPreviousHour": 1,
+        "linkedHours": [],
+        "criticalObservations": [],
+        "missingStudents": [],
+        "students": [],
+        "grades": [],
+        "observations": [],
+        "absenceOpenAbsencesStudents": []
+       }
+      ],
+      "criticalObservations": [],
+      "missingStudents": [],
+      "students": [],
+      "grades": [],
+      "observations": [],
+      "absenceOpenAbsencesStudents": []
+     },
+     "hour": 3,
+     "linkedHoursCount": 1
+    },
+    "5": {
+     "isLesson": 1,
+     "lesson": {
+      "id": 3530,
+      "date": "2026-11-09",
+      "hour": 5,
+      "toHour": 6,
+      "timeStart": 36600,
+      "timeEnd": 39300,
+      "timeToEnd": 42300,
+      "timeStartObject": {
+       "h": "11",
+       "m": "10",
+       "ts": 36600,
+       "text": "11:10",
+       "html": "11<sup>10</sup>"
+      },
+      "timeEndObject": {
+       "h": "11",
+       "m": "55",
+       "ts": 39300,
+       "text": "11:55",
+       "html": "11<sup>55</sup>"
+      },
+      "timeToEndObject": {
+       "h": "12",
+       "m": "45",
+       "ts": 42300,
+       "text": "12:45",
+       "html": "12<sup>45</sup>"
+      },
+      "timeShowEnabled": true,
+      "classId": 60,
+      "className": "8K",
+      "classComment": "",
+      "description": "",
+      "note": "",
+      "lessonShow": true,
+      "teachers": [
+       {
+        "id": 1628,
+        "firstName": "Christof",
+        "lastName": "Obkircher"
+       }
+      ],
+      "teachersToNotify": [],
+      "teacherMyself": null,
+      "isAutoNotify": false,
+      "isLessonTypeNotifyOn": false,
+      "exp_lt_default": false,
+      "isSecretary": false,
+      "subject": {
+       "id": 10,
+       "name": "Geschichte",
+       "lernfeld": 0,
+       "defaultLessonContent": "",
+       "defaultLessonContentType": 0
+      },
+      "homeworkExams": [],
+      "lessonContents": [
+       {
+        "id": 1665,
+        "name": "Der 1. Weltkrieg: das Epochenjahr 1917 (Kriegseintritt der USA, Oktoberrevolution in Russland), die Kriegswirtschaft (Arbeitsblatt, PPP)",
+        "homework": 0,
+        "online": 0,
+        "deadlineStart": null,
+        "deadline": null,
+        "deadlineOvertime": null,
+        "hasLessonContentSubmissions": false,
+        "typeId": 1,
+        "typeName": "Fachunterricht",
+        "lessonContentSubmissions": [],
+        "lessonContentStudents": [],
+        "lessonContentStudentsPercentage": 100
+       }
+      ],
+      "rooms": [],
+      "readOnly": true,
+      "isSubstitute": 0,
+      "linkToPreviousHour": 0,
+      "linkedHours": [
+       {
+        "id": 3531,
+        "date": "2026-11-09",
+        "hour": 6,
+        "toHour": 6,
+        "timeStart": 39600,
+        "timeEnd": 42300,
+        "timeToEnd": 42300,
+        "timeStartObject": {
+         "h": "12",
+         "m": "00",
+         "ts": 39600,
+         "text": "12:00",
+         "html": "12<sup>00</sup>"
+        },
+        "timeEndObject": {
+         "h": "12",
+         "m": "45",
+         "ts": 42300,
+         "text": "12:45",
+         "html": "12<sup>45</sup>"
+        },
+        "timeToEndObject": {
+         "h": "12",
+         "m": "45",
+         "ts": 42300,
+         "text": "12:45",
+         "html": "12<sup>45</sup>"
+        },
+        "timeShowEnabled": true,
+        "classId": 60,
+        "className": "8K",
+        "classComment": "",
+        "description": "",
+        "note": "",
+        "lessonShow": true,
+        "teachers": [
+         {
+          "id": 1628,
+          "firstName": "Christof",
+          "lastName": "Obkircher"
+         }
+        ],
+        "teachersToNotify": [],
+        "teacherMyself": null,
+        "isAutoNotify": false,
+        "isLessonTypeNotifyOn": false,
+        "exp_lt_default": false,
+        "isSecretary": false,
+        "subject": {
+         "id": 10,
+         "name": "Geschichte",
+         "lernfeld": 0,
+         "defaultLessonContent": "",
+         "defaultLessonContentType": 0
+        },
+        "homeworkExams": [],
+        "lessonContents": [],
+        "rooms": [],
+        "readOnly": true,
+        "isSubstitute": 0,
+        "linkToPreviousHour": 1,
+        "linkedHours": [],
+        "criticalObservations": [],
+        "missingStudents": [],
+        "students": [],
+        "grades": [],
+        "observations": [],
+        "absenceOpenAbsencesStudents": []
+       }
+      ],
+      "criticalObservations": [],
+      "missingStudents": [],
+      "students": [],
+      "grades": [],
+      "observations": [],
+      "absenceOpenAbsencesStudents": []
+     },
+     "hour": 5,
+     "linkedHoursCount": 1
+    },
+    "7": {
+     "isLesson": 1,
+     "lesson": {
+      "id": 3566,
+      "date": "2026-11-09",
+      "hour": 7,
+      "toHour": 7,
+      "timeStart": 42600,
+      "timeEnd": 45300,
+      "timeToEnd": 45300,
+      "timeStartObject": {
+       "h": "12",
+       "m": "50",
+       "ts": 42600,
+       "text": "12:50",
+       "html": "12<sup>50</sup>"
+      },
+      "timeEndObject": {
+       "h": "13",
+       "m": "35",
+       "ts": 45300,
+       "text": "13:35",
+       "html": "13<sup>35</sup>"
+      },
+      "timeToEndObject": {
+       "h": "13",
+       "m": "35",
+       "ts": 45300,
+       "text": "13:35",
+       "html": "13<sup>35</sup>"
+      },
+      "timeShowEnabled": true,
+      "classId": 60,
+      "className": "8K",
+      "classComment": "",
+      "description": "",
+      "note": "",
+      "lessonShow": true,
+      "teachers": [
+       {
+        "id": 3808,
+        "firstName": "Konrad",
+        "lastName": "Willeit"
+       }
+      ],
+      "teachersToNotify": [],
+      "teacherMyself": null,
+      "isAutoNotify": false,
+      "isLessonTypeNotifyOn": false,
+      "exp_lt_default": false,
+      "isSecretary": false,
+      "subject": {
+       "id": 5,
+       "name": "Religion",
+       "lernfeld": 0,
+       "defaultLessonContent": "",
+       "defaultLessonContentType": 0
+      },
+      "homeworkExams": [],
+      "lessonContents": [
+       {
+        "id": 1692,
+        "name": "Wiederholungen in Vorbereitung auf den Test am 20. Okt. 2022",
+        "homework": 0,
+        "online": 0,
+        "deadlineStart": null,
+        "deadline": null,
+        "deadlineOvertime": null,
+        "hasLessonContentSubmissions": false,
+        "typeId": 1,
+        "typeName": "Fachunterricht",
+        "lessonContentSubmissions": [],
+        "lessonContentStudents": [],
+        "lessonContentStudentsPercentage": 100
+       }
+      ],
+      "rooms": [
+       {
+        "id": 13,
+        "name": "8"
+       }
+      ],
+      "readOnly": true,
+      "isSubstitute": 0,
+      "linkToPreviousHour": 0,
+      "linkedHours": [],
+      "criticalObservations": [],
+      "missingStudents": [],
+      "students": [],
+      "grades": [],
+      "observations": [],
+      "absenceOpenAbsencesStudents": []
+     },
+     "hour": 7,
+     "linkedHoursCount": 0
+    },
+    "8": {
+     "isLesson": 0,
+     "lesson": null,
+     "hour": 8,
+     "linkedHoursCount": 0
+    },
+    "9": {
+     "isLesson": 0,
+     "lesson": null,
+     "hour": 9,
+     "linkedHoursCount": 0
+    },
+    "10": {
+     "isLesson": 0,
+     "lesson": null,
+     "hour": 10,
+     "linkedHoursCount": 0
+    }
+   }
+  }
+ },
+ "2026-11-10": {
+  "1": {
+   "1": {
+    "1": {
+     "isLesson": 1,
+     "lesson": {
+      "id": 3459,
+      "date": "2026-11-10",
+      "hour": 1,
+      "toHour": 2,
+      "timeStart": 24300,
+      "timeEnd": 27000,
+      "timeToEnd": 29700,
+      "timeStartObject": {
+       "h": "07",
+       "m": "45",
+       "ts": 24300,
+       "text": "07:45",
+       "html": "07<sup>45</sup>"
+      },
+      "timeEndObject": {
+       "h": "08",
+       "m": "30",
+       "ts": 27000,
+       "text": "08:30",
+       "html": "08<sup>30</sup>"
+      },
+      "timeToEndObject": {
+       "h": "09",
+       "m": "15",
+       "ts": 29700,
+       "text": "09:15",
+       "html": "09<sup>15</sup>"
+      },
+      "timeShowEnabled": true,
+      "classId": 60,
+      "className": "8K",
+      "classComment": "",
+      "description": "",
+      "note": "",
+      "lessonShow": true,
+      "teachers": [
+       {
+        "id": 1628,
+        "firstName": "Christof",
+        "lastName": "Obkircher"
+       }
+      ],
+      "teachersToNotify": [],
+      "teacherMyself": null,
+      "isAutoNotify": false,
+      "isLessonTypeNotifyOn": false,
+      "exp_lt_default": false,
+      "isSecretary": false,
+      "subject": {
+       "id": 6,
+       "name": "Deutsch",
+       "lernfeld": 0,
+       "defaultLessonContent": "",
+       "defaultLessonContentType": 0
+      },
+      "homeworkExams": [],
+      "lessonContents": [
+       {
+        "id": 1699,
+        "name": "Der 1. Weltkrieg: die Oktoberrevolution, Friedensbemühungen und das Problem des Friedensschließens, das Ende des 1. Weltkrieges (Buch, Arbeitsblatt,  Lehrvideo, PPP)",
+        "homework": 0,
+        "online": 0,
+        "deadlineStart": null,
+        "deadline": null,
+        "deadlineOvertime": null,
+        "hasLessonContentSubmissions": false,
+        "typeId": 1,
+        "typeName": "Fachunterricht",
+        "lessonContentSubmissions": [],
+        "lessonContentStudents": [],
+        "lessonContentStudentsPercentage": 100
+       }
+      ],
+      "rooms": [],
+      "readOnly": true,
+      "isSubstitute": 0,
+      "linkToPreviousHour": 0,
+      "linkedHours": [
+       {
+        "id": 3460,
+        "date": "2026-11-10",
+        "hour": 2,
+        "toHour": 2,
+        "timeStart": 27000,
+        "timeEnd": 29700,
+        "timeToEnd": 29700,
+        "timeStartObject": {
+         "h": "08",
+         "m": "30",
+         "ts": 27000,
+         "text": "08:30",
+         "html": "08<sup>30</sup>"
+        },
+        "timeEndObject": {
+         "h": "09",
+         "m": "15",
+         "ts": 29700,
+         "text": "09:15",
+         "html": "09<sup>15</sup>"
+        },
+        "timeToEndObject": {
+         "h": "09",
+         "m": "15",
+         "ts": 29700,
+         "text": "09:15",
+         "html": "09<sup>15</sup>"
+        },
+        "timeShowEnabled": true,
+        "classId": 60,
+        "className": "8K",
+        "classComment": "",
+        "description": "",
+        "note": "",
+        "lessonShow": true,
+        "teachers": [
+         {
+          "id": 1628,
+          "firstName": "Christof",
+          "lastName": "Obkircher"
+         }
+        ],
+        "teachersToNotify": [],
+        "teacherMyself": null,
+        "isAutoNotify": false,
+        "isLessonTypeNotifyOn": false,
+        "exp_lt_default": false,
+        "isSecretary": false,
+        "subject": {
+         "id": 6,
+         "name": "Deutsch",
+         "lernfeld": 0,
+         "defaultLessonContent": "",
+         "defaultLessonContentType": 0
+        },
+        "homeworkExams": [],
+        "lessonContents": [],
+        "rooms": [],
+        "readOnly": true,
+        "isSubstitute": 0,
+        "linkToPreviousHour": 1,
+        "linkedHours": [],
+        "criticalObservations": [],
+        "missingStudents": [],
+        "students": [],
+        "grades": [],
+        "observations": [],
+        "absenceOpenAbsencesStudents": []
+       }
+      ],
+      "criticalObservations": [],
+      "missingStudents": [],
+      "students": [],
+      "grades": [],
+      "observations": [],
+      "absenceOpenAbsencesStudents": []
+     },
+     "hour": 1,
+     "linkedHoursCount": 1
+    },
+    "3": {
+     "isLesson": 1,
+     "lesson": {
+      "id": 2735,
+      "date": "2026-11-10",
+      "hour": 3,
+      "toHour": 3,
+      "timeStart": 30000,
+      "timeEnd": 32700,
+      "timeToEnd": 32700,
+      "timeStartObject": {
+       "h": "09",
+       "m": "20",
+       "ts": 30000,
+       "text": "09:20",
+       "html": "09<sup>20</sup>"
+      },
+      "timeEndObject": {
+       "h": "10",
+       "m": "05",
+       "ts": 32700,
+       "text": "10:05",
+       "html": "10<sup>05</sup>"
+      },
+      "timeToEndObject": {
+       "h": "10",
+       "m": "05",
+       "ts": 32700,
+       "text": "10:05",
+       "html": "10<sup>05</sup>"
+      },
+      "timeShowEnabled": true,
+      "classId": 60,
+      "className": "8K",
+      "classComment": "",
+      "description": "",
+      "note": "",
+      "lessonShow": true,
+      "teachers": [
+       {
+        "id": 1639,
+        "firstName": "Verena",
+        "lastName": "Steinmair"
+       }
+      ],
+      "teachersToNotify": [],
+      "teacherMyself": null,
+      "isAutoNotify": false,
+      "isLessonTypeNotifyOn": false,
+      "exp_lt_default": false,
+      "isSecretary": false,
+      "subject": {
+       "id": 22,
+       "name": "Naturwissenschaften",
+       "lernfeld": 0,
+       "defaultLessonContent": "",
+       "defaultLessonContentType": 0
+      },
+      "homeworkExams": [
+       {
+        "id": 1003,
+        "name": "1. Test (Wiederholung Grundwissen Chemie)",
+        "homework": 0,
+        "online": 0,
+        "deadlineStart": null,
+        "deadline": "2022-10-18 09:20:00",
+        "deadlineOvertime": null,
+        "hasGrades": false,
+        "hasGradeGroupSubmissions": false,
+        "typeId": 2,
+        "typeName": "Testarbeit",
+        "gradeGroupSubmissions": [],
+        "gradeGroupStudents": [],
+        "gradeGroupStudentsPercentage": 100
+       },
+       {
+        "id": 1005,
+        "name": "lernen für Test (Grundwissenheft S. 14-26)",
+        "homework": 3,
+        "online": 0,
+        "deadlineStart": null,
+        "deadline": "2022-10-18 09:20:00",
+        "deadlineOvertime": null,
+        "hasGrades": false,
+        "hasGradeGroupSubmissions": false,
+        "typeId": 60,
+        "typeName": "Hausaufgabe Mündlich",
+        "gradeGroupSubmissions": [],
+        "gradeGroupStudents": [],
+        "gradeGroupStudentsPercentage": 100
+       }
+      ],
+      "lessonContents": [
+       {
+        "id": 1701,
+        "name": "Test; Exkurs Gesellschaftliche Bildung: Zivilschutz; Proteine: Tertiär- und Quartärstruktur (Film, AB)",
+        "homework": 0,
+        "online": 0,
+        "deadlineStart": null,
+        "deadline": null,
+        "deadlineOvertime": null,
+        "hasLessonContentSubmissions": false,
+        "typeId": 1,
+        "typeName": "Fachunterricht",
+        "lessonContentSubmissions": [],
+        "lessonContentStudents": [],
+        "lessonContentStudentsPercentage": 100
+       }
+      ],
+      "rooms": [],
+      "readOnly": true,
+      "isSubstitute": 0,
+      "linkToPreviousHour": 0,
+      "linkedHours": [],
+      "criticalObservations": [],
+      "missingStudents": [],
+      "students": [],
+      "grades": [],
+      "observations": [],
+      "absenceOpenAbsencesStudents": []
+     },
+     "hour": 3,
+     "linkedHoursCount": 0
+    },
+    "4": {
+     "isLesson": 1,
+     "lesson": {
+      "id": 2736,
+      "date": "2026-11-10",
+      "hour": 4,
+      "toHour": 4,
+      "timeStart": 33000,
+      "timeEnd": 35700,
+      "timeToEnd": 35700,
+      "timeStartObject": {
+       "h": "10",
+       "m": "10",
+       "ts": 33000,
+       "text": "10:10",
+       "html": "10<sup>10</sup>"
+      },
+      "timeEndObject": {
+       "h": "10",
+       "m": "55",
+       "ts": 35700,
+       "text": "10:55",
+       "html": "10<sup>55</sup>"
+      },
+      "timeToEndObject": {
+       "h": "10",
+       "m": "55",
+       "ts": 35700,
+       "text": "10:55",
+       "html": "10<sup>55</sup>"
+      },
+      "timeShowEnabled": true,
+      "classId": 60,
+      "className": "8K",
+      "classComment": "",
+      "description": "",
+      "note": "",
+      "lessonShow": true,
+      "teachers": [
+       {
+        "id": 1639,
+        "firstName": "Verena",
+        "lastName": "Steinmair"
+       }
+      ],
+      "teachersToNotify": [],
+      "teacherMyself": null,
+      "isAutoNotify": false,
+      "isLessonTypeNotifyOn": false,
+      "exp_lt_default": false,
+      "isSecretary": false,
+      "subject": {
+       "id": 22,
+       "name": "Naturwissenschaften",
+       "lernfeld": 0,
+       "defaultLessonContent": "",
+       "defaultLessonContentType": 0
+      },
+      "homeworkExams": [],
+      "lessonContents": [
+       {
+        "id": 1729,
+        "name": "Test; Exkurs Gesellschaftliche Bildung: Zivilschutz; Proteine: Tertiär- und Quartärstruktur (Film, AB)",
+        "homework": 0,
+        "online": 0,
+        "deadlineStart": null,
+        "deadline": null,
+        "deadlineOvertime": null,
+        "hasLessonContentSubmissions": false,
+        "typeId": 1,
+        "typeName": "Fachunterricht",
+        "lessonContentSubmissions": [],
+        "lessonContentStudents": [],
+        "lessonContentStudentsPercentage": 100
+       }
+      ],
+      "rooms": [
+       {
+        "id": 14,
+        "name": "Chemieraum"
+       }
+      ],
+      "readOnly": true,
+      "isSubstitute": 0,
+      "linkToPreviousHour": 0,
+      "linkedHours": [],
+      "criticalObservations": [],
+      "missingStudents": [],
+      "students": [],
+      "grades": [],
+      "observations": [],
+      "absenceOpenAbsencesStudents": []
+     },
+     "hour": 4,
+     "linkedHoursCount": 0
+    },
+    "5": {
+     "isLesson": 1,
+     "lesson": {
+      "id": 3601,
+      "date": "2026-11-10",
+      "hour": 5,
+      "toHour": 6,
+      "timeStart": 36600,
+      "timeEnd": 39300,
+      "timeToEnd": 42300,
+      "timeStartObject": {
+       "h": "11",
+       "m": "10",
+       "ts": 36600,
+       "text": "11:10",
+       "html": "11<sup>10</sup>"
+      },
+      "timeEndObject": {
+       "h": "11",
+       "m": "55",
+       "ts": 39300,
+       "text": "11:55",
+       "html": "11<sup>55</sup>"
+      },
+      "timeToEndObject": {
+       "h": "12",
+       "m": "45",
+       "ts": 42300,
+       "text": "12:45",
+       "html": "12<sup>45</sup>"
+      },
+      "timeShowEnabled": true,
+      "classId": 60,
+      "className": "8K",
+      "classComment": "",
+      "description": "",
+      "note": "",
+      "lessonShow": true,
+      "teachers": [
+       {
+        "id": 5256,
+        "firstName": "Vania",
+        "lastName": "Vidotto"
+       }
+      ],
+      "teachersToNotify": [],
+      "teacherMyself": null,
+      "isAutoNotify": false,
+      "isLessonTypeNotifyOn": false,
+      "exp_lt_default": false,
+      "isSecretary": false,
+      "subject": {
+       "id": 7,
+       "name": "Italienisch",
+       "lernfeld": 0,
+       "defaultLessonContent": "",
+       "defaultLessonContentType": 0
+      },
+      "homeworkExams": [],
+      "lessonContents": [
+       {
+        "id": 1715,
+        "name": "Lingua, stile e parti dell'edizione quarantana ; brevi letture/ ascolti dai capp. I e II : le figure di Don Abbondio e Renzo;  esercizi scritti  di comprensione, in piccoli gruppi.",
+        "homework": 0,
+        "online": 0,
+        "deadlineStart": null,
+        "deadline": null,
+        "deadlineOvertime": null,
+        "hasLessonContentSubmissions": false,
+        "typeId": 1,
+        "typeName": "Fachunterricht",
+        "lessonContentSubmissions": [],
+        "lessonContentStudents": [],
+        "lessonContentStudentsPercentage": 100
+       }
+      ],
+      "rooms": [],
+      "readOnly": true,
+      "isSubstitute": 0,
+      "linkToPreviousHour": 0,
+      "linkedHours": [
+       {
+        "id": 3602,
+        "date": "2026-11-10",
+        "hour": 6,
+        "toHour": 6,
+        "timeStart": 39600,
+        "timeEnd": 42300,
+        "timeToEnd": 42300,
+        "timeStartObject": {
+         "h": "12",
+         "m": "00",
+         "ts": 39600,
+         "text": "12:00",
+         "html": "12<sup>00</sup>"
+        },
+        "timeEndObject": {
+         "h": "12",
+         "m": "45",
+         "ts": 42300,
+         "text": "12:45",
+         "html": "12<sup>45</sup>"
+        },
+        "timeToEndObject": {
+         "h": "12",
+         "m": "45",
+         "ts": 42300,
+         "text": "12:45",
+         "html": "12<sup>45</sup>"
+        },
+        "timeShowEnabled": true,
+        "classId": 60,
+        "className": "8K",
+        "classComment": "",
+        "description": "",
+        "note": "",
+        "lessonShow": true,
+        "teachers": [
+         {
+          "id": 5256,
+          "firstName": "Vania",
+          "lastName": "Vidotto"
+         }
+        ],
+        "teachersToNotify": [],
+        "teacherMyself": null,
+        "isAutoNotify": false,
+        "isLessonTypeNotifyOn": false,
+        "exp_lt_default": false,
+        "isSecretary": false,
+        "subject": {
+         "id": 7,
+         "name": "Italienisch",
+         "lernfeld": 0,
+         "defaultLessonContent": "",
+         "defaultLessonContentType": 0
+        },
+        "homeworkExams": [],
+        "lessonContents": [],
+        "rooms": [],
+        "readOnly": true,
+        "isSubstitute": 0,
+        "linkToPreviousHour": 1,
+        "linkedHours": [],
+        "criticalObservations": [],
+        "missingStudents": [],
+        "students": [],
+        "grades": [],
+        "observations": [],
+        "absenceOpenAbsencesStudents": []
+       }
+      ],
+      "criticalObservations": [],
+      "missingStudents": [],
+      "students": [],
+      "grades": [],
+      "observations": [],
+      "absenceOpenAbsencesStudents": []
+     },
+     "hour": 5,
+     "linkedHoursCount": 1
+    },
+    "7": {
+     "isLesson": 1,
+     "lesson": {
+      "id": 3633,
+      "date": "2026-11-10",
+      "hour": 7,
+      "toHour": 7,
+      "timeStart": 42600,
+      "timeEnd": 45300,
+      "timeToEnd": 45300,
+      "timeStartObject": {
+       "h": "12",
+       "m": "50",
+       "ts": 42600,
+       "text": "12:50",
+       "html": "12<sup>50</sup>"
+      },
+      "timeEndObject": {
+       "h": "13",
+       "m": "35",
+       "ts": 45300,
+       "text": "13:35",
+       "html": "13<sup>35</sup>"
+      },
+      "timeToEndObject": {
+       "h": "13",
+       "m": "35",
+       "ts": 45300,
+       "text": "13:35",
+       "html": "13<sup>35</sup>"
+      },
+      "timeShowEnabled": true,
+      "classId": 60,
+      "className": "8K",
+      "classComment": "",
+      "description": "",
+      "note": "",
+      "lessonShow": true,
+      "teachers": [
+       {
+        "id": 1642,
+        "firstName": "Gernot",
+        "lastName": "Wachtler"
+       }
+      ],
+      "teachersToNotify": [],
+      "teacherMyself": null,
+      "isAutoNotify": false,
+      "isLessonTypeNotifyOn": false,
+      "exp_lt_default": false,
+      "isSecretary": false,
+      "subject": {
+       "id": 17,
+       "name": "Bewegung und Sport",
+       "lernfeld": 0,
+       "defaultLessonContent": "",
+       "defaultLessonContentType": 0
+      },
+      "homeworkExams": [],
+      "lessonContents": [
+       {
+        "id": 1724,
+        "name": "Pantherball",
+        "homework": 0,
+        "online": 0,
+        "deadlineStart": null,
+        "deadline": null,
+        "deadlineOvertime": null,
+        "hasLessonContentSubmissions": false,
+        "typeId": 1,
+        "typeName": "Fachunterricht",
+        "lessonContentSubmissions": [],
+        "lessonContentStudents": [],
+        "lessonContentStudentsPercentage": 100
+       }
+      ],
+      "rooms": [
+       {
+        "id": 26,
+        "name": "Turnhalle"
+       }
+      ],
+      "readOnly": true,
+      "isSubstitute": 0,
+      "linkToPreviousHour": 0,
+      "linkedHours": [],
+      "criticalObservations": [],
+      "missingStudents": [],
+      "students": [],
+      "grades": [],
+      "observations": [],
+      "absenceOpenAbsencesStudents": []
+     },
+     "hour": 7,
+     "linkedHoursCount": 0
+    },
+    "8": {
+     "isLesson": 0,
+     "lesson": null,
+     "hour": 8,
+     "linkedHoursCount": 0
+    },
+    "9": {
+     "isLesson": 0,
+     "lesson": null,
+     "hour": 9,
+     "linkedHoursCount": 0
+    },
+    "10": {
+     "isLesson": 0,
+     "lesson": null,
+     "hour": 10,
+     "linkedHoursCount": 0
+    }
+   }
+  }
+ },
+ "2026-11-11": {
+  "1": {
+   "1": {
+    "1": {
+     "isLesson": 1,
+     "lesson": {
+      "id": 3645,
+      "date": "2026-11-11",
+      "hour": 1,
+      "toHour": 2,
+      "timeStart": 24300,
+      "timeEnd": 27000,
+      "timeToEnd": 29700,
+      "timeStartObject": {
+       "h": "07",
+       "m": "45",
+       "ts": 24300,
+       "text": "07:45",
+       "html": "07<sup>45</sup>"
+      },
+      "timeEndObject": {
+       "h": "08",
+       "m": "30",
+       "ts": 27000,
+       "text": "08:30",
+       "html": "08<sup>30</sup>"
+      },
+      "timeToEndObject": {
+       "h": "09",
+       "m": "15",
+       "ts": 29700,
+       "text": "09:15",
+       "html": "09<sup>15</sup>"
+      },
+      "timeShowEnabled": true,
+      "classId": 60,
+      "className": "8K",
+      "classComment": "",
+      "description": "",
+      "note": "",
+      "lessonShow": true,
+      "teachers": [
+       {
+        "id": 1655,
+        "firstName": "Andres",
+        "lastName": "Pizzinini"
+       }
+      ],
+      "teachersToNotify": [],
+      "teacherMyself": null,
+      "isAutoNotify": false,
+      "isLessonTypeNotifyOn": false,
+      "exp_lt_default": false,
+      "isSecretary": false,
+      "subject": {
+       "id": 21,
+       "name": "Philosophie",
+       "lernfeld": 0,
+       "defaultLessonContent": "",
+       "defaultLessonContentType": 0
+      },
+      "homeworkExams": [],
+      "lessonContents": [
+       {
+        "id": 1739,
+        "name": "Verzweigung des Denkens nach Kant. G. F. Hegel: dialektische Grundstruktur unter Einbeziehung der Zeit",
+        "homework": 0,
+        "online": 0,
+        "deadlineStart": null,
+        "deadline": null,
+        "deadlineOvertime": null,
+        "hasLessonContentSubmissions": false,
+        "typeId": 1,
+        "typeName": "Fachunterricht",
+        "lessonContentSubmissions": [],
+        "lessonContentStudents": [],
+        "lessonContentStudentsPercentage": 100
+       }
+      ],
+      "rooms": [],
+      "readOnly": true,
+      "isSubstitute": 0,
+      "linkToPreviousHour": 0,
+      "linkedHours": [
+       {
+        "id": 3646,
+        "date": "2026-11-11",
+        "hour": 2,
+        "toHour": 2,
+        "timeStart": 27000,
+        "timeEnd": 29700,
+        "timeToEnd": 29700,
+        "timeStartObject": {
+         "h": "08",
+         "m": "30",
+         "ts": 27000,
+         "text": "08:30",
+         "html": "08<sup>30</sup>"
+        },
+        "timeEndObject": {
+         "h": "09",
+         "m": "15",
+         "ts": 29700,
+         "text": "09:15",
+         "html": "09<sup>15</sup>"
+        },
+        "timeToEndObject": {
+         "h": "09",
+         "m": "15",
+         "ts": 29700,
+         "text": "09:15",
+         "html": "09<sup>15</sup>"
+        },
+        "timeShowEnabled": true,
+        "classId": 60,
+        "className": "8K",
+        "classComment": "",
+        "description": "",
+        "note": "",
+        "lessonShow": true,
+        "teachers": [
+         {
+          "id": 1655,
+          "firstName": "Andres",
+          "lastName": "Pizzinini"
+         }
+        ],
+        "teachersToNotify": [],
+        "teacherMyself": null,
+        "isAutoNotify": false,
+        "isLessonTypeNotifyOn": false,
+        "exp_lt_default": false,
+        "isSecretary": false,
+        "subject": {
+         "id": 21,
+         "name": "Philosophie",
+         "lernfeld": 0,
+         "defaultLessonContent": "",
+         "defaultLessonContentType": 0
+        },
+        "homeworkExams": [],
+        "lessonContents": [],
+        "rooms": [],
+        "readOnly": true,
+        "isSubstitute": 0,
+        "linkToPreviousHour": 1,
+        "linkedHours": [],
+        "criticalObservations": [],
+        "missingStudents": [],
+        "students": [],
+        "grades": [],
+        "observations": [],
+        "absenceOpenAbsencesStudents": []
+       }
+      ],
+      "criticalObservations": [],
+      "missingStudents": [],
+      "students": [],
+      "grades": [],
+      "observations": [],
+      "absenceOpenAbsencesStudents": []
+     },
+     "hour": 1,
+     "linkedHoursCount": 1
+    },
+    "3": {
+     "isLesson": 1,
+     "lesson": {
+      "id": 3675,
+      "date": "2026-11-11",
+      "hour": 3,
+      "toHour": 4,
+      "timeStart": 30000,
+      "timeEnd": 32700,
+      "timeToEnd": 35700,
+      "timeStartObject": {
+       "h": "09",
+       "m": "20",
+       "ts": 30000,
+       "text": "09:20",
+       "html": "09<sup>20</sup>"
+      },
+      "timeEndObject": {
+       "h": "10",
+       "m": "05",
+       "ts": 32700,
+       "text": "10:05",
+       "html": "10<sup>05</sup>"
+      },
+      "timeToEndObject": {
+       "h": "10",
+       "m": "55",
+       "ts": 35700,
+       "text": "10:55",
+       "html": "10<sup>55</sup>"
+      },
+      "timeShowEnabled": true,
+      "classId": 60,
+      "className": "8K",
+      "classComment": "",
+      "description": "",
+      "note": "",
+      "lessonShow": true,
+      "teachers": [
+       {
+        "id": 1624,
+        "firstName": "Otmar",
+        "lastName": "Kollmann"
+       }
+      ],
+      "teachersToNotify": [],
+      "teacherMyself": null,
+      "isAutoNotify": false,
+      "isLessonTypeNotifyOn": false,
+      "exp_lt_default": false,
+      "isSecretary": false,
+      "subject": {
+       "id": 19,
+       "name": "Latein",
+       "lernfeld": 0,
+       "defaultLessonContent": "",
+       "defaultLessonContentType": 0
+      },
+      "homeworkExams": [],
+      "lessonContents": [
+       {
+        "id": 1763,
+        "name": "Hymnus auf die Leistungen der Philosophie: \"O vitae philosophia dux\" (Cicero, Tusc. disp. V, 5): Z. 16-20: sprachliche Analyse, Übersetzung, Stilmittel;  Strukturanalyse nach \"religiösen Kategorien\"; Erschließungsfragen zum Text; Ciceros Schrift: \"Tusculanae disputationes\": Einführung (Teil 1).",
+        "homework": 0,
+        "online": 0,
+        "deadlineStart": null,
+        "deadline": null,
+        "deadlineOvertime": null,
+        "hasLessonContentSubmissions": false,
+        "typeId": 1,
+        "typeName": "Fachunterricht",
+        "lessonContentSubmissions": [],
+        "lessonContentStudents": [],
+        "lessonContentStudentsPercentage": 100
+       }
+      ],
+      "rooms": [],
+      "readOnly": true,
+      "isSubstitute": 0,
+      "linkToPreviousHour": 0,
+      "linkedHours": [
+       {
+        "id": 3676,
+        "date": "2026-11-11",
+        "hour": 4,
+        "toHour": 4,
+        "timeStart": 33000,
+        "timeEnd": 35700,
+        "timeToEnd": 35700,
+        "timeStartObject": {
+         "h": "10",
+         "m": "10",
+         "ts": 33000,
+         "text": "10:10",
+         "html": "10<sup>10</sup>"
+        },
+        "timeEndObject": {
+         "h": "10",
+         "m": "55",
+         "ts": 35700,
+         "text": "10:55",
+         "html": "10<sup>55</sup>"
+        },
+        "timeToEndObject": {
+         "h": "10",
+         "m": "55",
+         "ts": 35700,
+         "text": "10:55",
+         "html": "10<sup>55</sup>"
+        },
+        "timeShowEnabled": true,
+        "classId": 60,
+        "className": "8K",
+        "classComment": "",
+        "description": "",
+        "note": "",
+        "lessonShow": true,
+        "teachers": [
+         {
+          "id": 1624,
+          "firstName": "Otmar",
+          "lastName": "Kollmann"
+         }
+        ],
+        "teachersToNotify": [],
+        "teacherMyself": null,
+        "isAutoNotify": false,
+        "isLessonTypeNotifyOn": false,
+        "exp_lt_default": false,
+        "isSecretary": false,
+        "subject": {
+         "id": 19,
+         "name": "Latein",
+         "lernfeld": 0,
+         "defaultLessonContent": "",
+         "defaultLessonContentType": 0
+        },
+        "homeworkExams": [],
+        "lessonContents": [],
+        "rooms": [],
+        "readOnly": true,
+        "isSubstitute": 0,
+        "linkToPreviousHour": 1,
+        "linkedHours": [],
+        "criticalObservations": [],
+        "missingStudents": [],
+        "students": [],
+        "grades": [],
+        "observations": [],
+        "absenceOpenAbsencesStudents": []
+       }
+      ],
+      "criticalObservations": [],
+      "missingStudents": [],
+      "students": [],
+      "grades": [],
+      "observations": [],
+      "absenceOpenAbsencesStudents": []
+     },
+     "hour": 3,
+     "linkedHoursCount": 1
+    },
+    "5": {
+     "isLesson": 1,
+     "lesson": {
+      "id": null,
+      "date": "2026-11-11",
+      "hour": 5,
+      "toHour": 7,
+      "timeStart": 36600,
+      "timeEnd": 39300,
+      "timeToEnd": 45300,
+      "timeStartObject": {
+       "h": "11",
+       "m": "10",
+       "ts": 36600,
+       "text": "11:10",
+       "html": "11<sup>10</sup>"
+      },
+      "timeEndObject": {
+       "h": "11",
+       "m": "55",
+       "ts": 39300,
+       "text": "11:55",
+       "html": "11<sup>55</sup>"
+      },
+      "timeToEndObject": {
+       "h": "13",
+       "m": "35",
+       "ts": 45300,
+       "text": "13:35",
+       "html": "13<sup>35</sup>"
+      },
+      "timeShowEnabled": true,
+      "classId": 60,
+      "className": "8K",
+      "classComment": "",
+      "description": "",
+      "note": "",
+      "lessonShow": true,
+      "teachers": [
+       {
+        "id": 1623,
+        "firstName": "Harald",
+        "lastName": "Knoflach"
+       }
+      ],
+      "teachersToNotify": [],
+      "teacherMyself": null,
+      "isAutoNotify": false,
+      "isLessonTypeNotifyOn": false,
+      "exp_lt_default": false,
+      "isSecretary": false,
+      "subject": {
+       "id": 106,
+       "name": "Gesellschaftliche Bildung",
+       "lernfeld": 0,
+       "defaultLessonContent": "",
+       "defaultLessonContentType": 0
+      },
+      "homeworkExams": [],
+      "lessonContents": [],
+      "rooms": [],
+      "readOnly": true,
+      "isSubstitute": 0,
+      "linkToPreviousHour": 0,
+      "linkedHours": [
+       {
+        "id": null,
+        "date": "2026-11-11",
+        "hour": 6,
+        "toHour": 6,
+        "timeStart": 39600,
+        "timeEnd": 42300,
+        "timeToEnd": 42300,
+        "timeStartObject": {
+         "h": "12",
+         "m": "00",
+         "ts": 39600,
+         "text": "12:00",
+         "html": "12<sup>00</sup>"
+        },
+        "timeEndObject": {
+         "h": "12",
+         "m": "45",
+         "ts": 42300,
+         "text": "12:45",
+         "html": "12<sup>45</sup>"
+        },
+        "timeToEndObject": {
+         "h": "12",
+         "m": "45",
+         "ts": 42300,
+         "text": "12:45",
+         "html": "12<sup>45</sup>"
+        },
+        "timeShowEnabled": true,
+        "classId": 60,
+        "className": "8K",
+        "classComment": "",
+        "description": "",
+        "note": "",
+        "lessonShow": true,
+        "teachers": [
+         {
+          "id": 1623,
+          "firstName": "Harald",
+          "lastName": "Knoflach"
+         }
+        ],
+        "teachersToNotify": [],
+        "teacherMyself": null,
+        "isAutoNotify": false,
+        "isLessonTypeNotifyOn": false,
+        "exp_lt_default": false,
+        "isSecretary": false,
+        "subject": {
+         "id": 106,
+         "name": "Gesellschaftliche Bildung",
+         "lernfeld": 0,
+         "defaultLessonContent": "",
+         "defaultLessonContentType": 0
+        },
+        "homeworkExams": [],
+        "lessonContents": [],
+        "rooms": [],
+        "readOnly": true,
+        "isSubstitute": 0,
+        "linkToPreviousHour": 1,
+        "linkedHours": [],
+        "criticalObservations": [],
+        "missingStudents": [],
+        "students": [],
+        "grades": [],
+        "observations": [],
+        "absenceOpenAbsencesStudents": []
+       },
+       {
+        "id": null,
+        "date": "2026-11-11",
+        "hour": 7,
+        "toHour": 7,
+        "timeStart": 42600,
+        "timeEnd": 45300,
+        "timeToEnd": 45300,
+        "timeStartObject": {
+         "h": "12",
+         "m": "50",
+         "ts": 42600,
+         "text": "12:50",
+         "html": "12<sup>50</sup>"
+        },
+        "timeEndObject": {
+         "h": "13",
+         "m": "35",
+         "ts": 45300,
+         "text": "13:35",
+         "html": "13<sup>35</sup>"
+        },
+        "timeToEndObject": {
+         "h": "13",
+         "m": "35",
+         "ts": 45300,
+         "text": "13:35",
+         "html": "13<sup>35</sup>"
+        },
+        "timeShowEnabled": true,
+        "classId": 60,
+        "className": "8K",
+        "classComment": "",
+        "description": "",
+        "note": "",
+        "lessonShow": true,
+        "teachers": [
+         {
+          "id": 1623,
+          "firstName": "Harald",
+          "lastName": "Knoflach"
+         }
+        ],
+        "teachersToNotify": [],
+        "teacherMyself": null,
+        "isAutoNotify": false,
+        "isLessonTypeNotifyOn": false,
+        "exp_lt_default": false,
+        "isSecretary": false,
+        "subject": {
+         "id": 106,
+         "name": "Gesellschaftliche Bildung",
+         "lernfeld": 0,
+         "defaultLessonContent": "",
+         "defaultLessonContentType": 0
+        },
+        "homeworkExams": [],
+        "lessonContents": [],
+        "rooms": [],
+        "readOnly": true,
+        "isSubstitute": 0,
+        "linkToPreviousHour": 1,
+        "linkedHours": [],
+        "criticalObservations": [],
+        "missingStudents": [],
+        "students": [],
+        "grades": [],
+        "observations": [],
+        "absenceOpenAbsencesStudents": []
+       }
+      ],
+      "criticalObservations": [],
+      "missingStudents": [],
+      "students": [],
+      "grades": [],
+      "observations": [],
+      "absenceOpenAbsencesStudents": []
+     },
+     "hour": 5,
+     "linkedHoursCount": 2
+    },
+    "8": {
+     "isLesson": 0,
+     "lesson": null,
+     "hour": 8,
+     "linkedHoursCount": 0
+    },
+    "9": {
+     "isLesson": 0,
+     "lesson": null,
+     "hour": 9,
+     "linkedHoursCount": 0
+    },
+    "10": {
+     "isLesson": 0,
+     "lesson": null,
+     "hour": 10,
+     "linkedHoursCount": 0
+    }
+   }
+  }
+ },
+ "2026-11-12": {
+  "1": {
+   "1": {
+    "1": {
+     "isLesson": 1,
+     "lesson": {
+      "id": 3603,
+      "date": "2026-11-12",
+      "hour": 1,
+      "toHour": 2,
+      "timeStart": 24300,
+      "timeEnd": 27000,
+      "timeToEnd": 29700,
+      "timeStartObject": {
+       "h": "07",
+       "m": "45",
+       "ts": 24300,
+       "text": "07:45",
+       "html": "07<sup>45</sup>"
+      },
+      "timeEndObject": {
+       "h": "08",
+       "m": "30",
+       "ts": 27000,
+       "text": "08:30",
+       "html": "08<sup>30</sup>"
+      },
+      "timeToEndObject": {
+       "h": "09",
+       "m": "15",
+       "ts": 29700,
+       "text": "09:15",
+       "html": "09<sup>15</sup>"
+      },
+      "timeShowEnabled": true,
+      "classId": 60,
+      "className": "8K",
+      "classComment": "",
+      "description": "",
+      "note": "",
+      "lessonShow": true,
+      "teachers": [
+       {
+        "id": 5256,
+        "firstName": "Vania",
+        "lastName": "Vidotto"
+       }
+      ],
+      "teachersToNotify": [],
+      "teacherMyself": null,
+      "isAutoNotify": false,
+      "isLessonTypeNotifyOn": false,
+      "exp_lt_default": false,
+      "isSecretary": false,
+      "subject": {
+       "id": 7,
+       "name": "Italienisch",
+       "lernfeld": 0,
+       "defaultLessonContent": "",
+       "defaultLessonContentType": 0
+      },
+      "homeworkExams": [
+       {
+        "id": 1338,
+        "name": "Completare gli esercizi iniziati in classe; studiare con cura gli appunti.",
+        "homework": 1,
+        "online": 0,
+        "deadlineStart": null,
+        "deadline": "2022-10-20 07:45:00",
+        "deadlineOvertime": null,
+        "hasGrades": false,
+        "hasGradeGroupSubmissions": false,
+        "typeId": 57,
+        "typeName": "Hausaufgabe Schriftlich",
+        "gradeGroupSubmissions": [],
+        "gradeGroupStudents": [],
+        "gradeGroupStudentsPercentage": 100
+       }
+      ],
+      "lessonContents": [],
+      "rooms": [],
+      "readOnly": true,
+      "isSubstitute": 0,
+      "linkToPreviousHour": 0,
+      "linkedHours": [
+       {
+        "id": 3604,
+        "date": "2026-11-12",
+        "hour": 2,
+        "toHour": 2,
+        "timeStart": 27000,
+        "timeEnd": 29700,
+        "timeToEnd": 29700,
+        "timeStartObject": {
+         "h": "08",
+         "m": "30",
+         "ts": 27000,
+         "text": "08:30",
+         "html": "08<sup>30</sup>"
+        },
+        "timeEndObject": {
+         "h": "09",
+         "m": "15",
+         "ts": 29700,
+         "text": "09:15",
+         "html": "09<sup>15</sup>"
+        },
+        "timeToEndObject": {
+         "h": "09",
+         "m": "15",
+         "ts": 29700,
+         "text": "09:15",
+         "html": "09<sup>15</sup>"
+        },
+        "timeShowEnabled": true,
+        "classId": 60,
+        "className": "8K",
+        "classComment": "",
+        "description": "",
+        "note": "",
+        "lessonShow": true,
+        "teachers": [
+         {
+          "id": 5256,
+          "firstName": "Vania",
+          "lastName": "Vidotto"
+         }
+        ],
+        "teachersToNotify": [],
+        "teacherMyself": null,
+        "isAutoNotify": false,
+        "isLessonTypeNotifyOn": false,
+        "exp_lt_default": false,
+        "isSecretary": false,
+        "subject": {
+         "id": 7,
+         "name": "Italienisch",
+         "lernfeld": 0,
+         "defaultLessonContent": "",
+         "defaultLessonContentType": 0
+        },
+        "homeworkExams": [],
+        "lessonContents": [],
+        "rooms": [],
+        "readOnly": true,
+        "isSubstitute": 0,
+        "linkToPreviousHour": 1,
+        "linkedHours": [],
+        "criticalObservations": [],
+        "missingStudents": [],
+        "students": [],
+        "grades": [],
+        "observations": [],
+        "absenceOpenAbsencesStudents": []
+       }
+      ],
+      "criticalObservations": [],
+      "missingStudents": [],
+      "students": [],
+      "grades": [],
+      "observations": [],
+      "absenceOpenAbsencesStudents": []
+     },
+     "hour": 1,
+     "linkedHoursCount": 1
+    },
+    "3": {
+     "isLesson": 1,
+     "lesson": {
+      "id": null,
+      "date": "2026-11-12",
+      "hour": 3,
+      "toHour": 3,
+      "timeStart": 30000,
+      "timeEnd": 32700,
+      "timeToEnd": 32700,
+      "timeStartObject": {
+       "h": "09",
+       "m": "20",
+       "ts": 30000,
+       "text": "09:20",
+       "html": "09<sup>20</sup>"
+      },
+      "timeEndObject": {
+       "h": "10",
+       "m": "05",
+       "ts": 32700,
+       "text": "10:05",
+       "html": "10<sup>05</sup>"
+      },
+      "timeToEndObject": {
+       "h": "10",
+       "m": "05",
+       "ts": 32700,
+       "text": "10:05",
+       "html": "10<sup>05</sup>"
+      },
+      "timeShowEnabled": true,
+      "classId": 60,
+      "className": "8K",
+      "classComment": "",
+      "description": "",
+      "note": "",
+      "lessonShow": true,
+      "teachers": [
+       {
+        "id": 5971,
+        "firstName": "Barbara",
+        "lastName": "Mitterrutzner"
+       }
+      ],
+      "teachersToNotify": [],
+      "teacherMyself": null,
+      "isAutoNotify": false,
+      "isLessonTypeNotifyOn": false,
+      "exp_lt_default": false,
+      "isSecretary": false,
+      "subject": {
+       "id": 8,
+       "name": "Englisch",
+       "lernfeld": 0,
+       "defaultLessonContent": "",
+       "defaultLessonContentType": 0
+      },
+      "homeworkExams": [],
+      "lessonContents": [],
+      "rooms": [],
+      "readOnly": true,
+      "isSubstitute": 0,
+      "linkToPreviousHour": 0,
+      "linkedHours": [],
+      "criticalObservations": [],
+      "missingStudents": [],
+      "students": [],
+      "grades": [],
+      "observations": [],
+      "absenceOpenAbsencesStudents": []
+     },
+     "hour": 3,
+     "linkedHoursCount": 0
+    },
+    "4": {
+     "isLesson": 1,
+     "lesson": {
+      "id": null,
+      "date": "2026-11-12",
+      "hour": 4,
+      "toHour": 4,
+      "timeStart": 33000,
+      "timeEnd": 35700,
+      "timeToEnd": 35700,
+      "timeStartObject": {
+       "h": "10",
+       "m": "10",
+       "ts": 33000,
+       "text": "10:10",
+       "html": "10<sup>10</sup>"
+      },
+      "timeEndObject": {
+       "h": "10",
+       "m": "55",
+       "ts": 35700,
+       "text": "10:55",
+       "html": "10<sup>55</sup>"
+      },
+      "timeToEndObject": {
+       "h": "10",
+       "m": "55",
+       "ts": 35700,
+       "text": "10:55",
+       "html": "10<sup>55</sup>"
+      },
+      "timeShowEnabled": true,
+      "classId": 60,
+      "className": "8K",
+      "classComment": "",
+      "description": "",
+      "note": "",
+      "lessonShow": true,
+      "teachers": [
+       {
+        "id": 3808,
+        "firstName": "Konrad",
+        "lastName": "Willeit"
+       }
+      ],
+      "teachersToNotify": [],
+      "teacherMyself": null,
+      "isAutoNotify": false,
+      "isLessonTypeNotifyOn": false,
+      "exp_lt_default": false,
+      "isSecretary": false,
+      "subject": {
+       "id": 5,
+       "name": "Religion",
+       "lernfeld": 0,
+       "defaultLessonContent": "",
+       "defaultLessonContentType": 0
+      },
+      "homeworkExams": [],
+      "lessonContents": [],
+      "rooms": [],
+      "readOnly": true,
+      "isSubstitute": 0,
+      "linkToPreviousHour": 0,
+      "linkedHours": [],
+      "criticalObservations": [],
+      "missingStudents": [],
+      "students": [],
+      "grades": [],
+      "observations": [],
+      "absenceOpenAbsencesStudents": []
+     },
+     "hour": 4,
+     "linkedHoursCount": 0
+    },
+    "5": {
+     "isLesson": 1,
+     "lesson": {
+      "id": null,
+      "date": "2026-11-12",
+      "hour": 5,
+      "toHour": 5,
+      "timeStart": 36600,
+      "timeEnd": 39300,
+      "timeToEnd": 39300,
+      "timeStartObject": {
+       "h": "11",
+       "m": "10",
+       "ts": 36600,
+       "text": "11:10",
+       "html": "11<sup>10</sup>"
+      },
+      "timeEndObject": {
+       "h": "11",
+       "m": "55",
+       "ts": 39300,
+       "text": "11:55",
+       "html": "11<sup>55</sup>"
+      },
+      "timeToEndObject": {
+       "h": "11",
+       "m": "55",
+       "ts": 39300,
+       "text": "11:55",
+       "html": "11<sup>55</sup>"
+      },
+      "timeShowEnabled": true,
+      "classId": 60,
+      "className": "8K",
+      "classComment": "",
+      "description": "",
+      "note": "",
+      "lessonShow": true,
+      "teachers": [
+       {
+        "id": 1642,
+        "firstName": "Gernot",
+        "lastName": "Wachtler"
+       }
+      ],
+      "teachersToNotify": [],
+      "teacherMyself": null,
+      "isAutoNotify": false,
+      "isLessonTypeNotifyOn": false,
+      "exp_lt_default": false,
+      "isSecretary": false,
+      "subject": {
+       "id": 17,
+       "name": "Bewegung und Sport",
+       "lernfeld": 0,
+       "defaultLessonContent": "",
+       "defaultLessonContentType": 0
+      },
+      "homeworkExams": [],
+      "lessonContents": [],
+      "rooms": [],
+      "readOnly": true,
+      "isSubstitute": 0,
+      "linkToPreviousHour": 0,
+      "linkedHours": [],
+      "criticalObservations": [],
+      "missingStudents": [],
+      "students": [],
+      "grades": [],
+      "observations": [],
+      "absenceOpenAbsencesStudents": []
+     },
+     "hour": 5,
+     "linkedHoursCount": 0
+    },
+    "6": {
+     "isLesson": 1,
+     "lesson": {
+      "id": 3532,
+      "date": "2026-11-12",
+      "hour": 6,
+      "toHour": 7,
+      "timeStart": 39600,
+      "timeEnd": 42300,
+      "timeToEnd": 45300,
+      "timeStartObject": {
+       "h": "12",
+       "m": "00",
+       "ts": 39600,
+       "text": "12:00",
+       "html": "12<sup>00</sup>"
+      },
+      "timeEndObject": {
+       "h": "12",
+       "m": "45",
+       "ts": 42300,
+       "text": "12:45",
+       "html": "12<sup>45</sup>"
+      },
+      "timeToEndObject": {
+       "h": "13",
+       "m": "35",
+       "ts": 45300,
+       "text": "13:35",
+       "html": "13<sup>35</sup>"
+      },
+      "timeShowEnabled": true,
+      "classId": 60,
+      "className": "8K",
+      "classComment": "",
+      "description": "",
+      "note": "",
+      "lessonShow": true,
+      "teachers": [
+       {
+        "id": 1643,
+        "firstName": "Manuel",
+        "lastName": "Winkler"
+       }
+      ],
+      "teachersToNotify": [],
+      "teacherMyself": null,
+      "isAutoNotify": false,
+      "isLessonTypeNotifyOn": false,
+      "exp_lt_default": false,
+      "isSecretary": false,
+      "subject": {
+       "id": 13,
+       "name": "Mathematik",
+       "lernfeld": 0,
+       "defaultLessonContent": "",
+       "defaultLessonContentType": 0
+      },
+      "homeworkExams": [],
+      "lessonContents": [],
+      "rooms": [],
+      "readOnly": true,
+      "isSubstitute": 0,
+      "linkToPreviousHour": 0,
+      "linkedHours": [
+       {
+        "id": 3533,
+        "date": "2026-11-12",
+        "hour": 7,
+        "toHour": 7,
+        "timeStart": 42600,
+        "timeEnd": 45300,
+        "timeToEnd": 45300,
+        "timeStartObject": {
+         "h": "12",
+         "m": "50",
+         "ts": 42600,
+         "text": "12:50",
+         "html": "12<sup>50</sup>"
+        },
+        "timeEndObject": {
+         "h": "13",
+         "m": "35",
+         "ts": 45300,
+         "text": "13:35",
+         "html": "13<sup>35</sup>"
+        },
+        "timeToEndObject": {
+         "h": "13",
+         "m": "35",
+         "ts": 45300,
+         "text": "13:35",
+         "html": "13<sup>35</sup>"
+        },
+        "timeShowEnabled": true,
+        "classId": 60,
+        "className": "8K",
+        "classComment": "",
+        "description": "",
+        "note": "",
+        "lessonShow": true,
+        "teachers": [
+         {
+          "id": 1643,
+          "firstName": "Manuel",
+          "lastName": "Winkler"
+         }
+        ],
+        "teachersToNotify": [],
+        "teacherMyself": null,
+        "isAutoNotify": false,
+        "isLessonTypeNotifyOn": false,
+        "exp_lt_default": false,
+        "isSecretary": false,
+        "subject": {
+         "id": 13,
+         "name": "Mathematik",
+         "lernfeld": 0,
+         "defaultLessonContent": "",
+         "defaultLessonContentType": 0
+        },
+        "homeworkExams": [],
+        "lessonContents": [],
+        "rooms": [],
+        "readOnly": true,
+        "isSubstitute": 0,
+        "linkToPreviousHour": 1,
+        "linkedHours": [],
+        "criticalObservations": [],
+        "missingStudents": [],
+        "students": [],
+        "grades": [],
+        "observations": [],
+        "absenceOpenAbsencesStudents": []
+       }
+      ],
+      "criticalObservations": [],
+      "missingStudents": [],
+      "students": [],
+      "grades": [],
+      "observations": [],
+      "absenceOpenAbsencesStudents": []
+     },
+     "hour": 6,
+     "linkedHoursCount": 1
+    },
+    "8": {
+     "isLesson": 0,
+     "lesson": null,
+     "hour": 8,
+     "linkedHoursCount": 0
+    },
+    "9": {
+     "isLesson": 0,
+     "lesson": null,
+     "hour": 9,
+     "linkedHoursCount": 0
+    },
+    "10": {
+     "isLesson": 0,
+     "lesson": null,
+     "hour": 10,
+     "linkedHoursCount": 0
+    }
+   }
+  }
+ },
+ "2026-11-13": {
+  "1": {
+   "1": {
+    "1": {
+     "isLesson": 1,
+     "lesson": {
+      "id": 2578,
+      "date": "2026-11-13",
+      "hour": 1,
+      "toHour": 2,
+      "timeStart": 24300,
+      "timeEnd": 27000,
+      "timeToEnd": 29700,
+      "timeStartObject": {
+       "h": "07",
+       "m": "45",
+       "ts": 24300,
+       "text": "07:45",
+       "html": "07<sup>45</sup>"
+      },
+      "timeEndObject": {
+       "h": "08",
+       "m": "30",
+       "ts": 27000,
+       "text": "08:30",
+       "html": "08<sup>30</sup>"
+      },
+      "timeToEndObject": {
+       "h": "09",
+       "m": "15",
+       "ts": 29700,
+       "text": "09:15",
+       "html": "09<sup>15</sup>"
+      },
+      "timeShowEnabled": true,
+      "classId": 60,
+      "className": "8K",
+      "classComment": "",
+      "description": "",
+      "note": "",
+      "lessonShow": true,
+      "teachers": [
+       {
+        "id": 1624,
+        "firstName": "Otmar",
+        "lastName": "Kollmann"
+       }
+      ],
+      "teachersToNotify": [],
+      "teacherMyself": null,
+      "isAutoNotify": false,
+      "isLessonTypeNotifyOn": false,
+      "exp_lt_default": false,
+      "isSecretary": false,
+      "subject": {
+       "id": 20,
+       "name": "Griechisch",
+       "lernfeld": 0,
+       "defaultLessonContent": "",
+       "defaultLessonContentType": 0
+      },
+      "homeworkExams": [
+       {
+        "id": 942,
+        "name": "1. Schularbeit",
+        "homework": 0,
+        "online": 0,
+        "deadlineStart": null,
+        "deadline": "2022-10-21 07:45:00",
+        "deadlineOvertime": null,
+        "hasGrades": false,
+        "hasGradeGroupSubmissions": false,
+        "typeId": 3,
+        "typeName": "Schularbeit",
+        "gradeGroupSubmissions": [],
+        "gradeGroupStudents": [],
+        "gradeGroupStudentsPercentage": 100
+       }
+      ],
+      "lessonContents": [],
+      "rooms": [],
+      "readOnly": true,
+      "isSubstitute": 0,
+      "linkToPreviousHour": 0,
+      "linkedHours": [
+       {
+        "id": 2579,
+        "date": "2026-11-13",
+        "hour": 2,
+        "toHour": 2,
+        "timeStart": 27000,
+        "timeEnd": 29700,
+        "timeToEnd": 29700,
+        "timeStartObject": {
+         "h": "08",
+         "m": "30",
+         "ts": 27000,
+         "text": "08:30",
+         "html": "08<sup>30</sup>"
+        },
+        "timeEndObject": {
+         "h": "09",
+         "m": "15",
+         "ts": 29700,
+         "text": "09:15",
+         "html": "09<sup>15</sup>"
+        },
+        "timeToEndObject": {
+         "h": "09",
+         "m": "15",
+         "ts": 29700,
+         "text": "09:15",
+         "html": "09<sup>15</sup>"
+        },
+        "timeShowEnabled": true,
+        "classId": 60,
+        "className": "8K",
+        "classComment": "",
+        "description": "",
+        "note": "",
+        "lessonShow": true,
+        "teachers": [
+         {
+          "id": 1624,
+          "firstName": "Otmar",
+          "lastName": "Kollmann"
+         }
+        ],
+        "teachersToNotify": [],
+        "teacherMyself": null,
+        "isAutoNotify": false,
+        "isLessonTypeNotifyOn": false,
+        "exp_lt_default": false,
+        "isSecretary": false,
+        "subject": {
+         "id": 20,
+         "name": "Griechisch",
+         "lernfeld": 0,
+         "defaultLessonContent": "",
+         "defaultLessonContentType": 0
+        },
+        "homeworkExams": [],
+        "lessonContents": [],
+        "rooms": [],
+        "readOnly": true,
+        "isSubstitute": 0,
+        "linkToPreviousHour": 1,
+        "linkedHours": [],
+        "criticalObservations": [],
+        "missingStudents": [],
+        "students": [],
+        "grades": [],
+        "observations": [],
+        "absenceOpenAbsencesStudents": []
+       }
+      ],
+      "criticalObservations": [],
+      "missingStudents": [],
+      "students": [],
+      "grades": [],
+      "observations": [],
+      "absenceOpenAbsencesStudents": []
+     },
+     "hour": 1,
+     "linkedHoursCount": 1
+    },
+    "3": {
+     "isLesson": 1,
+     "lesson": {
+      "id": null,
+      "date": "2026-11-13",
+      "hour": 3,
+      "toHour": 3,
+      "timeStart": 30000,
+      "timeEnd": 32700,
+      "timeToEnd": 32700,
+      "timeStartObject": {
+       "h": "09",
+       "m": "20",
+       "ts": 30000,
+       "text": "09:20",
+       "html": "09<sup>20</sup>"
+      },
+      "timeEndObject": {
+       "h": "10",
+       "m": "05",
+       "ts": 32700,
+       "text": "10:05",
+       "html": "10<sup>05</sup>"
+      },
+      "timeToEndObject": {
+       "h": "10",
+       "m": "05",
+       "ts": 32700,
+       "text": "10:05",
+       "html": "10<sup>05</sup>"
+      },
+      "timeShowEnabled": true,
+      "classId": 60,
+      "className": "8K",
+      "classComment": "",
+      "description": "",
+      "note": "",
+      "lessonShow": true,
+      "teachers": [
+       {
+        "id": 1628,
+        "firstName": "Christof",
+        "lastName": "Obkircher"
+       }
+      ],
+      "teachersToNotify": [],
+      "teacherMyself": null,
+      "isAutoNotify": false,
+      "isLessonTypeNotifyOn": false,
+      "exp_lt_default": false,
+      "isSecretary": false,
+      "subject": {
+       "id": 10,
+       "name": "Geschichte",
+       "lernfeld": 0,
+       "defaultLessonContent": "",
+       "defaultLessonContentType": 0
+      },
+      "homeworkExams": [],
+      "lessonContents": [],
+      "rooms": [],
+      "readOnly": true,
+      "isSubstitute": 0,
+      "linkToPreviousHour": 0,
+      "linkedHours": [],
+      "criticalObservations": [],
+      "missingStudents": [],
+      "students": [],
+      "grades": [],
+      "observations": [],
+      "absenceOpenAbsencesStudents": []
+     },
+     "hour": 3,
+     "linkedHoursCount": 0
+    },
+    "4": {
+     "isLesson": 1,
+     "lesson": {
+      "id": null,
+      "date": "2026-11-13",
+      "hour": 4,
+      "toHour": 4,
+      "timeStart": 33000,
+      "timeEnd": 35700,
+      "timeToEnd": 35700,
+      "timeStartObject": {
+       "h": "10",
+       "m": "10",
+       "ts": 33000,
+       "text": "10:10",
+       "html": "10<sup>10</sup>"
+      },
+      "timeEndObject": {
+       "h": "10",
+       "m": "55",
+       "ts": 35700,
+       "text": "10:55",
+       "html": "10<sup>55</sup>"
+      },
+      "timeToEndObject": {
+       "h": "10",
+       "m": "55",
+       "ts": 35700,
+       "text": "10:55",
+       "html": "10<sup>55</sup>"
+      },
+      "timeShowEnabled": true,
+      "classId": 60,
+      "className": "8K",
+      "classComment": "",
+      "description": "",
+      "note": "",
+      "lessonShow": true,
+      "teachers": [
+       {
+        "id": 1624,
+        "firstName": "Otmar",
+        "lastName": "Kollmann"
+       }
+      ],
+      "teachersToNotify": [],
+      "teacherMyself": null,
+      "isAutoNotify": false,
+      "isLessonTypeNotifyOn": false,
+      "exp_lt_default": false,
+      "isSecretary": false,
+      "subject": {
+       "id": 19,
+       "name": "Latein",
+       "lernfeld": 0,
+       "defaultLessonContent": "",
+       "defaultLessonContentType": 0
+      },
+      "homeworkExams": [],
+      "lessonContents": [],
+      "rooms": [],
+      "readOnly": true,
+      "isSubstitute": 0,
+      "linkToPreviousHour": 0,
+      "linkedHours": [],
+      "criticalObservations": [],
+      "missingStudents": [],
+      "students": [],
+      "grades": [],
+      "observations": [],
+      "absenceOpenAbsencesStudents": []
+     },
+     "hour": 4,
+     "linkedHoursCount": 0
+    },
+    "5": {
+     "isLesson": 1,
+     "lesson": {
+      "id": 2179,
+      "date": "2026-11-13",
+      "hour": 5,
+      "toHour": 6,
+      "timeStart": 36600,
+      "timeEnd": 39300,
+      "timeToEnd": 42300,
+      "timeStartObject": {
+       "h": "11",
+       "m": "10",
+       "ts": 36600,
+       "text": "11:10",
+       "html": "11<sup>10</sup>"
+      },
+      "timeEndObject": {
+       "h": "11",
+       "m": "55",
+       "ts": 39300,
+       "text": "11:55",
+       "html": "11<sup>55</sup>"
+      },
+      "timeToEndObject": {
+       "h": "12",
+       "m": "45",
+       "ts": 42300,
+       "text": "12:45",
+       "html": "12<sup>45</sup>"
+      },
+      "timeShowEnabled": true,
+      "classId": 60,
+      "className": "8K",
+      "classComment": "",
+      "description": "",
+      "note": "",
+      "lessonShow": true,
+      "teachers": [
+       {
+        "id": 1616,
+        "firstName": "Eva",
+        "lastName": "Gadner"
+       }
+      ],
+      "teachersToNotify": [],
+      "teacherMyself": null,
+      "isAutoNotify": false,
+      "isLessonTypeNotifyOn": false,
+      "exp_lt_default": false,
+      "isSecretary": false,
+      "subject": {
+       "id": 103,
+       "name": "Kunstgeschichte",
+       "lernfeld": 0,
+       "defaultLessonContent": "",
+       "defaultLessonContentType": 0
+      },
+      "homeworkExams": [
+       {
+        "id": 794,
+        "name": "Historismus, Nazarener, Biedermeier, Realismus, Impressionismus",
+        "homework": 5,
+        "online": 0,
+        "deadlineStart": null,
+        "deadline": "2022-10-21 11:10:00",
+        "deadlineOvertime": null,
+        "hasGrades": false,
+        "hasGradeGroupSubmissions": false,
+        "typeId": 1,
+        "typeName": "Mündliche Prüfung",
+        "gradeGroupSubmissions": [],
+        "gradeGroupStudents": [],
+        "gradeGroupStudentsPercentage": 100
+       }
+      ],
+      "lessonContents": [],
+      "rooms": [],
+      "readOnly": true,
+      "isSubstitute": 0,
+      "linkToPreviousHour": 0,
+      "linkedHours": [
+       {
+        "id": 2180,
+        "date": "2026-11-13",
+        "hour": 6,
+        "toHour": 6,
+        "timeStart": 39600,
+        "timeEnd": 42300,
+        "timeToEnd": 42300,
+        "timeStartObject": {
+         "h": "12",
+         "m": "00",
+         "ts": 39600,
+         "text": "12:00",
+         "html": "12<sup>00</sup>"
+        },
+        "timeEndObject": {
+         "h": "12",
+         "m": "45",
+         "ts": 42300,
+         "text": "12:45",
+         "html": "12<sup>45</sup>"
+        },
+        "timeToEndObject": {
+         "h": "12",
+         "m": "45",
+         "ts": 42300,
+         "text": "12:45",
+         "html": "12<sup>45</sup>"
+        },
+        "timeShowEnabled": true,
+        "classId": 60,
+        "className": "8K",
+        "classComment": "",
+        "description": "",
+        "note": "",
+        "lessonShow": true,
+        "teachers": [
+         {
+          "id": 1616,
+          "firstName": "Eva",
+          "lastName": "Gadner"
+         }
+        ],
+        "teachersToNotify": [],
+        "teacherMyself": null,
+        "isAutoNotify": false,
+        "isLessonTypeNotifyOn": false,
+        "exp_lt_default": false,
+        "isSecretary": false,
+        "subject": {
+         "id": 103,
+         "name": "Kunstgeschichte",
+         "lernfeld": 0,
+         "defaultLessonContent": "",
+         "defaultLessonContentType": 0
+        },
+        "homeworkExams": [],
+        "lessonContents": [],
+        "rooms": [],
+        "readOnly": true,
+        "isSubstitute": 0,
+        "linkToPreviousHour": 1,
+        "linkedHours": [],
+        "criticalObservations": [],
+        "missingStudents": [],
+        "students": [],
+        "grades": [],
+        "observations": [],
+        "absenceOpenAbsencesStudents": []
+       }
+      ],
+      "criticalObservations": [],
+      "missingStudents": [],
+      "students": [],
+      "grades": [],
+      "observations": [],
+      "absenceOpenAbsencesStudents": []
+     },
+     "hour": 5,
+     "linkedHoursCount": 1
+    },
+    "7": {
+     "isLesson": 0,
+     "lesson": null,
+     "hour": 7,
+     "linkedHoursCount": 0
+    },
+    "8": {
+     "isLesson": 1,
+     "lesson": {
+      "id": null,
+      "date": "2026-11-13",
+      "hour": 8,
+      "toHour": 8,
+      "timeStart": 46800,
+      "timeEnd": 50400,
+      "timeToEnd": 50400,
+      "timeStartObject": {
+       "h": "14",
+       "m": "00",
+       "ts": 46800,
+       "text": "14:00",
+       "html": "14<sup>00</sup>"
+      },
+      "timeEndObject": {
+       "h": "15",
+       "m": "00",
+       "ts": 50400,
+       "text": "15:00",
+       "html": "15<sup>00</sup>"
+      },
+      "timeToEndObject": {
+       "h": "15",
+       "m": "00",
+       "ts": 50400,
+       "text": "15:00",
+       "html": "15<sup>00</sup>"
+      },
+      "timeShowEnabled": true,
+      "classId": 60,
+      "className": "8K",
+      "classComment": "",
+      "description": "",
+      "note": "",
+      "lessonShow": true,
+      "teachers": [
+       {
+        "id": 1624,
+        "firstName": "Otmar",
+        "lastName": "Kollmann"
+       }
+      ],
+      "teachersToNotify": [],
+      "teacherMyself": null,
+      "isAutoNotify": false,
+      "isLessonTypeNotifyOn": false,
+      "exp_lt_default": false,
+      "isSecretary": false,
+      "subject": {
+       "id": 24,
+       "name": "FÜ",
+       "lernfeld": 0,
+       "defaultLessonContent": "",
+       "defaultLessonContentType": 0
+      },
+      "homeworkExams": [],
+      "lessonContents": [],
+      "rooms": [],
+      "readOnly": true,
+      "isSubstitute": 0,
+      "linkToPreviousHour": 0,
+      "linkedHours": [],
+      "criticalObservations": [],
+      "missingStudents": [],
+      "students": [],
+      "grades": [],
+      "observations": [],
+      "absenceOpenAbsencesStudents": []
+     },
+     "hour": 8,
+     "linkedHoursCount": 0
+    },
+    "9": {
+     "isLesson": 1,
+     "lesson": {
+      "id": 3415,
+      "date": "2026-11-13",
+      "hour": 9,
+      "toHour": 10,
+      "timeStart": 51300,
+      "timeEnd": 54000,
+      "timeToEnd": 56700,
+      "timeStartObject": {
+       "h": "15",
+       "m": "15",
+       "ts": 51300,
+       "text": "15:15",
+       "html": "15<sup>15</sup>"
+      },
+      "timeEndObject": {
+       "h": "16",
+       "m": "00",
+       "ts": 54000,
+       "text": "16:00",
+       "html": "16<sup>00</sup>"
+      },
+      "timeToEndObject": {
+       "h": "16",
+       "m": "45",
+       "ts": 56700,
+       "text": "16:45",
+       "html": "16<sup>45</sup>"
+      },
+      "timeShowEnabled": true,
+      "classId": 60,
+      "className": "8K",
+      "classComment": "",
+      "description": "",
+      "note": "",
+      "lessonShow": true,
+      "teachers": [
+       {
+        "id": 1643,
+        "firstName": "Manuel",
+        "lastName": "Winkler"
+       }
+      ],
+      "teachersToNotify": [],
+      "teacherMyself": null,
+      "isAutoNotify": false,
+      "isLessonTypeNotifyOn": false,
+      "exp_lt_default": false,
+      "isSecretary": false,
+      "subject": {
+       "id": 13,
+       "name": "Mathematik",
+       "lernfeld": 0,
+       "defaultLessonContent": "",
+       "defaultLessonContentType": 0
+      },
+      "homeworkExams": [],
+      "lessonContents": [],
+      "rooms": [
+       {
+        "id": 15,
+        "name": "Physikraum"
+       },
+       {
+        "id": 25,
+        "name": "Physikpraktikumsraum"
+       }
+      ],
+      "readOnly": true,
+      "isSubstitute": 0,
+      "linkToPreviousHour": 0,
+      "linkedHours": [
+       {
+        "id": 3416,
+        "date": "2026-11-13",
+        "hour": 10,
+        "toHour": 10,
+        "timeStart": 54000,
+        "timeEnd": 56700,
+        "timeToEnd": 56700,
+        "timeStartObject": {
+         "h": "16",
+         "m": "00",
+         "ts": 54000,
+         "text": "16:00",
+         "html": "16<sup>00</sup>"
+        },
+        "timeEndObject": {
+         "h": "16",
+         "m": "45",
+         "ts": 56700,
+         "text": "16:45",
+         "html": "16<sup>45</sup>"
+        },
+        "timeToEndObject": {
+         "h": "16",
+         "m": "45",
+         "ts": 56700,
+         "text": "16:45",
+         "html": "16<sup>45</sup>"
+        },
+        "timeShowEnabled": true,
+        "classId": 60,
+        "className": "8K",
+        "classComment": "",
+        "description": "",
+        "note": "",
+        "lessonShow": true,
+        "teachers": [
+         {
+          "id": 1643,
+          "firstName": "Manuel",
+          "lastName": "Winkler"
+         }
+        ],
+        "teachersToNotify": [],
+        "teacherMyself": null,
+        "isAutoNotify": false,
+        "isLessonTypeNotifyOn": false,
+        "exp_lt_default": false,
+        "isSecretary": false,
+        "subject": {
+         "id": 13,
+         "name": "Mathematik",
+         "lernfeld": 0,
+         "defaultLessonContent": "",
+         "defaultLessonContentType": 0
+        },
+        "homeworkExams": [],
+        "lessonContents": [],
+        "rooms": [
+         {
+          "id": 25,
+          "name": "Physikpraktikumsraum"
+         },
+         {
+          "id": 15,
+          "name": "Physikraum"
+         }
+        ],
+        "readOnly": true,
+        "isSubstitute": 0,
+        "linkToPreviousHour": 1,
+        "linkedHours": [],
+        "criticalObservations": [],
+        "missingStudents": [],
+        "students": [],
+        "grades": [],
+        "observations": [],
+        "absenceOpenAbsencesStudents": []
+       }
+      ],
+      "criticalObservations": [],
+      "missingStudents": [],
+      "students": [],
+      "grades": [],
+      "observations": [],
+      "absenceOpenAbsencesStudents": []
+     },
+     "hour": 9,
+     "linkedHoursCount": 1
+    }
+   }
+  }
+ }
+}
