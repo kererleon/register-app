@@ -124,6 +124,10 @@ pub fn response(path: &str, args: &Value) -> Value {
              "timeSent": "2026-10-28 14:40:00", "timeRead": "2026-10-28 16:00:00", "submissions": []}
         ]),
         "api/notification/unread" | "api/message/getMyMessages" => Value::Array(Vec::new()),
+        "api/profile/get" => serde_json::json!({
+            "name": "Max Mustermann", "username": "demo-user", "roleName": "Schüler/in",
+            "email": "max.mustermann@example.com", "notificationsEnabled": true
+        }),
         _ => serde_json::json!({ "success": true }),
     }
 }

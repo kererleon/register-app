@@ -5,7 +5,7 @@ import { LoginPage } from "login.slint";
 import { TodayPage, HomeworkPage, StudyPlanDialog, InfoDialog } from "pages.slint";
 import { GradesPage, ChartPage, CalculatorPage } from "grades.slint";
 import { CalendarPage, AbsencesPage, AbsenceForm, MessagesPage, CertificatePage, NotificationsPage } from "pages2.slint";
-import { SettingsPage, SettingsDialogs } from "settings.slint";
+import { SettingsPage, SettingsDialogs, ProfilePages } from "settings.slint";
 
 export { Theme, AppData, Nav, Deco, DecoItem, Competence, GradeGroup, ForecastResult, CalcGrade, DetailCard, DetailRow, TeacherView, TestItem, TargetChip, WeakSubject, HomeworkItem, HomeworkDay, GradeItem, SubjectItem, ChartLine, Lesson, WeekDay, AbsenceItem, MessageItem, SchoolItem, Prefs, NickItem, ColorItem }
 
@@ -433,6 +433,11 @@ export component AppWindow inherits Window {
     }
 
     if Nav.notifications: NotificationsPage {
+        width: 100%;
+        height: 100%;
+    }
+
+    if Nav.profile != 0: ProfilePages {
         width: 100%;
         height: 100%;
     }
