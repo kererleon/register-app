@@ -15,7 +15,6 @@ const ACCOUNT: &str = "login";
 static DIR: OnceLock<PathBuf> = OnceLock::new();
 
 /// Android gives the app its own private folder.
-#[cfg_attr(not(target_os = "android"), allow(dead_code))]
 pub fn set_dir(dir: PathBuf) {
     let _ = DIR.set(dir);
 }
@@ -49,6 +48,10 @@ pub struct Settings {
     pub own_images: BTreeMap<String, String>,
     /// Staff pages entered by hand, by register host.
     pub staff_pages: BTreeMap<String, String>,
+    /// Line thickness of each subject in the grade chart (0 hides it).
+    pub subject_thick: BTreeMap<String, i32>,
+    /// Subjects left out of the overall average.
+    pub ignored_subjects: Vec<String>,
 }
 
 /// The staff page entered by hand for the school at [host].
@@ -104,6 +107,14 @@ impl Settings {
                 .as_object()
                 .map(|m| m.iter().filter_map(|(k, p)| Some((k.clone(), p.as_str()?.to_owned()))).collect())
                 .unwrap_or_default(),
+            subject_thick: v["subjectThick"]
+                .as_object()
+                .map(|m| m.iter().filter_map(|(k, t)| Some((k.clone(), t.as_i64()? as i32))).collect())
+                .unwrap_or_default(),
+            ignored_subjects: v["ignoredSubjects"]
+                .as_array()
+                .map(|a| a.iter().filter_map(|x| x.as_str().map(str::to_owned)).collect())
+                .unwrap_or_default(),
             subject_colors: v["subjectColors"]
                 .as_object()
                 .map(|m| m.iter().filter_map(|(k, c)| Some((k.clone(), c.as_u64()? as u32))).collect())
@@ -121,6 +132,8 @@ impl Settings {
             "showPhotos": self.show_photos,
             "ownImages": self.own_images,
             "staffPages": self.staff_pages,
+            "subjectThick": self.subject_thick,
+            "ignoredSubjects": self.ignored_subjects,
         });
         let _ = std::fs::create_dir_all(dir());
         let _ = std::fs::write(Self::path(), v.to_string());

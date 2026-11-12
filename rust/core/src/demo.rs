@@ -44,7 +44,7 @@ fn subject_detail(id: i64) -> &'static str {
         29 => include_str!("../../demo/api_student_subject_detail_29.json"),
         103 => include_str!("../../demo/api_student_subject_detail_103.json"),
         106 => include_str!("../../demo/api_student_subject_detail_106.json"),
-        _ => "{\"grades\":[],\"observations\":[]}",
+        _ => "\"{\\\"grades\\\":[],\\\"observations\\\":[]}\"",
     }
 }
 
@@ -96,7 +96,8 @@ pub fn response(path: &str, args: &Value) -> Value {
         }
         "api/student/all_subjects" => parse(SUBJECTS),
         "api/student/subject_detail" => {
-            Value::String(subject_detail(args["subjectId"].as_i64().unwrap_or(0)).to_owned())
+            // Stored like the server sends it: a JSON string with the details.
+            parse(subject_detail(args["subjectId"].as_i64().unwrap_or(0)))
         }
         "api/student/dashboard/absences" => parse(ABSENCES),
         "api/calendar/student" => {

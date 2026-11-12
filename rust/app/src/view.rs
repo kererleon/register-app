@@ -15,7 +15,7 @@ use slint::{Color, ComponentHandle, Image, ModelRc, SharedString, VecModel};
 use crate::{format, photos, subject_icons};
 use crate::{
     AbsenceItem, AppData, AppWindow, ChartLine, GradeItem, HomeworkDay, HomeworkItem, Lesson, MessageItem, State,
-    DetailCard, DetailRow, SubjectItem, TargetChip, TeacherView, TestItem, WeakSubject, WeekDay,
+    CalcGrade, Competence, DetailCard, DetailRow, GradeGroup, SubjectItem, TargetChip, TeacherView, TestItem, WeakSubject, WeekDay,
 };
 
 fn model<T: Clone + 'static>(items: Vec<T>) -> ModelRc<T> {
@@ -429,7 +429,12 @@ fn short_month(date: NaiveDate) -> String {
 
 /// One line per subject through its grades (grade 10 at the top, 3 at the
 /// bottom), in a 1000 × 100 box.
-fn chart(subjects: &[Subject], semester: Semester, colors: &BTreeMap<String, u32>) -> (Vec<ChartLine>, String, String) {
+fn chart(
+    subjects: &[Subject],
+    semester: Semester,
+    colors: &BTreeMap<String, u32>,
+    thick: &BTreeMap<String, i32>,
+) -> (Vec<ChartLine>, String, String) {
     let points: Vec<(&Subject, Vec<(NaiveDate, f64)>)> = subjects
         .iter()
         .map(|s| {
@@ -453,114 +458,168 @@ fn chart(subjects: &[Subject], semester: Semester, colors: &BTreeMap<String, u32
         .into_iter()
         .map(|(subject, p)| {
             let color = rgb(colors.get(&subject.name).copied().unwrap_or(0x7C5CFF));
-            if p.len() == 1 {
+            let thick = thick.get(&subject.name).copied().unwrap_or(2);
+            let (commands, dots) = if p.len() == 1 {
                 let (px, py) = (x(p[0].0), y(p[0].1));
-                ChartLine {
-                    color,
-                    commands: SharedString::new(),
-                    dots: s(format!("M {:.1} {py:.1} a 5 2.5 0 1 0 10 0 a 5 2.5 0 1 0 -10 0 Z", px - 5.0)),
-                }
+                (String::new(), format!("M {:.1} {py:.1} a 5 2.5 0 1 0 10 0 a 5 2.5 0 1 0 -10 0 Z", px - 5.0))
             } else {
                 let path: Vec<String> = p
                     .iter()
                     .enumerate()
                     .map(|(i, (d, g))| format!("{} {:.1} {:.1}", if i == 0 { "M" } else { "L" }, x(*d), y(*g)))
                     .collect();
-                ChartLine { color, commands: s(path.join(" ")), dots: SharedString::new() }
-            }
+                (path.join(" "), String::new())
+            };
+            ChartLine { name: s(&subject.name), thick, color, commands: s(commands), dots: s(dots) }
         })
         .collect();
     (lines, short_month(from), short_month(to))
 }
 
+fn grade_item(g: &Grade) -> GradeItem {
+    GradeItem {
+        value: s(g.value.map(grades::format_grade).unwrap_or_default()),
+        value_num: g.value.map(|v| v as f32 / 100.0).unwrap_or(0.0),
+        name: s(if g.name.is_empty() { g.kind.clone() } else { g.name.clone() }),
+        description: s(&g.description),
+        line: s(format!("{}: {} - {}%", g.date.format("%d.%m.%y"), g.kind, g.weight_percent)),
+        created: s(&g.created),
+        cancelled_reason: s(g.cancelled_description.as_deref().unwrap_or("")),
+        cancelled: g.cancelled,
+        observation: false,
+        competences: model(
+            g.competences.iter().map(|(name, stars)| Competence { name: s(name), stars: *stars }).collect(),
+        ),
+    }
+}
+
+fn observation_item(o: &register_core::model::Observation) -> GradeItem {
+    GradeItem {
+        value: SharedString::new(),
+        value_num: 0.0,
+        name: s(&o.kind),
+        description: SharedString::new(),
+        line: s(format!(
+            "{}{}",
+            o.date.format("%d.%m.%y"),
+            if o.note.is_empty() { String::new() } else { format!(": {}", o.note) }
+        )),
+        created: s(&o.created),
+        cancelled_reason: SharedString::new(),
+        cancelled: o.cancelled,
+        observation: true,
+        competences: model(Vec::new()),
+    }
+}
+
+/// The semester's detail entries of [subject], or None before they are
+/// loaded: grades and observations, newest first.
+fn detail_entries(subject: &Subject, semester: Semester) -> Option<Vec<(NaiveDate, String, GradeItem, bool)>> {
+    let semesters: &[usize] = match semester {
+        Semester::First => &[0],
+        Semester::Second => &[1],
+        Semester::All => &[0, 1],
+    };
+    let mut entries = Vec::new();
+    let mut any = false;
+    for &i in semesters {
+        if let (Some(grades), Some(observations)) = (&subject.details[i], &subject.observations[i]) {
+            any = true;
+            entries.extend(grades.iter().map(|g| (g.date, g.kind.clone(), grade_item(g), g.cancelled)));
+            entries.extend(observations.iter().map(|o| (o.date, "Beobachtung".to_owned(), observation_item(o), o.cancelled)));
+        }
+    }
+    entries.sort_by(|a, b| b.0.cmp(&a.0));
+    any.then_some(entries)
+}
+
 fn apply_grades(d: &AppData, state: &State) {
     let semester = semester_of(state.semester);
+    let today = today();
     let tests = state.data.upcoming_tests();
-    let colors = &state.settings.subject_colors;
+    let ignored = &state.settings.ignored_subjects;
+    let is_ignored = |name: &str| ignored.iter().any(|i| i.eq_ignore_ascii_case(name));
     let subjects: Vec<SubjectItem> = state
         .data
         .subjects
         .iter()
         .map(|subject| {
             let average = grades::average(subject, semester);
-            // Details (names, descriptions) once loaded, else the overview.
-            let detailed: Vec<&Grade> = match semester {
-                Semester::First => subject.details[0].iter().flatten().collect(),
-                Semester::Second => subject.details[1].iter().flatten().collect(),
-                Semester::All => subject.details.iter().flatten().flatten().collect(),
-            };
-            let mut list: Vec<&Grade> =
-                if detailed.is_empty() { grades::grades_of(subject, semester).collect() } else { detailed };
-            if !state.show_cancelled {
-                list.retain(|g| !g.cancelled);
-            }
-            list.sort_by(|a, b| b.date.cmp(&a.date));
-            if state.sort_by_type {
-                list.sort_by(|a, b| a.kind.cmp(&b.kind));
-            }
-            let next_test = tests.iter().find(|(_, h)| {
-                h.label.as_deref().is_some_and(|l| l.trim().eq_ignore_ascii_case(subject.name.trim()))
-            });
-            let forecast = match average {
-                Some(avg) if avg < 600 => match grades::forecast(subject, semester, grades::PASS_MARK, 100) {
-                    Forecast::Needs(g) => {
-                        format!("Für eine 6 brauchst du im nächsten Test mindestens {}", grades::format_steps(g))
-                    }
-                    Forecast::Impossible => "Eine 6 ist mit dem nächsten Test allein nicht mehr erreichbar".into(),
-                    Forecast::Safe => String::new(),
-                },
-                Some(avg) if avg < 1000 => {
-                    let target = ((avg as f64 / 100.0).floor() + 1.0).min(10.0);
-                    match grades::forecast(subject, semester, target, 100) {
-                        Forecast::Needs(g) => {
-                            format!("Für Ø {target} brauchst du als Nächstes eine {}", grades::format_steps(g))
-                        }
-                        _ => String::new(),
+            let next_test = tests
+                .iter()
+                .find(|(_, h)| h.label.as_deref().is_some_and(|l| l.trim().eq_ignore_ascii_case(subject.name.trim())));
+            let entries = detail_entries(subject, semester);
+            let loaded = entries.is_some();
+            let entries: Vec<_> = entries.unwrap_or_default().into_iter().filter(|e| state.show_cancelled || !e.3).collect();
+            let groups: Vec<GradeGroup> = if state.sort_by_type {
+                let mut types: Vec<String> = Vec::new();
+                for e in &entries {
+                    if !types.contains(&e.1) {
+                        types.push(e.1.clone());
                     }
                 }
-                _ => String::new(),
+                types
+                    .into_iter()
+                    .map(|t| GradeGroup {
+                        title: s(t.to_uppercase()),
+                        entries: model(entries.iter().filter(|e| e.1 == t).map(|e| e.2.clone()).collect()),
+                    })
+                    .collect()
+            } else {
+                vec![GradeGroup { title: SharedString::new(), entries: model(entries.into_iter().map(|e| e.2).collect()) }]
             };
             SubjectItem {
                 id: subject.id as i32,
                 name: s(&subject.name),
-                average: s(average.map(grades::format_average).unwrap_or_else(|| "–".into())),
+                average: s(average.map(grades::format_average).unwrap_or_else(|| "/".into())),
                 average_value: average.map(|a| a as f32 / 100.0).unwrap_or(0.0),
-                color: rgb(colors.get(&subject.name).copied().unwrap_or(0x7C5CFF)),
-                test_chip: s(next_test
-                    .map(|(date, _)| format!("Test {}. {}", wd2(*date), format::short(*date)))
+                ignored: is_ignored(&subject.name),
+                test_chip: s(next_test.map(|(date, _)| format!("Test {}", day_short(*date))).unwrap_or_default()),
+                next_test: s(next_test
+                    .map(|(date, h)| format!("Nächster Test: {} am {}, {}", h.title, format::weekday(*date), format::day_month(*date)))
                     .unwrap_or_default()),
-                forecast: s(forecast),
-                grades: model(
-                    list.iter()
-                        .map(|g| GradeItem {
-                            value: s(g.value.map(grades::format_grade).unwrap_or_else(|| "–".into())),
-                            title: s(if g.name.is_empty() { g.kind.clone() } else { format!("{} · {}", g.name, g.kind) }),
-                            detail: s(&g.description),
-                            date: s(format::short(g.date)),
-                            weight: s(format!("{} %", g.weight_percent)),
-                            cancelled: g.cancelled,
-                        })
-                        .collect(),
-                ),
+                loaded,
+                groups: model(groups),
             }
         })
         .collect();
-    let overall = grades::overall_average(&state.data.subjects, semester, &[]);
+    let _ = today;
+    let overall = grades::overall_average(&state.data.subjects, semester, ignored);
     d.set_semester(state.semester);
     d.set_show_cancelled(state.show_cancelled);
     d.set_sort_by_type(state.sort_by_type);
-    d.set_overall(s(overall.map(grades::format_average).unwrap_or_else(|| "–".into())));
+    d.set_overall(s(overall.map(grades::format_average).unwrap_or_else(|| "/".into())));
     d.set_overall_value(overall.map(|a| a as f32 / 100.0).unwrap_or(0.0));
-    d.set_overall_note(s(match overall {
-        None => "Noch keine Noten",
-        Some(avg) if avg >= 600 => "Alles im grünen Bereich",
-        Some(_) => "Unter der Genügend-Grenze",
+    d.set_ignored_note(s(if state.data.subjects.iter().any(|s| is_ignored(&s.name)) {
+        "* Du hast dieses Fach aus dem Notendurchschnitt ausgeschlossen"
+    } else {
+        ""
     }));
-    let (lines, from, to) = chart(&state.data.subjects, semester, colors);
+    let (lines, from, to) =
+        chart(&state.data.subjects, semester, &state.settings.subject_colors, &state.settings.subject_thick);
     d.set_chart(model(lines));
     d.set_chart_from(s(from));
     d.set_chart_to(s(to));
     d.set_subjects(model(subjects));
+    apply_calculator(d, state);
+}
+
+/// The grade calculator's list and average.
+pub fn apply_calculator(d: &AppData, state: &State) {
+    d.set_calc_grades(model(
+        state
+            .calc
+            .iter()
+            .map(|(g, w, desc)| CalcGrade {
+                grade: s(grades::format_grade(*g)),
+                weight: s(w.to_string()),
+                description: s(desc.as_deref().unwrap_or("")),
+            })
+            .collect(),
+    ));
+    let pairs: Vec<(i32, i32)> = state.calc.iter().map(|(g, w, _)| (*g, *w)).collect();
+    d.set_calc_average(s(grades::calculator_average(&pairs)));
+    d.set_calc_subjects(model(state.data.subjects.iter().map(|s| s.name.as_str().into()).collect()));
 }
 
 fn apply_calendar(d: &AppData, state: &State) {

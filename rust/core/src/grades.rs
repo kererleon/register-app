@@ -119,6 +119,49 @@ pub fn forecast(subject: &Subject, semester: Semester, target: f64, weight_perce
     }
 }
 
+/// A grade as typed into the grade calculator (tryParseFormattedGrade):
+/// "8", "8,25", "8.5", "8+", "9-", "7/8" or "7-8".
+pub fn parse_input(text: &str) -> Option<GradeValue> {
+    let t = text.trim();
+    let in_range = |g: i32| (0..=1000).contains(&g).then_some(g);
+    let digits = |s: &str| !s.is_empty() && s.chars().all(|c| c.is_ascii_digit());
+    // 8, 8,25, 8.5
+    if let Some((major, minor)) = t.split_once([',', '.']).or(Some((t, ""))) {
+        if digits(major) && (minor.is_empty() && !t.contains([',', '.']) || digits(minor) && minor.len() <= 2) {
+            let major: i32 = major.parse().ok()?;
+            let mut minor: i32 = if minor.is_empty() { 0 } else { minor.parse().ok()? };
+            if t.split_once([',', '.']).is_some_and(|(_, m)| m.len() == 1) {
+                minor *= 10;
+            }
+            return in_range(major * 100 + minor);
+        }
+    }
+    // 9-, 8+
+    if let Some(n) = t.strip_suffix('-').filter(|n| digits(n)) {
+        return in_range(n.parse::<i32>().ok()? * 100 - 25);
+    }
+    if let Some(n) = t.strip_suffix('+').filter(|n| digits(n)) {
+        return in_range(n.parse::<i32>().ok()? * 100 + 25);
+    }
+    // 7/8, 7-8
+    if let Some((a, b)) = t.split_once(['/', '-']).filter(|(a, b)| digits(a) && digits(b)) {
+        let (a, b): (i32, i32) = (a.parse().ok()?, b.parse().ok()?);
+        return (b == a + 1).then(|| in_range(a * 100 + 50)).flatten();
+    }
+    None
+}
+
+/// The calculator's average: integer division like the Flutter app, "/"
+/// without grades.
+pub fn calculator_average(grades: &[(GradeValue, i32)]) -> String {
+    let weights: i64 = grades.iter().map(|g| g.1 as i64).sum();
+    if weights == 0 {
+        return "/".into();
+    }
+    let sum: i64 = grades.iter().map(|g| g.0 as i64 * g.1 as i64).sum();
+    format_average((sum / weights) as GradeValue)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -135,6 +178,8 @@ mod tests {
             name: String::new(),
             description: String::new(),
             created: String::new(),
+            competences: Vec::new(),
+            cancelled_description: None,
         }
     }
 
@@ -175,5 +220,21 @@ mod tests {
         assert_eq!(forecast(&s, Semester::First, 4.0, 100), Forecast::Needs(3.0));
         assert_eq!(forecast(&s, Semester::First, 2.5, 100), Forecast::Safe);
         assert_eq!(forecast(&subject(vec![g(200, 100)]), Semester::First, 8.0, 100), Forecast::Impossible);
+    }
+
+    #[test]
+    fn calculator_inputs() {
+        assert_eq!(parse_input("8"), Some(800));
+        assert_eq!(parse_input("8,25"), Some(825));
+        assert_eq!(parse_input("8.5"), Some(850));
+        assert_eq!(parse_input("8+"), Some(825));
+        assert_eq!(parse_input("9-"), Some(875));
+        assert_eq!(parse_input("7/8"), Some(750));
+        assert_eq!(parse_input("7-8"), Some(750));
+        assert_eq!(parse_input("7/9"), None);
+        assert_eq!(parse_input("11"), None);
+        assert_eq!(parse_input("abc"), None);
+        assert_eq!(calculator_average(&[(800, 100), (650, 50)]), "7,5");
+        assert_eq!(calculator_average(&[]), "/");
     }
 }
