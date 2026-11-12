@@ -90,6 +90,7 @@ fn homework_item(h: &Homework) -> HomeworkItem {
         is_grade,
         checkable: h.checkable,
         checked: h.checked,
+        deletable: h.is_reminder(),
     }
 }
 

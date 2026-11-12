@@ -1,6 +1,6 @@
 import { Theme } from "theme.slint";
 import { AppData, HomeworkItem, Lesson, SubjectItem, MessageItem, AbsenceItem } from "data.slint";
-import { Card, SectionLabel, Pill, Meter, EmptyState, PageTitle, GhostButton } from "widgets.slint";
+import { Card, SectionLabel, Pill, Meter, EmptyState, PageTitle, GhostButton, Field, PrimaryButton } from "widgets.slint";
 import { ScrollView, Switch } from "std-widgets.slint";
 
 // Scrollable content, centred and not wider than is pleasant to read.
@@ -65,6 +65,24 @@ component HomeworkRow inherits Rectangle {
                 color: Theme.muted;
                 font-size: Theme.font-small;
                 wrap: word-wrap;
+            }
+        }
+        if item.deletable: Rectangle {
+            width: 28px;
+            height: 28px;
+            y: 2px;
+            border-radius: 8px;
+            background: del.has-hover ? Theme.danger.transparentize(80%) : transparent;
+            Text {
+                text: "✕";
+                color: Theme.danger;
+                font-size: 14px;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+            del := TouchArea {
+                mouse-cursor: pointer;
+                clicked => { AppData.delete-reminder(item.id); }
             }
         }
         if item.checkable: Rectangle {
@@ -292,6 +310,35 @@ export component TodayPage inherits Page {
 export component HomeworkPage inherits Page {
     title: "Hausaufgaben";
     subtitle: "Aufgaben, Tests und Erinnerungen";
+    Card {
+        HorizontalLayout {
+            padding: 12px;
+            spacing: 10px;
+            reminder-date := Field {
+                width: 130px;
+                text: AppData.tomorrow-date;
+                placeholder: "TT.MM.JJJJ";
+            }
+            reminder-text := Field {
+                placeholder: "Neue Erinnerung, z. B. Vokabeln lernen";
+                accepted => {
+                    if self.text != "" {
+                        AppData.add-reminder(reminder-date.text, self.text);
+                        self.text = "";
+                    }
+                }
+            }
+            PrimaryButton {
+                width: 110px;
+                text: "Hinzufügen";
+                enabled: reminder-text.text != "";
+                clicked => {
+                    AppData.add-reminder(reminder-date.text, reminder-text.text);
+                    reminder-text.text = "";
+                }
+            }
+        }
+    }
     HorizontalLayout {
         alignment: end;
         Switch {

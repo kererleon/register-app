@@ -198,6 +198,29 @@ impl Data {
         Ok(())
     }
 
+    /// Adds an own reminder for [date].
+    pub fn add_reminder(&mut self, client: &Client, date: NaiveDate, text: &str) -> Result<(), Error> {
+        client.send(
+            "api/student/dashboard/save_reminder",
+            json!({ "date": date.format("%Y-%m-%d").to_string(), "text": text }),
+        )?;
+        self.reload_dashboard(client)
+    }
+
+    /// Deletes an own reminder.
+    pub fn delete_reminder(&mut self, client: &Client, id: i64) -> Result<(), Error> {
+        let result = client.send("api/student/dashboard/delete_reminder", json!({ "id": id }))?;
+        if result["success"] == false {
+            return Err(Error::Server("Die Erinnerung konnte nicht gelöscht werden".into()));
+        }
+        self.reload_dashboard(client)
+    }
+
+    fn reload_dashboard(&mut self, client: &Client) -> Result<(), Error> {
+        self.dashboard = parse::dashboard(&client.send("api/student/dashboard/dashboard", json!({ "viewFuture": true }))?);
+        Ok(())
+    }
+
     /// Upcoming tests (today and later), soonest first.
     pub fn upcoming_tests(&self) -> Vec<(NaiveDate, &Homework)> {
         let today = today();

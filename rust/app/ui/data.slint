@@ -11,6 +11,7 @@ export struct HomeworkItem {
     is-grade: bool,
     checkable: bool,
     checked: bool,
+    deletable: bool,
 }
 
 export struct HomeworkDay {
@@ -123,6 +124,8 @@ export global AppData {
     in-out property <bool> show-past: false;
     callback toggle-done(int /* id */, string /* kind */, bool);
     callback set-show-past(bool);
+    callback add-reminder(string /* date */, string /* text */);
+    callback delete-reminder(int);
 
     // --- grades ---
     in-out property <[SubjectItem]> subjects;
