@@ -3,6 +3,7 @@
 //! absences over the school year, tests …).
 
 pub mod absences;
+pub mod changes;
 pub mod client;
 pub mod data;
 pub mod demo;

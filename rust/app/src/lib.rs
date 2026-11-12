@@ -3,6 +3,7 @@
 // time, and the window updates when the answers are there.
 
 mod format;
+mod notify;
 mod settings;
 mod view;
 
@@ -74,8 +75,10 @@ fn update(weak: Weak<AppWindow>, shared: Shared, status: Option<String>) {
 fn refresh(shared: &Shared) -> Option<String> {
     let client = shared.lock().unwrap().client.clone()?;
     // Loaded into a copy, so the window stays usable meanwhile.
-    let mut data = shared.lock().unwrap().data.clone();
+    let before = shared.lock().unwrap().data.clone();
+    let mut data = before.clone();
     let report = data.refresh(&client);
+    notify::announce(&register_core::changes::between(&before, &data, today()));
     let mut state = shared.lock().unwrap();
     state.data = data;
     if state.remember && !client.is_demo() {
@@ -167,6 +170,13 @@ pub fn run() -> Result<(), slint::PlatformError> {
     }));
 
     let data = ui.global::<AppData>();
+    // For trying out notifications: REGISTER_TEST_NOTIFY=1.
+    if std::env::var_os("REGISTER_TEST_NOTIFY").is_some() {
+        notify::announce(&[register_core::changes::Change {
+            title: "Supplenz am 13.11.".into(),
+            body: "3. Stunde Mathematik: Test Vertretung".into(),
+        }]);
+    }
     // For trying out a page directly: REGISTER_PAGE=2 (grades).
     if let Some(page) = std::env::var("REGISTER_PAGE").ok().and_then(|p| p.parse().ok()) {
         ui.set_page(page);
@@ -373,6 +383,47 @@ pub fn run() -> Result<(), slint::PlatformError> {
         }
     });
 
+    data.on_add_reminder({
+        let weak = ui.as_weak();
+        let shared = shared.clone();
+        move |date, text| {
+            let ui = weak.unwrap();
+            let Some(date) = format::parse_date(&date, today()) else {
+                ui.global::<AppData>().set_status("Datum bitte als TT.MM.JJJJ eingeben".into());
+                return;
+            };
+            let text = text.trim().to_owned();
+            background(&ui, &shared, move |s| {
+                let client = s.lock().unwrap().client.clone()?;
+                let mut data = s.lock().unwrap().data.clone();
+                let result = data.add_reminder(&client, date, &text);
+                s.lock().unwrap().data = data;
+                Some(match result {
+                    Ok(()) => "Erinnerung eingetragen".into(),
+                    Err(e) => format!("Nicht eingetragen: {e}"),
+                })
+            });
+        }
+    });
+
+    data.on_delete_reminder({
+        let weak = ui.as_weak();
+        let shared = shared.clone();
+        move |id| {
+            let ui = weak.unwrap();
+            background(&ui, &shared, move |s| {
+                let client = s.lock().unwrap().client.clone()?;
+                let mut data = s.lock().unwrap().data.clone();
+                let result = data.delete_reminder(&client, id as i64);
+                s.lock().unwrap().data = data;
+                Some(match result {
+                    Ok(()) => "Erinnerung gelöscht".into(),
+                    Err(e) => format!("Nicht gelöscht: {e}"),
+                })
+            });
+        }
+    });
+
     data.on_report_absence({
         let weak = ui.as_weak();
         let shared = shared.clone();
@@ -428,6 +479,18 @@ pub fn run() -> Result<(), slint::PlatformError> {
         move || {
             if let (Some(ui), Ok(state)) = (weak.upgrade(), shared.try_lock()) {
                 view::apply_today(&ui, &state);
+            }
+        }
+    });
+
+    // Look for news every 15 minutes while the app is open.
+    let reload = slint::Timer::default();
+    reload.start(slint::TimerMode::Repeated, std::time::Duration::from_secs(15 * 60), {
+        let weak = ui.as_weak();
+        let shared = shared.clone();
+        move || {
+            if let Some(ui) = weak.upgrade() {
+                background(&ui, &shared, refresh);
             }
         }
     });
