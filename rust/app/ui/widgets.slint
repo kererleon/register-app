@@ -1,71 +1,370 @@
 import { Theme } from "theme.slint";
 
-// A rounded panel; glows slightly in the holo look.
-export component Card inherits Rectangle {
+// The page background: violet glow top left, cyan glow bottom right and a
+// faint 32 px grid (AuroraBackdrop in the Flutter app).
+export component Backdrop inherits Rectangle {
+    background: Theme.bg;
+    clip: true;
+    property <length> shortest: min(self.width, self.height);
+    if Theme.dark: Rectangle {
+        x: root.width * 0.05 - root.shortest * 0.95;
+        y: root.height * 0.02 - root.shortest * 0.95;
+        width: root.shortest * 1.9;
+        height: self.width;
+        background: @radial-gradient(circle, #7C5CFF4d 0%, #7C5CFF00 70%);
+    }
+    if Theme.dark: Rectangle {
+        x: root.width - root.shortest * 0.9;
+        y: root.height * 0.85 - root.shortest * 0.9;
+        width: root.shortest * 1.8;
+        height: self.width;
+        background: @radial-gradient(circle, #22D3EE29 0%, #22D3EE00 70%);
+    }
+    Image {
+        width: 100%;
+        height: 100%;
+        source: @image-url("grid.svg");
+        horizontal-tiling: repeat;
+        vertical-tiling: repeat;
+        opacity: Theme.dark ? 1 : 0.6;
+    }
+}
+
+// Small upper-case monospace caption (HudLabel). The text must be given in
+// capitals.
+export component HudLabel inherits Text {
+    color: Theme.muted;
+    font-family: Theme.font-mono;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 1.6px;
+}
+
+// "● FÄLLIG" above a group of panels.
+export component SectionLabel inherits HorizontalLayout {
+    in property <string> text;
+    spacing: 8px;
+    padding-top: 14px;
+    padding-bottom: 2px;
+    padding-left: 4px;
+    VerticalLayout {
+        alignment: center;
+        Rectangle {
+            width: 5px;
+            height: 5px;
+            border-radius: 2.5px;
+            background: Theme.violet;
+        }
+    }
+    HudLabel {
+        text: root.text;
+        vertical-alignment: center;
+    }
+}
+
+// The large card with a violet-to-cyan frame and a soft glow (GlowCard).
+export component GlowCard inherits Rectangle {
+    border-radius: Theme.radius-card;
+    background: Theme.dark ? Theme.accent-gradient : Theme.outline;
+    drop-shadow-blur: 28px;
+    drop-shadow-color: Theme.dark ? #7C5CFF47 : #7C5CFF24;
+    inner := Rectangle {
+        x: 1.2px;
+        y: 1.2px;
+        width: parent.width - 2.4px;
+        height: parent.height - 2.4px;
+        border-radius: Theme.radius-card - 1.2px;
+        background: Theme.surface;
+    }
+    VerticalLayout {
+        padding: 20px;
+        @children
+    }
+}
+
+component Bracket inherits Path {
+    width: 30px;
+    height: 30px;
+    stroke-width: 1.6px;
+    fill: transparent;
+    viewbox-width: 30;
+    viewbox-height: 30;
+}
+
+// A glass panel with glowing corner brackets (HoloPanel). [accent] draws a
+// coloured stripe on the left.
+export component HoloPanel inherits Rectangle {
     in property <bool> clickable: false;
-    in property <bool> highlight: false;
+    in property <bool> highlighted: false;
+    in property <color> accent: transparent;
+    in property <bool> has-accent: false;
+    in property <length> inner-padding: 14px;
     callback clicked();
-    background: touch.has-hover && clickable ? Theme.card-hover : Theme.card;
-    border-radius: Theme.radius;
+    property <color> bracket-color: (highlighted ? Theme.cyan : Theme.primary).transparentize(highlighted ? 0% : 25%);
+    border-radius: Theme.radius-panel;
+    background: touch.has-hover && clickable ? Theme.surface-high.transparentize(20%) : Theme.surface.transparentize(Theme.dark ? 32% : 15%);
     border-width: 1px;
-    border-color: highlight ? Theme.accent : Theme.border;
-    drop-shadow-blur: Theme.dark ? (highlight ? 18px : 10px) : 6px;
-    drop-shadow-color: Theme.dark ? (highlight ? #4cc9ff55 : #00000060) : #1a224010;
-    drop-shadow-offset-y: Theme.dark ? 0px : 2px;
-    animate background { duration: 120ms; }
+    border-color: highlighted ? Theme.cyan.transparentize(40%) : Theme.outline;
     touch := TouchArea {
-        enabled: clickable;
-        mouse-cursor: clickable ? pointer : default;
+        enabled: root.clickable;
+        mouse-cursor: root.clickable ? pointer : default;
         clicked => { root.clicked(); }
     }
-    @children
-}
-
-// Small upper-case caption above a section.
-export component SectionLabel inherits Text {
-    color: Theme.muted;
-    font-size: Theme.font-small;
-    font-weight: 700;
-    letter-spacing: 1.4px;
-}
-
-export component Pill inherits Rectangle {
-    in property <string> text;
-    in property <color> tint: Theme.accent;
-    height: 24px;
-    width: label.preferred-width + 20px;
-    border-radius: 12px;
-    background: tint.transparentize(82%);
-    border-width: 1px;
-    border-color: tint.transparentize(55%);
-    label := Text {
-        text: root.text;
-        color: root.tint;
-        font-size: Theme.font-small;
-        font-weight: 600;
-        vertical-alignment: center;
-        horizontal-alignment: center;
+    if root.has-accent: Rectangle {
+        x: 0;
+        y: 10px;
+        width: 3.5px;
+        height: parent.height - 20px;
+        border-top-right-radius: 4px;
+        border-bottom-right-radius: 4px;
+        background: @linear-gradient(90deg, root.accent 0%, root.accent.transparentize(45%) 100%);
+    }
+    // Corner brackets: the rounded corner and 12 px along both edges.
+    Bracket {
+        x: 0;
+        y: 0;
+        stroke: root.bracket-color;
+        commands: "M 0.8 28.8 L 0.8 16.8 A 16 16 0 0 1 16.8 0.8 L 28.8 0.8";
+    }
+    Bracket {
+        x: parent.width - 30px;
+        y: 0;
+        stroke: root.bracket-color;
+        commands: "M 1.2 0.8 L 13.2 0.8 A 16 16 0 0 1 29.2 16.8 L 29.2 28.8";
+    }
+    Bracket {
+        x: parent.width - 30px;
+        y: parent.height - 30px;
+        stroke: root.bracket-color;
+        commands: "M 29.2 1.2 L 29.2 13.2 A 16 16 0 0 1 13.2 29.2 L 1.2 29.2";
+    }
+    Bracket {
+        x: 0;
+        y: parent.height - 30px;
+        stroke: root.bracket-color;
+        commands: "M 28.8 29.2 L 16.8 29.2 A 16 16 0 0 1 0.8 13.2 L 0.8 1.2";
+    }
+    VerticalLayout {
+        padding: root.inner-padding;
+        padding-left: root.inner-padding + (root.has-accent ? 6px : 0px);
+        @children
     }
 }
 
+// An outlined pill, e.g. "Jetzt", "Im grünen Bereich", "✓ Entschuldigt".
+export component StatusPill inherits Rectangle {
+    in property <string> text;
+    in property <image> icon;
+    in property <bool> has-icon: false;
+    in property <color> tint: Theme.cyan;
+    in property <bool> mono: false;
+    height: 24px;
+    width: row.preferred-width;
+    border-radius: 12px;
+    background: tint.transparentize(85%);
+    border-width: 1px;
+    border-color: tint.transparentize(45%);
+    row := HorizontalLayout {
+        padding-left: 9px;
+        padding-right: 9px;
+        spacing: 4px;
+        alignment: center;
+        if root.has-icon: Image {
+            source: root.icon;
+            width: 12px;
+            height: 12px;
+            y: (parent.height - self.height) / 2;
+            colorize: root.tint;
+        }
+        Text {
+            text: root.text;
+            color: root.tint;
+            font-family: root.mono ? Theme.font-mono : Theme.font-body;
+            font-size: 11.5px;
+            font-weight: 600;
+            vertical-alignment: center;
+        }
+    }
+}
+
+// A circular gauge for a grade on the 1–10 scale (NeonRing).
+export component NeonRing inherits Rectangle {
+    in property <float> value; // 0 = no grade
+    in property <string> label;
+    in property <length> size: 44px;
+    in property <length> stroke: 3.5px;
+    in property <length> font-size: 13px;
+    property <color> ring-color: value == 0 ? Theme.violet : (value < 6 ? Theme.danger : (value < 7 ? Theme.warning : (value < 8.5 ? Theme.violet : Theme.cyan)));
+    property <float> f: clamp(value / 10, 0, 0.999);
+    property <float> s: size / 1px;
+    property <float> r: (size - stroke) / 2px;
+    property <float> c: s / 2;
+    width: size;
+    height: size;
+    Path {
+        width: root.size;
+        height: root.size;
+        viewbox-width: root.s;
+        viewbox-height: root.s;
+        stroke: root.ring-color.transparentize(78%);
+        stroke-width: root.stroke;
+        fill: transparent;
+        commands: "M " + root.c + " " + (root.c - root.r) + " A " + root.r + " " + root.r + " 0 1 1 " + (root.c - 0.01) + " " + (root.c - root.r);
+    }
+    if root.value > 0: Path {
+        width: root.size;
+        height: root.size;
+        viewbox-width: root.s;
+        viewbox-height: root.s;
+        stroke: root.ring-color;
+        stroke-width: root.stroke;
+        fill: transparent;
+        commands: "M " + root.c + " " + (root.c - root.r) + " A " + root.r + " " + root.r + " 0 " + (root.f > 0.5 ? "1" : "0") + " 1 " + (root.c + root.r * Math.sin(root.f * 360deg)) + " " + (root.c - root.r * Math.cos(root.f * 360deg));
+    }
+    Text {
+        text: root.label;
+        color: Theme.text;
+        font-family: Theme.font-mono;
+        font-size: root.font-size;
+        font-weight: 700;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+}
+
+// Two or more options in a pill; the chosen one glows (HoloToggle).
+export component HoloToggle inherits Rectangle {
+    in property <[string]> options;
+    in property <int> selected;
+    callback chosen(int);
+    height: 38px;
+    width: row.preferred-width;
+    border-radius: 19px;
+    background: Theme.surface.transparentize(30%);
+    border-width: 1px;
+    border-color: Theme.outline;
+    row := HorizontalLayout {
+        padding: 3px;
+        spacing: 2px;
+        for option[i] in root.options: Rectangle {
+            width: label.preferred-width + 36px;
+            border-radius: 16px;
+            background: i == root.selected ? Theme.accent-gradient : transparent;
+            drop-shadow-blur: i == root.selected ? 16px : 0px;
+            drop-shadow-color: #7C5CFF73;
+            label := Text {
+                text: option;
+                color: i == root.selected ? #ffffff : Theme.muted;
+                font-family: Theme.font-mono;
+                font-size: 11.5px;
+                font-weight: 700;
+                letter-spacing: 1.2px;
+                horizontal-alignment: center;
+                vertical-alignment: center;
+            }
+            TouchArea {
+                mouse-cursor: pointer;
+                clicked => { root.chosen(i); }
+            }
+        }
+    }
+}
+
+export component IconButton inherits Rectangle {
+    in property <image> icon;
+    in property <color> tint: Theme.muted;
+    in property <length> icon-size: 20px;
+    callback clicked();
+    width: 36px;
+    height: 36px;
+    border-radius: 18px;
+    background: ta.has-hover ? Theme.text.transparentize(92%) : transparent;
+    Image {
+        source: root.icon;
+        width: root.icon-size;
+        height: root.icon-size;
+        colorize: root.tint;
+    }
+    ta := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+// Outlined button with an icon ("Nach Art sortieren").
+export component OutlineButton inherits Rectangle {
+    in property <string> text;
+    in property <image> icon;
+    in property <bool> has-icon: false;
+    in property <bool> active: false;
+    callback clicked();
+    height: 36px;
+    width: row.preferred-width;
+    border-radius: 10px;
+    background: active ? Theme.violet.transparentize(80%) : (ta.has-hover ? Theme.surface-high : Theme.surface.transparentize(30%));
+    border-width: 1px;
+    border-color: active ? Theme.violet.transparentize(40%) : Theme.outline;
+    row := HorizontalLayout {
+        padding-left: 12px;
+        padding-right: 14px;
+        spacing: 8px;
+        if root.has-icon: Image {
+            source: root.icon;
+            width: 16px;
+            height: 16px;
+            y: (parent.height - self.height) / 2;
+            colorize: Theme.violet;
+        }
+        Text {
+            text: root.text;
+            color: Theme.text.transparentize(15%);
+            font-family: Theme.font-body;
+            font-size: 13px;
+            font-weight: 500;
+            vertical-alignment: center;
+        }
+    }
+    ta := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+// The filled violet button, also used floating ("Abwesenheit melden").
 export component PrimaryButton inherits Rectangle {
     in property <string> text;
+    in property <image> icon;
+    in property <bool> has-icon: false;
     in property <bool> enabled: true;
     in property <bool> busy: false;
     callback clicked();
     height: 44px;
-    border-radius: 12px;
-    background: Theme.accent-gradient;
-    opacity: enabled ? (touch.pressed ? 0.8 : 1.0) : 0.45;
-    drop-shadow-blur: Theme.dark ? 16px : 4px;
-    drop-shadow-color: Theme.dark ? #4cc9ff50 : #00000020;
-    Text {
-        text: busy ? "…" : root.text;
-        color: Theme.on-accent;
-        font-size: Theme.font;
-        font-weight: 700;
-        vertical-alignment: center;
-        horizontal-alignment: center;
+    border-radius: 14px;
+    background: touch.has-hover ? Theme.violet.brighter(8%) : Theme.violet;
+    opacity: enabled ? 1.0 : 0.45;
+    drop-shadow-blur: 14px;
+    drop-shadow-color: #00000066;
+    drop-shadow-offset-y: 3px;
+    HorizontalLayout {
+        padding-left: 18px;
+        padding-right: 20px;
+        spacing: 10px;
+        alignment: center;
+        if root.has-icon: Image {
+            source: root.icon;
+            width: 20px;
+            height: 20px;
+            y: (parent.height - self.height) / 2;
+            colorize: #ffffff;
+        }
+        Text {
+            text: root.busy ? "…" : root.text;
+            color: #ffffff;
+            font-family: Theme.font-body;
+            font-size: 14px;
+            font-weight: 500;
+            vertical-alignment: center;
+        }
     }
     touch := TouchArea {
         enabled: root.enabled && !root.busy;
@@ -74,23 +373,36 @@ export component PrimaryButton inherits Rectangle {
     }
 }
 
-export component GhostButton inherits Rectangle {
+export component TextButton inherits Rectangle {
     in property <string> text;
+    in property <image> icon;
+    in property <bool> has-icon: false;
     callback clicked();
-    height: 36px;
-    width: label.preferred-width + 28px;
-    border-radius: 10px;
-    background: touch.has-hover ? Theme.card-hover : transparent;
-    border-width: 1px;
-    border-color: Theme.border;
-    label := Text {
-        text: root.text;
-        color: Theme.text;
-        font-size: Theme.font;
-        vertical-alignment: center;
-        horizontal-alignment: center;
+    height: 34px;
+    width: row.preferred-width;
+    border-radius: 8px;
+    background: ta.has-hover ? Theme.violet.transparentize(88%) : transparent;
+    row := HorizontalLayout {
+        padding-left: 8px;
+        padding-right: 8px;
+        spacing: 6px;
+        if root.has-icon: Image {
+            source: root.icon;
+            width: 16px;
+            height: 16px;
+            y: (parent.height - self.height) / 2;
+            colorize: Theme.violet;
+        }
+        Text {
+            text: root.text;
+            color: Theme.violet;
+            font-family: Theme.font-body;
+            font-size: 13.5px;
+            font-weight: 500;
+            vertical-alignment: center;
+        }
     }
-    touch := TouchArea {
+    ta := TouchArea {
         mouse-cursor: pointer;
         clicked => { root.clicked(); }
     }
@@ -103,17 +415,18 @@ export component Field inherits Rectangle {
     in-out property <string> text <=> input.text;
     callback accepted();
     callback edited(string);
-    height: 46px;
+    height: 48px;
     border-radius: 12px;
-    background: Theme.bg-2;
+    background: Theme.surface.transparentize(20%);
     border-width: 1px;
-    border-color: input.has-focus ? Theme.accent : Theme.border;
+    border-color: input.has-focus ? Theme.violet : Theme.outline;
     Text {
         x: 14px;
         text: root.placeholder;
         visible: input.text == "";
-        color: Theme.faint;
-        font-size: Theme.font;
+        color: Theme.muted.transparentize(30%);
+        font-family: Theme.font-body;
+        font-size: 14px;
         vertical-alignment: center;
         height: parent.height;
     }
@@ -123,7 +436,8 @@ export component Field inherits Rectangle {
         height: parent.height;
         vertical-alignment: center;
         color: Theme.text;
-        font-size: Theme.font;
+        font-family: Theme.font-body;
+        font-size: 14px;
         input-type: root.password ? InputType.password : InputType.text;
         single-line: true;
         accepted => { root.accepted(); }
@@ -134,69 +448,58 @@ export component Field inherits Rectangle {
 // A bar from 0 to 100 %.
 export component Meter inherits Rectangle {
     in property <float> fraction;
-    in property <color> tint: Theme.accent;
+    in property <color> tint: Theme.success;
     height: 8px;
     border-radius: 4px;
-    background: Theme.border;
+    background: Theme.outline;
     Rectangle {
         x: 0;
-        width: parent.width * clamp(root.fraction, 0.02, 1.0);
+        width: parent.width * clamp(root.fraction, 0.015, 1.0);
         height: parent.height;
         border-radius: 4px;
-        background: @linear-gradient(90deg, root.tint.transparentize(40%) 0%, root.tint 100%);
-        drop-shadow-blur: Theme.dark ? 8px : 0px;
-        drop-shadow-color: root.tint.transparentize(40%);
+        background: root.tint;
         animate width { duration: 400ms; easing: ease-out; }
     }
 }
 
 // Shown while a page has nothing to show.
 export component EmptyState inherits VerticalLayout {
-    in property <string> icon: "✦";
+    in property <image> icon;
     in property <string> title;
     in property <string> text;
     alignment: center;
     spacing: 8px;
-    padding: 40px;
-    Text {
-        text: root.icon;
-        font-size: 34px;
-        color: Theme.accent;
-        horizontal-alignment: center;
+    padding: 36px;
+    HorizontalLayout {
+        alignment: center;
+        Image {
+            source: root.icon;
+            width: 40px;
+            height: 40px;
+            colorize: Theme.violet;
+        }
     }
     Text {
         text: root.title;
-        font-size: Theme.font-big;
-        font-weight: 700;
+        font-family: Theme.font-display;
+        font-size: 17px;
+        font-weight: 600;
         color: Theme.text;
         horizontal-alignment: center;
     }
-    Text {
+    if root.text != "": Text {
         text: root.text;
-        font-size: Theme.font;
+        font-family: Theme.font-body;
+        font-size: 14px;
         color: Theme.muted;
         horizontal-alignment: center;
         wrap: word-wrap;
     }
 }
 
-export component PageTitle inherits HorizontalLayout {
-    in property <string> title;
-    in property <string> subtitle;
-    spacing: 12px;
-    VerticalLayout {
-        spacing: 2px;
-        Text {
-            text: root.title;
-            font-size: Theme.font-title;
-            font-weight: 800;
-            color: Theme.text;
-        }
-        if root.subtitle != "": Text {
-            text: root.subtitle;
-            font-size: Theme.font;
-            color: Theme.muted;
-        }
-    }
-    @children
+// Text with the violet-to-cyan gradient (GradientText).
+export component GradientTitle inherits Text {
+    color: Theme.accent-gradient;
+    font-family: Theme.font-display;
+    font-weight: 700;
 }

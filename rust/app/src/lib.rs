@@ -40,6 +40,8 @@ pub struct State {
     pub show_past: bool,
     /// 0 first, 1 second, 2 both semesters.
     pub semester: i32,
+    pub show_cancelled: bool,
+    pub sort_by_type: bool,
     remember: bool,
 }
 
@@ -61,8 +63,8 @@ fn background(ui: &AppWindow, shared: &Shared, work: impl FnOnce(&Shared) -> Opt
 
 fn update(weak: Weak<AppWindow>, shared: Shared, status: Option<String>) {
     let _ = weak.upgrade_in_event_loop(move |ui| {
-        let state = shared.lock().unwrap();
-        view::apply(&ui, &state);
+        let mut state = shared.lock().unwrap();
+        view::apply(&ui, &mut state);
         let data = ui.global::<AppData>();
         data.set_busy(false);
         if let Some(status) = status {
@@ -116,6 +118,7 @@ fn login(ui: &AppWindow, shared: &Shared, url: String, user: String, pass: Strin
                     if state.data.config.as_ref().is_some_and(|c| c.user_id != config.user_id) {
                         state.data = Data::default();
                     }
+                    state.semester = config.current_semester.map(|c| c as i32 - 1).unwrap_or(2);
                     state.data.config = Some(config);
                     state.client = Some(client.clone());
                     state.remember = remember;
@@ -128,7 +131,7 @@ fn login(ui: &AppWindow, shared: &Shared, url: String, user: String, pass: Strin
                     if remember && !client.is_demo() {
                         settings::store_login(client.url(), &user, &pass);
                     }
-                    view::apply(&ui, &state);
+                    view::apply(&ui, &mut state);
                     data.set_two_factor(false);
                     data.set_logged_in(true);
                     data.set_status("Lade Daten …".into());
@@ -166,6 +169,8 @@ pub fn run() -> Result<(), slint::PlatformError> {
         week_offset: 0,
         show_past: false,
         semester: 2,
+        show_cancelled: false,
+        sort_by_type: false,
         remember: true,
     }));
 
@@ -187,8 +192,9 @@ pub fn run() -> Result<(), slint::PlatformError> {
     // window must not wait for it.
     if let Some(saved) = Data::load(&data_path()) {
         let mut state = shared.lock().unwrap();
+        state.semester = saved.config.as_ref().and_then(|c| c.current_semester).map(|c| c as i32 - 1).unwrap_or(2);
         state.data = saved;
-        view::apply(&ui, &state);
+        view::apply(&ui, &mut state);
         data.set_logged_in(true);
     }
     {
@@ -256,7 +262,7 @@ pub fn run() -> Result<(), slint::PlatformError> {
             state.data = Data::default();
             settings::forget_login();
             let _ = std::fs::remove_file(data_path());
-            view::apply(&ui, &state);
+            view::apply(&ui, &mut state);
             let data = ui.global::<AppData>();
             data.set_logged_in(false);
             data.set_status(SharedString::new());
@@ -286,7 +292,7 @@ pub fn run() -> Result<(), slint::PlatformError> {
                         hw.checked = done;
                     }
                 }
-                view::apply(&ui, &state);
+                view::apply(&ui, &mut state);
             }
             let kind = kind.to_string();
             background(&ui, &shared, move |s| {
@@ -305,7 +311,7 @@ pub fn run() -> Result<(), slint::PlatformError> {
         move |show_past| {
             let mut state = shared.lock().unwrap();
             state.show_past = show_past;
-            view::apply(&weak.unwrap(), &state);
+            view::apply(&weak.unwrap(), &mut state);
         }
     });
 
@@ -315,7 +321,27 @@ pub fn run() -> Result<(), slint::PlatformError> {
         move |semester| {
             let mut state = shared.lock().unwrap();
             state.semester = semester;
-            view::apply(&weak.unwrap(), &state);
+            view::apply(&weak.unwrap(), &mut state);
+        }
+    });
+
+    data.on_set_show_cancelled({
+        let weak = ui.as_weak();
+        let shared = shared.clone();
+        move |show| {
+            let mut state = shared.lock().unwrap();
+            state.show_cancelled = show;
+            view::apply(&weak.unwrap(), &mut state);
+        }
+    });
+
+    data.on_set_sort_by_type({
+        let weak = ui.as_weak();
+        let shared = shared.clone();
+        move |sort| {
+            let mut state = shared.lock().unwrap();
+            state.sort_by_type = sort;
+            view::apply(&weak.unwrap(), &mut state);
         }
     });
 
@@ -351,7 +377,7 @@ pub fn run() -> Result<(), slint::PlatformError> {
             let monday = {
                 let mut state = shared.lock().unwrap();
                 state.week_offset = if step == 0 { 0 } else { state.week_offset + step as i64 };
-                view::apply(&ui, &state);
+                view::apply(&ui, &mut state);
                 monday_of(today()) + chrono::Duration::weeks(state.week_offset)
             };
             background(&ui, &shared, move |s| {
@@ -374,7 +400,7 @@ pub fn run() -> Result<(), slint::PlatformError> {
                 if let Some(m) = state.data.messages.iter_mut().find(|m| m.id == id as i64) {
                     m.read = true;
                 }
-                view::apply(&ui, &state);
+                view::apply(&ui, &mut state);
             }
             background(&ui, &shared, move |s| {
                 let client = s.lock().unwrap().client.clone()?;

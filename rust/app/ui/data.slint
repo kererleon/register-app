@@ -4,9 +4,10 @@
 export struct HomeworkItem {
     id: int,
     kind: string,
+    // "MORGEN · DEUTSCH" on the today page, "DEUTSCH" in the list.
+    header: string,
     title: string,
     subtitle: string,
-    label: string,
     is-test: bool,
     is-grade: bool,
     checkable: bool,
@@ -15,8 +16,9 @@ export struct HomeworkItem {
 }
 
 export struct HomeworkDay {
-    title: string,
-    relative: string,
+    date: string,     // "13.11.2026", for new reminders
+    header: string,   // "FR. · 13.11.2026"
+    title: string,    // "Morgen", "Samstag, 14.11."
     is-today: bool,
     items: [HomeworkItem],
 }
@@ -35,36 +37,50 @@ export struct SubjectItem {
     name: string,
     average: string,
     average-value: float,
-    count: int,
+    color: color,
+    test-chip: string,  // "Test Fr. 27.11."
     forecast: string,
     grades: [GradeItem],
-    next-test: string,
+}
+
+export struct ChartLine {
+    color: color,
+    // SVG path commands in a 1000 × 100 box (grade 10 at the top).
+    commands: string,
+    dots: string,
 }
 
 export struct Lesson {
-    hours: string,
-    time: string,
+    hours: string,      // "1-2", "3."
+    time: string,       // "07:50-09:30"
     subject: string,
-    teachers: string,
+    nick: string,       // "Deu"
+    teachers: string,   // last names, one per line
     rooms: string,
     note: string,
+    color: color,
+    span: int,          // lessons it lasts
+    first: int,         // first hour
     has-test: bool,
     is-now: bool,
     is-past: bool,
 }
 
 export struct WeekDay {
-    title: string,
-    date: string,
+    weekday: string,    // "MO"
+    date: string,       // "09.11"
     is-today: bool,
     lessons: [Lesson],
 }
 
 export struct AbsenceItem {
+    index: int,
     title: string,
-    detail: string,
+    subtitle: string,
+    reason: string,
+    footer: string,
     status: string,
-    level: int, // 0 ok, 1 open, 2 bad
+    level: int, // 0 justified, 1 open, 2 not justified, 3 for school
 }
 
 export struct MessageItem {
@@ -79,13 +95,6 @@ export struct MessageItem {
 export struct SchoolItem {
     name: string,
     url: string,
-}
-
-export struct TestItem {
-    title: string,
-    subject: string,
-    when: string,
-    days: int,
 }
 
 export global AppData {
@@ -105,23 +114,21 @@ export global AppData {
     // --- user ---
     in-out property <string> full-name;
     in-out property <string> school;
-    in-out property <bool> demo: false;
     in-out property <string> fetched;
 
     // --- today ---
-    in-out property <string> greeting;
-    in-out property <string> today-title;
-    in-out property <string> now-subject;
+    in-out property <string> now-header;
+    in-out property <string> now-title;
     in-out property <string> now-detail;
-    in-out property <float> now-progress;
-    in-out property <string> next-subject;
+    in-out property <bool> now-running;
     in-out property <[Lesson]> today-lessons;
-    in-out property <[HomeworkItem]> due-tomorrow;
-    in-out property <[TestItem]> tests;
+    in-out property <[HomeworkItem]> due;
+    in-out property <[HomeworkItem]> tests;
 
     // --- homework ---
     in-out property <[HomeworkDay]> homework;
     in-out property <bool> show-past: false;
+    in-out property <string> tomorrow-date;
     callback toggle-done(int /* id */, string /* kind */, bool);
     callback set-show-past(bool);
     callback add-reminder(string /* date */, string /* text */);
@@ -130,13 +137,23 @@ export global AppData {
     // --- grades ---
     in-out property <[SubjectItem]> subjects;
     in-out property <string> overall;
-    in-out property <int> semester: 2; // 0 first, 1 second, 2 both
+    in-out property <float> overall-value;
+    in-out property <string> overall-note;
+    in-out property <[ChartLine]> chart;
+    in-out property <string> chart-from;
+    in-out property <string> chart-to;
+    in-out property <int> semester: 0; // 0 first, 1 second, 2 both
+    in-out property <bool> show-cancelled: false;
+    in-out property <bool> sort-by-type: false;
+    callback set-sort-by-type(bool);
     callback set-semester(int);
+    callback set-show-cancelled(bool);
     callback open-subject(int);
 
     // --- calendar ---
     in-out property <[WeekDay]> week;
     in-out property <string> week-title;
+    in-out property <int> week-hours: 8;
     callback move-week(int);
 
     // --- absences ---
@@ -146,12 +163,15 @@ export global AppData {
     in-out property <string> absence-label;
     in-out property <string> absence-left;
     in-out property <string> year-allowed;
+    in-out property <string> year-allowed-rest;
     in-out property <string> year-detail;
-    in-out property <string> absence-counts;
+    in-out property <string> count-absences;
+    in-out property <string> count-justified;
+    in-out property <string> count-not-justified;
+    in-out property <string> count-delayed;
     in-out property <[AbsenceItem]> absences;
     in-out property <[AbsenceItem]> future-absences;
     in-out property <bool> absence-can-edit: false;
-    in-out property <string> tomorrow-date;
     callback report-absence(string /* from */, string /* to */, int /* first hour */, int /* last hour */, string /* reason */, string /* signature */);
     callback remove-future-absence(int);
 
@@ -160,4 +180,11 @@ export global AppData {
     in-out property <[MessageItem]> notifications;
     in-out property <int> unread;
     callback mark-read(int);
+}
+
+// The page shown (0 Heute, 1 Hausaufgaben, 2 Noten, 3 Absenzen, 4 Kalender,
+// 5 Mitteilungen, 6 Einstellungen), as in the Flutter app's menu.
+export global Nav {
+    in-out property <int> page: 0;
+    in-out property <bool> absence-form: false;
 }

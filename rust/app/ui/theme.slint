@@ -1,36 +1,52 @@
-// Colours and sizes of the app. "Holo" is the dark, futuristic look;
-// "Clean" is light with one accent colour.
+// The look of the Flutter app's "Holo" style, with its exact colours, fonts
+// and sizes (lib/ui/theme.dart and lib/ui/holo.dart). "Clean" is the light
+// look with one accent colour.
+
+import "fonts/inter-400.ttf";
+import "fonts/inter-500.ttf";
+import "fonts/inter-600.ttf";
+import "fonts/inter-700.ttf";
+import "fonts/sora-600.ttf";
+import "fonts/sora-700.ttf";
+import "fonts/jetbrains-mono-500.ttf";
+import "fonts/jetbrains-mono-600.ttf";
+import "fonts/jetbrains-mono-700.ttf";
 
 export global Theme {
     in-out property <bool> dark: true;
-    // Accent for the clean look (the holo look uses its own gradient).
+    // Accent for the clean look.
     in-out property <color> accent-choice: #5b6cff;
-    // True when the window is narrow (phone): bottom bar instead of a rail.
+    // True when the window is narrow (phone): bottom bar instead of the menu.
     in-out property <bool> narrow: false;
 
-    out property <color> bg: dark ? #060a14 : #f3f5fa;
-    out property <color> bg-2: dark ? #0b1222 : #ffffff;
-    out property <color> card: dark ? #0e1629 : #ffffff;
-    out property <color> card-hover: dark ? #132039 : #f5f7ff;
-    out property <color> border: dark ? #1d2a47 : #e3e7f0;
-    out property <color> text: dark ? #e9eefc : #141a2b;
-    out property <color> muted: dark ? #8a96b8 : #5d667d;
-    out property <color> faint: dark ? #4e5a7a : #9aa3b8;
-    out property <color> accent: dark ? #4cc9ff : accent-choice;
-    out property <color> accent-2: dark ? #8b5cff : accent-choice.darker(20%);
-    out property <brush> accent-gradient: @linear-gradient(90deg, accent 0%, accent-2 100%);
-    out property <color> on-accent: dark ? #04101f : #ffffff;
-    out property <color> success: dark ? #3ee0a0 : #13a36b;
-    out property <color> warning: dark ? #ffc455 : #c98500;
-    out property <color> danger: dark ? #ff5c7a : #d63b55;
-    out property <color> glow: dark ? #4cc9ff40 : #00000000;
+    // AppColors (holo)
+    out property <color> violet: dark ? #7C5CFF : accent-choice;
+    out property <color> violet-deep: dark ? #5B3DF5 : accent-choice.darker(25%);
+    out property <color> cyan: dark ? #22D3EE : accent-choice;
+    out property <color> success: dark ? #2DD4A3 : #22A06B;
+    out property <color> warning: dark ? #F5B544 : #D99A1F;
+    out property <color> danger: dark ? #FF5C7A : #E5484D;
 
-    out property <length> radius: 16px;
-    out property <length> radius-small: 10px;
+    // ColorScheme
+    out property <color> bg: dark ? #0A0E1A : #F4F6FB;            // surface / night
+    out property <color> surface: dark ? #111729 : #FFFFFF;       // surfaceContainer
+    out property <color> surface-high: dark ? #182038 : #EAEEF8;
+    out property <color> drawer: dark ? #070A13 : #FFFFFF;        // surfaceContainerLowest
+    out property <color> outline: dark ? #26304D : #D8DEEC;       // outlineVariant
+    out property <color> text: dark ? #E7EAF6 : #0E1426;          // onSurface
+    out property <color> muted: dark ? #98A2C3 : #59627E;         // onSurfaceVariant
+    out property <color> selected-bg: dark ? #2A2163 : #E6E0FF;   // primaryContainer
+    out property <color> primary: dark ? violet : violet-deep;
+    out property <brush> accent-gradient: dark ? @linear-gradient(135deg, violet 0%, cyan 100%) : @linear-gradient(135deg, accent-choice 0%, accent-choice 100%);
+
+    // Fonts: Inter for text, Sora for headings, JetBrains Mono for data.
+    out property <string> font-body: "Inter";
+    out property <string> font-display: "Sora";
+    out property <string> font-mono: "JetBrains Mono";
+
+    out property <length> radius-panel: 16px;
+    out property <length> radius-card: 22px;
     out property <length> gap: 12px;
-    out property <length> page-padding: narrow ? 14px : 24px;
-    out property <length> font-title: 26px;
-    out property <length> font-big: 18px;
-    out property <length> font: 14px;
-    out property <length> font-small: 12px;
+    out property <length> page-padding: narrow ? 12px : 16px;
+    out property <length> max-content: 860px;
 }

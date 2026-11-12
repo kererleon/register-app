@@ -1,379 +1,331 @@
 import { Theme } from "theme.slint";
-import { AppData, HomeworkItem, Lesson, SubjectItem, MessageItem, AbsenceItem } from "data.slint";
-import { Card, SectionLabel, Pill, Meter, EmptyState, PageTitle, GhostButton, Field, PrimaryButton } from "widgets.slint";
-import { ScrollView, Switch } from "std-widgets.slint";
+import { AppData, Nav, HomeworkItem, Lesson } from "data.slint";
+import { GlowCard, HoloPanel, HudLabel, SectionLabel, StatusPill, HoloToggle, IconButton, TextButton, EmptyState, Field, PrimaryButton } from "widgets.slint";
+import { ScrollView } from "std-widgets.slint";
 
-// Scrollable content, centred and not wider than is pleasant to read.
+// Scrollable content, centred and at most 860 px wide (readablePadding).
 export component Page inherits ScrollView {
-    in property <string> title;
-    in property <string> subtitle;
     VerticalLayout {
-        padding: Theme.page-padding;
-        padding-bottom: Theme.narrow ? 90px : 32px;
+        padding-top: Theme.page-padding;
+        padding-bottom: Theme.narrow ? 96px : 90px;
         HorizontalLayout {
             alignment: center;
             VerticalLayout {
-                width: min(860px, root.visible-width - 2 * Theme.page-padding);
-                spacing: Theme.gap;
-                PageTitle {
-                    title: root.title;
-                    subtitle: root.subtitle;
-                }
+                width: min(Theme.max-content, root.visible-width - 2 * Theme.page-padding);
+                spacing: 10px;
                 @children
             }
         }
     }
 }
 
-component HomeworkRow inherits Rectangle {
-    in property <HomeworkItem> item;
-    min-height: row.preferred-height;
-    row := HorizontalLayout {
-        padding: 12px;
-        spacing: 12px;
-        Rectangle {
-            width: 4px;
-            border-radius: 2px;
-            background: item.is-test ? Theme.danger : (item.is-grade ? Theme.success : Theme.accent);
+// One row of the lesson list in the "now" card.
+component LessonLine inherits Rectangle {
+    in property <Lesson> lesson;
+    height: 34px;
+    border-radius: 8px;
+    background: lesson.is-now ? Theme.cyan.transparentize(88%) : transparent;
+    border-width: lesson.is-now ? 1px : 0px;
+    border-color: Theme.cyan.transparentize(45%);
+    HorizontalLayout {
+        padding-left: 10px;
+        padding-right: 10px;
+        spacing: 10px;
+        Text {
+            width: 26px;
+            text: lesson.hours;
+            color: Theme.text;
+            font-family: Theme.font-mono;
+            font-size: 12.5px;
+            font-weight: 700;
+            vertical-alignment: center;
         }
+        Text {
+            width: 98px;
+            text: lesson.time;
+            color: Theme.muted;
+            font-family: Theme.font-mono;
+            font-size: 12.5px;
+            font-weight: 500;
+            vertical-alignment: center;
+        }
+        Text {
+            text: lesson.subject;
+            color: lesson.is-now ? Theme.cyan : Theme.text;
+            font-family: Theme.font-body;
+            font-size: 14px;
+            vertical-alignment: center;
+            overflow: elide;
+            horizontal-stretch: 1;
+        }
+        Text {
+            text: lesson.rooms;
+            color: Theme.text.transparentize(15%);
+            font-family: Theme.font-mono;
+            font-size: 11.5px;
+            font-weight: 500;
+            vertical-alignment: center;
+            overflow: elide;
+        }
+    }
+}
+
+// A due entry or a test as a panel (today page).
+component DuePanel inherits HoloPanel {
+    in property <HomeworkItem> item;
+    has-accent: item.is-test;
+    accent: Theme.danger;
+    inner-padding: 12px;
+    VerticalLayout {
+        spacing: 3px;
+        HudLabel { text: item.header; }
+        Text {
+            text: item.title;
+            color: Theme.text;
+            font-family: Theme.font-body;
+            font-size: 15.5px;
+            font-weight: 500;
+            wrap: word-wrap;
+        }
+        if item.subtitle != "": Text {
+            text: item.subtitle;
+            color: Theme.text.transparentize(10%);
+            font-family: Theme.font-body;
+            font-size: 12.5px;
+            wrap: word-wrap;
+        }
+    }
+}
+
+export component TodayPage inherits Page {
+    GlowCard {
         VerticalLayout {
-            spacing: 3px;
+            spacing: 6px;
             HorizontalLayout {
-                spacing: 8px;
-                if item.label != "": Text {
-                    text: item.label;
-                    color: Theme.accent;
-                    font-size: Theme.font-small;
-                    font-weight: 700;
+                HudLabel {
+                    text: AppData.now-header;
                     vertical-alignment: center;
                 }
-                if item.is-test: Pill {
-                    text: "Test";
-                    tint: Theme.danger;
+                Rectangle { }
+                if AppData.now-running: StatusPill { text: "Jetzt"; }
+            }
+            // As wide as the text, so the gradient runs over the word.
+            HorizontalLayout {
+                alignment: start;
+                Text {
+                    text: AppData.now-title;
+                    color: Theme.accent-gradient;
+                    font-family: Theme.font-display;
+                    font-size: 26px;
+                    font-weight: 700;
+                }
+            }
+            if AppData.now-detail != "": Text {
+                text: AppData.now-detail;
+                color: Theme.text;
+                font-family: Theme.font-body;
+                font-size: 14px;
+            }
+            Rectangle { height: 8px; }
+            for lesson in AppData.today-lessons: LessonLine { lesson: lesson; }
+            HorizontalLayout {
+                alignment: end;
+                padding-top: 6px;
+                TextButton {
+                    text: "Kalender";
+                    icon: @image-url("icons/calendar_today.svg");
+                    has-icon: true;
+                    clicked => { Nav.page = 4; }
+                }
+            }
+        }
+    }
+
+    if AppData.due.length > 0: SectionLabel { text: "FÄLLIG"; }
+    for item in AppData.due: DuePanel { item: item; }
+
+    if AppData.tests.length > 0: SectionLabel { text: "TESTS & SCHULARBEITEN"; }
+    for item in AppData.tests: DuePanel { item: item; }
+}
+
+// The check circle on the right of an entry (NeonCheck).
+component NeonCheck inherits Rectangle {
+    in property <bool> value;
+    callback toggled();
+    width: 26px;
+    height: 26px;
+    border-radius: 13px;
+    background: value ? Theme.accent-gradient : transparent;
+    border-width: value ? 0px : 1.6px;
+    border-color: Theme.muted.transparentize(40%);
+    if value: Image {
+        source: @image-url("icons/check.svg");
+        width: 16px;
+        height: 16px;
+        colorize: #ffffff;
+    }
+    TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.toggled(); }
+    }
+}
+
+component HomeworkPanel inherits HoloPanel {
+    in property <HomeworkItem> item;
+    has-accent: item.is-test;
+    accent: Theme.danger;
+    inner-padding: 12px;
+    HorizontalLayout {
+        spacing: 10px;
+        VerticalLayout {
+            spacing: 5px;
+            horizontal-stretch: 1;
+            HorizontalLayout {
+                spacing: 6px;
+                Image {
+                    width: 15px;
+                    height: 15px;
+                    y: (parent.height - self.height) / 2;
+                    source: item.is-test ? @image-url("icons/bolt.svg") : (item.is-grade ? @image-url("icons/star.svg") : @image-url("icons/assignment.svg"));
+                    colorize: item.is-test ? Theme.danger : Theme.cyan;
+                }
+                HudLabel {
+                    text: item.header;
+                    color: item.is-test ? Theme.danger : Theme.cyan;
+                    vertical-alignment: center;
                 }
                 Rectangle { }
             }
             Text {
                 text: item.title;
                 color: item.checked ? Theme.muted : Theme.text;
-                font-size: Theme.font;
-                font-weight: 600;
+                font-family: Theme.font-body;
+                font-size: 16px;
+                font-weight: 500;
                 wrap: word-wrap;
             }
             if item.subtitle != "": Text {
                 text: item.subtitle;
                 color: Theme.muted;
-                font-size: Theme.font-small;
+                font-family: Theme.font-body;
+                font-size: 14px;
                 wrap: word-wrap;
             }
         }
-        if item.deletable: Rectangle {
+        VerticalLayout {
             width: 28px;
-            height: 28px;
-            y: 2px;
-            border-radius: 8px;
-            background: del.has-hover ? Theme.danger.transparentize(80%) : transparent;
-            Text {
-                text: "✕";
-                color: Theme.danger;
-                font-size: 14px;
-                horizontal-alignment: center;
-                vertical-alignment: center;
-            }
-            del := TouchArea {
-                mouse-cursor: pointer;
+            spacing: 6px;
+            alignment: start;
+            if item.deletable: IconButton {
+                width: 28px;
+                height: 28px;
+                icon: @image-url("icons/delete_outline.svg");
+                icon-size: 19px;
                 clicked => { AppData.delete-reminder(item.id); }
             }
-        }
-        if item.checkable: Rectangle {
-            width: 28px;
-            height: 28px;
-            y: 2px;
-            border-radius: 8px;
-            border-width: 2px;
-            border-color: item.checked ? Theme.success : Theme.border;
-            background: item.checked ? Theme.success.transparentize(75%) : transparent;
-            Text {
-                text: item.checked ? "✓" : "";
-                color: Theme.success;
-                font-size: 16px;
-                font-weight: 800;
-                horizontal-alignment: center;
-                vertical-alignment: center;
-            }
-            TouchArea {
-                mouse-cursor: pointer;
-                clicked => { AppData.toggle-done(item.id, item.kind, !item.checked); }
-            }
-        }
-    }
-}
-
-component LessonRow inherits Rectangle {
-    in property <Lesson> lesson;
-    min-height: row.preferred-height;
-    border-radius: Theme.radius-small;
-    background: lesson.is-now ? Theme.accent.transparentize(85%) : transparent;
-    opacity: lesson.is-past ? 0.55 : 1.0;
-    row := HorizontalLayout {
-        padding: 10px;
-        spacing: 12px;
-        VerticalLayout {
-            width: 88px;
-            alignment: center;
-            Text {
-                text: lesson.hours;
-                color: lesson.is-now ? Theme.accent : Theme.muted;
-                font-size: Theme.font-small;
-                font-weight: 700;
-            }
-            Text {
-                text: lesson.time;
-                color: Theme.faint;
-                font-size: Theme.font-small;
-            }
-        }
-        VerticalLayout {
-            spacing: 2px;
-            alignment: center;
-            HorizontalLayout {
-                spacing: 8px;
-                Text {
-                    text: lesson.subject;
-                    color: Theme.text;
-                    font-size: Theme.font;
-                    font-weight: 700;
-                    vertical-alignment: center;
-                    overflow: elide;
-                }
-                if lesson.is-now: Pill {
-                    text: "Jetzt";
-                }
-                if lesson.has-test: Pill {
-                    text: "Test";
-                    tint: Theme.danger;
-                }
-                Rectangle { }
-            }
-            Text {
-                text: lesson.teachers + (lesson.rooms != "" ? "  ·  " + lesson.rooms : "");
-                color: Theme.muted;
-                font-size: Theme.font-small;
-                overflow: elide;
-            }
-            if lesson.note != "": Text {
-                text: lesson.note;
-                color: Theme.faint;
-                font-size: Theme.font-small;
-                wrap: word-wrap;
-            }
-        }
-    }
-}
-
-export component TodayPage inherits Page {
-    title: AppData.greeting;
-    subtitle: AppData.today-title;
-
-    if AppData.now-subject != "": Card {
-        highlight: true;
-        VerticalLayout {
-            padding: 18px;
-            spacing: 8px;
-            SectionLabel { text: "JETZT"; }
-            Text {
-                text: AppData.now-subject;
-                color: Theme.text;
-                font-size: 22px;
-                font-weight: 800;
-            }
-            Text {
-                text: AppData.now-detail;
-                color: Theme.muted;
-                font-size: Theme.font;
-            }
-            Meter { fraction: AppData.now-progress; }
-            if AppData.next-subject != "": Text {
-                text: "Danach: " + AppData.next-subject;
-                color: Theme.muted;
-                font-size: Theme.font-small;
-            }
-        }
-    }
-
-    SectionLabel { text: "HEUTE"; }
-    Card {
-        VerticalLayout {
-            padding: 6px;
-            if AppData.today-lessons.length == 0: EmptyState {
-                icon: "☾";
-                title: "Heute kein Unterricht";
-                text: "Genieß den freien Tag.";
-            }
-            for lesson in AppData.today-lessons: LessonRow { lesson: lesson; }
-        }
-    }
-
-    if AppData.tests.length > 0: SectionLabel { text: "NÄCHSTE TESTS"; }
-    if AppData.tests.length > 0: Card {
-        VerticalLayout {
-            padding: 6px;
-            for test in AppData.tests: HorizontalLayout {
-                padding: 10px;
-                spacing: 12px;
-                Rectangle {
-                    width: 52px;
-                    height: 52px;
-                    border-radius: 14px;
-                    background: (test.days <= 2 ? Theme.danger : Theme.accent).transparentize(82%);
-                    VerticalLayout {
-                        alignment: center;
-                        Text {
-                            text: test.days == 0 ? "!" : test.days;
-                            color: test.days <= 2 ? Theme.danger : Theme.accent;
-                            font-size: 20px;
-                            font-weight: 800;
-                            horizontal-alignment: center;
-                        }
-                        Text {
-                            text: test.days == 0 ? "heute" : (test.days == 1 ? "Tag" : "Tage");
-                            color: Theme.muted;
-                            font-size: 10px;
-                            horizontal-alignment: center;
-                        }
-                    }
-                }
-                VerticalLayout {
-                    alignment: center;
-                    spacing: 2px;
-                    Text {
-                        text: test.subject;
-                        color: Theme.accent;
-                        font-size: Theme.font-small;
-                        font-weight: 700;
-                    }
-                    Text {
-                        text: test.title;
-                        color: Theme.text;
-                        font-size: Theme.font;
-                        wrap: word-wrap;
-                    }
-                    Text {
-                        text: test.when;
-                        color: Theme.muted;
-                        font-size: Theme.font-small;
-                    }
-                }
-            }
-        }
-    }
-
-    if AppData.due-tomorrow.length > 0: SectionLabel { text: "FÜR MORGEN"; }
-    if AppData.due-tomorrow.length > 0: Card {
-        VerticalLayout {
-            for item in AppData.due-tomorrow: HomeworkRow { item: item; }
-        }
-    }
-
-    if AppData.absence-percent != "": SectionLabel { text: "FEHLSTUNDEN"; }
-    if AppData.absence-percent != "": Card {
-        VerticalLayout {
-            padding: 18px;
-            spacing: 8px;
-            HorizontalLayout {
-                Text {
-                    text: AppData.absence-percent + " der Unterrichtszeit";
-                    color: Theme.text;
-                    font-size: Theme.font-big;
-                    font-weight: 700;
-                }
-                Rectangle { }
-                Pill {
-                    text: AppData.absence-label;
-                    tint: AppData.absence-level == 0 ? Theme.success : (AppData.absence-level == 1 ? Theme.warning : Theme.danger);
-                }
-            }
-            Meter {
-                fraction: AppData.absence-fraction;
-                tint: AppData.absence-level == 0 ? Theme.success : (AppData.absence-level == 1 ? Theme.warning : Theme.danger);
-            }
-            if AppData.year-allowed != "": Text {
-                text: AppData.year-allowed;
-                color: Theme.text;
-                font-size: Theme.font;
-                wrap: word-wrap;
+            if item.checkable: NeonCheck {
+                value: item.checked;
+                toggled => { AppData.toggle-done(item.id, item.kind, !item.checked); }
             }
         }
     }
 }
 
 export component HomeworkPage inherits Page {
-    title: "Hausaufgaben";
-    subtitle: "Aufgaben, Tests und Erinnerungen";
-    Card {
-        HorizontalLayout {
-            padding: 12px;
-            spacing: 10px;
-            reminder-date := Field {
-                width: 130px;
-                text: AppData.tomorrow-date;
-                placeholder: "TT.MM.JJJJ";
+    in-out property <int> adding: -1;
+
+    HorizontalLayout {
+        alignment: center;
+        padding-bottom: 6px;
+        HoloToggle {
+            options: ["KOMMEND", "VERGANGEN"];
+            selected: AppData.show-past ? 1 : 0;
+            chosen(i) => { AppData.set-show-past(i == 1); }
+        }
+    }
+
+    if AppData.homework.length == 0: EmptyState {
+        icon: @image-url("icons/assignment.svg");
+        title: "Nichts zu tun";
+        text: "Keine Einträge im Register.";
+    }
+
+    for day[d] in AppData.homework: HorizontalLayout {
+        spacing: 10px;
+        // The timeline on the left.
+        Rectangle {
+            width: 22px;
+            Rectangle {
+                x: (parent.width - 2px) / 2;
+                width: 2px;
+                height: parent.height;
+                background: Theme.violet.transparentize(65%);
             }
-            reminder-text := Field {
-                placeholder: "Neue Erinnerung, z. B. Vokabeln lernen";
-                accepted => {
-                    if self.text != "" {
-                        AppData.add-reminder(reminder-date.text, self.text);
-                        self.text = "";
+            Rectangle {
+                y: 13px;
+                x: (parent.width - self.width) / 2;
+                width: day.is-today ? 14px : 10px;
+                height: self.width;
+                border-radius: self.width / 2;
+                background: Theme.bg;
+                border-width: 2px;
+                border-color: day.is-today ? Theme.cyan : Theme.violet;
+                Rectangle {
+                    width: parent.width - 8px;
+                    height: self.width;
+                    border-radius: self.width / 2;
+                    background: day.is-today ? Theme.cyan : Theme.violet;
+                }
+            }
+        }
+        VerticalLayout {
+            spacing: 8px;
+            padding-bottom: 8px;
+            HorizontalLayout {
+                VerticalLayout {
+                    spacing: 0px;
+                    HudLabel {
+                        text: day.header;
+                        color: day.is-today ? Theme.cyan : Theme.muted;
+                    }
+                    Text {
+                        text: day.title;
+                        color: Theme.text;
+                        font-family: Theme.font-display;
+                        font-size: 22px;
+                        font-weight: 600;
+                    }
+                }
+                Rectangle { }
+                IconButton {
+                    icon: @image-url("icons/add_circle_outline.svg");
+                    tint: Theme.violet;
+                    icon-size: 22px;
+                    clicked => { root.adding = root.adding == d ? -1 : d; }
+                }
+            }
+            if root.adding == d: HorizontalLayout {
+                spacing: 8px;
+                new-reminder := Field {
+                    placeholder: "Neue Erinnerung, z. B. Vokabeln lernen";
+                    accepted => {
+                        if self.text != "" {
+                            AppData.add-reminder(day.date, self.text);
+                            root.adding = -1;
+                        }
+                    }
+                }
+                PrimaryButton {
+                    width: 120px;
+                    text: "Eintragen";
+                    enabled: new-reminder.text != "";
+                    clicked => {
+                        AppData.add-reminder(day.date, new-reminder.text);
+                        root.adding = -1;
                     }
                 }
             }
-            PrimaryButton {
-                width: 110px;
-                text: "Hinzufügen";
-                enabled: reminder-text.text != "";
-                clicked => {
-                    AppData.add-reminder(reminder-date.text, reminder-text.text);
-                    reminder-text.text = "";
-                }
-            }
-        }
-    }
-    HorizontalLayout {
-        alignment: end;
-        Switch {
-            text: "Vergangene zeigen";
-            checked: AppData.show-past;
-            toggled => { AppData.set-show-past(self.checked); }
-        }
-    }
-    if AppData.homework.length == 0: Card {
-        EmptyState {
-            icon: "✓";
-            title: "Nichts zu tun";
-            text: "Keine Einträge im Register.";
-        }
-    }
-    for day in AppData.homework: VerticalLayout {
-        spacing: 6px;
-        HorizontalLayout {
-            spacing: 8px;
-            SectionLabel {
-                text: day.title;
-                color: day.is-today ? Theme.accent : Theme.muted;
-            }
-            Text {
-                text: day.relative;
-                color: Theme.faint;
-                font-size: Theme.font-small;
-            }
-            Rectangle { }
-        }
-        Card {
-            highlight: day.is-today;
-            VerticalLayout {
-                for item in day.items: HomeworkRow { item: item; }
-            }
+            for item in day.items: HomeworkPanel { item: item; }
         }
     }
 }
