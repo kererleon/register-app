@@ -9,7 +9,7 @@ use crate::model::Config;
 pub fn config() -> Config {
     Config {
         user_id: 0,
-        full_name: "Demo User".into(),
+        full_name: "Max Mustermann".into(),
         image_url: String::new(),
         auto_logout_seconds: 300,
         current_semester: Some(1),
@@ -111,5 +111,13 @@ pub fn response(path: &str, args: &Value) -> Value {
         }
         "api/notification/unread" | "api/message/getMyMessages" => Value::Array(Vec::new()),
         _ => serde_json::json!({ "success": true }),
+    }
+}
+
+/// Pages the register sends as HTML.
+pub fn text(path: &str) -> String {
+    match path {
+        "student/certificate" => r#"<div class="student-subject-list"><div class="default-page-container"><h2 class="h2 margin-top">Zeugnis Mustermann Max</h2>Zeugnis noch nicht verfügbar</div></div>"#.to_owned(),
+        _ => String::new(),
     }
 }

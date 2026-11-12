@@ -232,6 +232,29 @@ impl Client {
         Ok(serde_json::from_str(&body).unwrap_or(Value::String(body)))
     }
 
+    /// A page of the register as text (GET), e.g. the certificate.
+    pub fn get_text(&self, path: &str) -> Result<String, Error> {
+        if self.demo {
+            return Ok(demo::text(path));
+        }
+        self.ensure_logged_in()?;
+        let fetch = || -> Result<String, Error> {
+            self.agent
+                .get(self.address(path))
+                .call()
+                .map_err(network_error)?
+                .body_mut()
+                .read_to_string()
+                .map_err(|e| Error::Server(e.to_string()))
+        };
+        let mut body = fetch()?;
+        if is_logout_redirect(&body) {
+            self.relogin()?;
+            body = fetch()?;
+        }
+        Ok(body)
+    }
+
     /// The semester the server answers for (grades).
     pub fn select_semester(&self, semester: u8) -> Result<(), Error> {
         if self.demo {
@@ -273,7 +296,7 @@ mod tests {
     fn demo_login_and_request() {
         let c = Client::new("https://vinzentinum.digitalesregister.it", "demo-user-6540", "x");
         assert!(c.is_demo());
-        assert_eq!(c.login(None).unwrap().full_name, "Demo User");
+        assert_eq!(c.login(None).unwrap().full_name, "Max Mustermann");
         let dashboard = c.send("api/student/dashboard/dashboard", json!({ "viewFuture": true })).unwrap();
         assert!(dashboard.is_array());
     }

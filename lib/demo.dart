@@ -13,7 +13,7 @@ dynamic getDemoResponse(String url, dynamic args) {
 
 final _demoRequestsAndResponses = <String, dynamic>{
   "api/student/subject_detail":
-      "{\"grades\":[{\"id\":1202,\"grade\":\"9.00\",\"weight\":100,\"typeId\":7,\"typeName\":\"Sonstige Bewertung\",\"name\":\"Ausdauertest\",\"description\":\"\",\"date\":\"2022-10-11\",\"cancelled\":0,\"created\":\"Von Gernot Wachtler am 17.10.2022 eingetragen\",\"subjectId\":17,\"classId\":60,\"studentId\":6619,\"createdTimeStamp\":\"2022-10-17 12:34:12\",\"cancelledTimeStamp\":null,\"competences\":[]}],\"absences\":[],\"observations\":[{\"id\":980,\"note\":\"\",\"date\":\"2022-10-11\",\"typeId\":19,\"typeName\":\"Plus\",\"cancelled\":0,\"created\":\"Von Gernot Wachtler am 17.10.2022 eingetragen\",\"subjectId\":17,\"classId\":60,\"studentId\":6619,\"hidden\":0}],\"averageSemester\":0,\"averageYear\":0,\"showGrades\":2,\"showGradesStudentView\":2,\"isClassHasNoGrades\":false,\"countCompetences\":0,\"countDescriptions\":0,\"countObservations\":1}",
+      "{\"grades\":[{\"id\":1202,\"grade\":\"9.00\",\"weight\":100,\"typeId\":7,\"typeName\":\"Sonstige Bewertung\",\"name\":\"Ausdauertest\",\"description\":\"\",\"date\":\"2022-10-11\",\"cancelled\":0,\"created\":\"Von Max Mustermann am 17.10.2022 eingetragen\",\"subjectId\":17,\"classId\":60,\"studentId\":6619,\"createdTimeStamp\":\"2022-10-17 12:34:12\",\"cancelledTimeStamp\":null,\"competences\":[]}],\"absences\":[],\"observations\":[{\"id\":980,\"note\":\"\",\"date\":\"2022-10-11\",\"typeId\":19,\"typeName\":\"Plus\",\"cancelled\":0,\"created\":\"Von Max Mustermann am 17.10.2022 eingetragen\",\"subjectId\":17,\"classId\":60,\"studentId\":6619,\"hidden\":0}],\"averageSemester\":0,\"averageYear\":0,\"showGrades\":2,\"showGradesStudentView\":2,\"isClassHasNoGrades\":false,\"countCompetences\":0,\"countDescriptions\":0,\"countObservations\":1}",
   "api/student/dashboard/save_reminder": {
     "id": -1,
     "title": "test entry",
@@ -885,7 +885,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
         "averageSemester": 0,
         "averageYear": 0,
         "subjectId": 17,
-        "student": {"id": 6619, "firstName": "Michael", "lastName": "Debertol"},
+        "student": {"id": 6619, "firstName": "Max", "lastName": "Mustermann"},
         "countCompetences": 0,
         "countDescriptions": 0,
         "countObservations": 1
@@ -897,7 +897,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
         "averageSemester": 0,
         "averageYear": 0,
         "subjectId": 6,
-        "student": {"id": 6619, "firstName": "Michael", "lastName": "Debertol"},
+        "student": {"id": 6619, "firstName": "Max", "lastName": "Mustermann"},
         "countCompetences": 0,
         "countDescriptions": 0,
         "countObservations": 0
@@ -924,7 +924,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
         "averageSemester": 0,
         "averageYear": 0,
         "subjectId": 8,
-        "student": {"id": 6619, "firstName": "Michael", "lastName": "Debertol"},
+        "student": {"id": 6619, "firstName": "Max", "lastName": "Mustermann"},
         "countCompetences": 0,
         "countDescriptions": 0,
         "countObservations": 0
@@ -936,7 +936,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
         "averageSemester": 0,
         "averageYear": 0,
         "subjectId": 24,
-        "student": {"id": 6619, "firstName": "Michael", "lastName": "Debertol"},
+        "student": {"id": 6619, "firstName": "Max", "lastName": "Mustermann"},
         "countCompetences": 0,
         "countDescriptions": 0,
         "countObservations": 0
@@ -963,7 +963,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
         "averageSemester": 0,
         "averageYear": 0,
         "subjectId": 10,
-        "student": {"id": 6619, "firstName": "Michael", "lastName": "Debertol"},
+        "student": {"id": 6619, "firstName": "Max", "lastName": "Mustermann"},
         "countCompetences": 0,
         "countDescriptions": 0,
         "countObservations": 0
@@ -975,7 +975,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
         "averageSemester": 0,
         "averageYear": 0,
         "subjectId": 106,
-        "student": {"id": 6619, "firstName": "Michael", "lastName": "Debertol"},
+        "student": {"id": 6619, "firstName": "Max", "lastName": "Mustermann"},
         "countCompetences": 0,
         "countDescriptions": 0,
         "countObservations": 0
@@ -987,7 +987,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
         "averageSemester": 0,
         "averageYear": 0,
         "subjectId": 20,
-        "student": {"id": 6619, "firstName": "Michael", "lastName": "Debertol"},
+        "student": {"id": 6619, "firstName": "Max", "lastName": "Mustermann"},
         "countCompetences": 0,
         "countDescriptions": 0,
         "countObservations": 0
@@ -999,7 +999,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
         "averageSemester": 0,
         "averageYear": 0,
         "subjectId": 7,
-        "student": {"id": 6619, "firstName": "Michael", "lastName": "Debertol"},
+        "student": {"id": 6619, "firstName": "Max", "lastName": "Mustermann"},
         "countCompetences": 0,
         "countDescriptions": 0,
         "countObservations": 0
@@ -1011,7 +1011,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
         "averageSemester": 0,
         "averageYear": 0,
         "subjectId": 103,
-        "student": {"id": 6619, "firstName": "Michael", "lastName": "Debertol"},
+        "student": {"id": 6619, "firstName": "Max", "lastName": "Mustermann"},
         "countCompetences": 0,
         "countDescriptions": 0,
         "countObservations": 0
@@ -1023,7 +1023,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
         "averageSemester": 0,
         "averageYear": 0,
         "subjectId": 19,
-        "student": {"id": 6619, "firstName": "Michael", "lastName": "Debertol"},
+        "student": {"id": 6619, "firstName": "Max", "lastName": "Mustermann"},
         "countCompetences": 0,
         "countDescriptions": 0,
         "countObservations": 0
@@ -1035,7 +1035,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
         "averageSemester": 0,
         "averageYear": 0,
         "subjectId": 13,
-        "student": {"id": 6619, "firstName": "Michael", "lastName": "Debertol"},
+        "student": {"id": 6619, "firstName": "Max", "lastName": "Mustermann"},
         "countCompetences": 0,
         "countDescriptions": 0,
         "countObservations": 0
@@ -1047,7 +1047,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
         "averageSemester": 0,
         "averageYear": 0,
         "subjectId": 22,
-        "student": {"id": 6619, "firstName": "Michael", "lastName": "Debertol"},
+        "student": {"id": 6619, "firstName": "Max", "lastName": "Mustermann"},
         "countCompetences": 0,
         "countDescriptions": 0,
         "countObservations": 0
@@ -1074,7 +1074,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
         "averageSemester": 0,
         "averageYear": 0,
         "subjectId": 21,
-        "student": {"id": 6619, "firstName": "Michael", "lastName": "Debertol"},
+        "student": {"id": 6619, "firstName": "Max", "lastName": "Mustermann"},
         "countCompetences": 0,
         "countDescriptions": 0,
         "countObservations": 0
@@ -1086,7 +1086,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
         "averageSemester": 0,
         "averageYear": 0,
         "subjectId": 14,
-        "student": {"id": 6619, "firstName": "Michael", "lastName": "Debertol"},
+        "student": {"id": 6619, "firstName": "Max", "lastName": "Mustermann"},
         "countCompetences": 0,
         "countDescriptions": 0,
         "countObservations": 0
@@ -1098,7 +1098,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
         "averageSemester": 0,
         "averageYear": 0,
         "subjectId": 5,
-        "student": {"id": 6619, "firstName": "Michael", "lastName": "Debertol"},
+        "student": {"id": 6619, "firstName": "Max", "lastName": "Mustermann"},
         "countCompetences": 0,
         "countDescriptions": 0,
         "countObservations": 0
@@ -1110,7 +1110,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
         "averageSemester": 0,
         "averageYear": 0,
         "subjectId": 29,
-        "student": {"id": 6619, "firstName": "Michael", "lastName": "Debertol"},
+        "student": {"id": 6619, "firstName": "Max", "lastName": "Mustermann"},
         "countCompetences": 0,
         "countDescriptions": 0,
         "countObservations": 0
@@ -1260,8 +1260,8 @@ final _demoRequestsAndResponses = <String, dynamic>{
                 "teachers": [
                   {
                     "id": 5971,
-                    "firstName": "Barbara",
-                    "lastName": "Mitterrutzner"
+                    "firstName": "Max",
+                    "lastName": "Mustermann"
                   }
                 ],
                 "teachersToNotify": [],
@@ -1342,8 +1342,8 @@ final _demoRequestsAndResponses = <String, dynamic>{
                     "teachers": [
                       {
                         "id": 5971,
-                        "firstName": "Barbara",
-                        "lastName": "Mitterrutzner"
+                        "firstName": "Max",
+                        "lastName": "Mustermann"
                       }
                     ],
                     "teachersToNotify": [],
@@ -1425,7 +1425,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
                 "note": "",
                 "lessonShow": true,
                 "teachers": [
-                  {"id": 1643, "firstName": "Manuel", "lastName": "Winkler"}
+                  {"id": 1643, "firstName": "Max", "lastName": "Mustermann"}
                 ],
                 "teachersToNotify": [],
                 "teacherMyself": null,
@@ -1517,7 +1517,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
                     "note": "",
                     "lessonShow": true,
                     "teachers": [
-                      {"id": 1643, "firstName": "Manuel", "lastName": "Winkler"}
+                      {"id": 1643, "firstName": "Max", "lastName": "Mustermann"}
                     ],
                     "teachersToNotify": [],
                     "teacherMyself": null,
@@ -1596,7 +1596,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
                 "note": "",
                 "lessonShow": true,
                 "teachers": [
-                  {"id": 1628, "firstName": "Christof", "lastName": "Obkircher"}
+                  {"id": 1628, "firstName": "Max", "lastName": "Mustermann"}
                 ],
                 "teachersToNotify": [],
                 "teacherMyself": null,
@@ -1674,8 +1674,8 @@ final _demoRequestsAndResponses = <String, dynamic>{
                     "teachers": [
                       {
                         "id": 1628,
-                        "firstName": "Christof",
-                        "lastName": "Obkircher"
+                        "firstName": "Max",
+                        "lastName": "Mustermann"
                       }
                     ],
                     "teachersToNotify": [],
@@ -1755,7 +1755,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
                 "note": "",
                 "lessonShow": true,
                 "teachers": [
-                  {"id": 3808, "firstName": "Konrad", "lastName": "Willeit"}
+                  {"id": 3808, "firstName": "Max", "lastName": "Mustermann"}
                 ],
                 "teachersToNotify": [],
                 "teacherMyself": null,
@@ -1869,7 +1869,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
                 "note": "",
                 "lessonShow": true,
                 "teachers": [
-                  {"id": 1628, "firstName": "Christof", "lastName": "Obkircher"}
+                  {"id": 1628, "firstName": "Max", "lastName": "Mustermann"}
                 ],
                 "teachersToNotify": [],
                 "teacherMyself": null,
@@ -1947,8 +1947,8 @@ final _demoRequestsAndResponses = <String, dynamic>{
                     "teachers": [
                       {
                         "id": 1628,
-                        "firstName": "Christof",
-                        "lastName": "Obkircher"
+                        "firstName": "Max",
+                        "lastName": "Mustermann"
                       }
                     ],
                     "teachersToNotify": [],
@@ -2028,7 +2028,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
                 "note": "",
                 "lessonShow": true,
                 "teachers": [
-                  {"id": 1639, "firstName": "Verena", "lastName": "Steinmair"}
+                  {"id": 1639, "firstName": "Max", "lastName": "Mustermann"}
                 ],
                 "teachersToNotify": [],
                 "teacherMyself": null,
@@ -2149,7 +2149,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
                 "note": "",
                 "lessonShow": true,
                 "teachers": [
-                  {"id": 1639, "firstName": "Verena", "lastName": "Steinmair"}
+                  {"id": 1639, "firstName": "Max", "lastName": "Mustermann"}
                 ],
                 "teachersToNotify": [],
                 "teacherMyself": null,
@@ -2239,7 +2239,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
                 "note": "",
                 "lessonShow": true,
                 "teachers": [
-                  {"id": 5256, "firstName": "Vania", "lastName": "Vidotto"}
+                  {"id": 5256, "firstName": "Max", "lastName": "Mustermann"}
                 ],
                 "teachersToNotify": [],
                 "teacherMyself": null,
@@ -2315,7 +2315,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
                     "note": "",
                     "lessonShow": true,
                     "teachers": [
-                      {"id": 5256, "firstName": "Vania", "lastName": "Vidotto"}
+                      {"id": 5256, "firstName": "Max", "lastName": "Mustermann"}
                     ],
                     "teachersToNotify": [],
                     "teacherMyself": null,
@@ -2394,7 +2394,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
                 "note": "",
                 "lessonShow": true,
                 "teachers": [
-                  {"id": 1642, "firstName": "Gernot", "lastName": "Wachtler"}
+                  {"id": 1642, "firstName": "Max", "lastName": "Mustermann"}
                 ],
                 "teachersToNotify": [],
                 "teacherMyself": null,
@@ -2507,7 +2507,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
                 "note": "",
                 "lessonShow": true,
                 "teachers": [
-                  {"id": 1655, "firstName": "Andres", "lastName": "Pizzinini"}
+                  {"id": 1655, "firstName": "Max", "lastName": "Mustermann"}
                 ],
                 "teachersToNotify": [],
                 "teacherMyself": null,
@@ -2585,8 +2585,8 @@ final _demoRequestsAndResponses = <String, dynamic>{
                     "teachers": [
                       {
                         "id": 1655,
-                        "firstName": "Andres",
-                        "lastName": "Pizzinini"
+                        "firstName": "Max",
+                        "lastName": "Mustermann"
                       }
                     ],
                     "teachersToNotify": [],
@@ -2666,7 +2666,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
                 "note": "",
                 "lessonShow": true,
                 "teachers": [
-                  {"id": 1624, "firstName": "Otmar", "lastName": "Kollmann"}
+                  {"id": 1624, "firstName": "Max", "lastName": "Mustermann"}
                 ],
                 "teachersToNotify": [],
                 "teacherMyself": null,
@@ -2742,7 +2742,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
                     "note": "",
                     "lessonShow": true,
                     "teachers": [
-                      {"id": 1624, "firstName": "Otmar", "lastName": "Kollmann"}
+                      {"id": 1624, "firstName": "Max", "lastName": "Mustermann"}
                     ],
                     "teachersToNotify": [],
                     "teacherMyself": null,
@@ -2821,7 +2821,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
                 "note": "",
                 "lessonShow": true,
                 "teachers": [
-                  {"id": 1623, "firstName": "Harald", "lastName": "Knoflach"}
+                  {"id": 1623, "firstName": "Max", "lastName": "Mustermann"}
                 ],
                 "teachersToNotify": [],
                 "teacherMyself": null,
@@ -2882,8 +2882,8 @@ final _demoRequestsAndResponses = <String, dynamic>{
                     "teachers": [
                       {
                         "id": 1623,
-                        "firstName": "Harald",
-                        "lastName": "Knoflach"
+                        "firstName": "Max",
+                        "lastName": "Mustermann"
                       }
                     ],
                     "teachersToNotify": [],
@@ -2952,8 +2952,8 @@ final _demoRequestsAndResponses = <String, dynamic>{
                     "teachers": [
                       {
                         "id": 1623,
-                        "firstName": "Harald",
-                        "lastName": "Knoflach"
+                        "firstName": "Max",
+                        "lastName": "Mustermann"
                       }
                     ],
                     "teachersToNotify": [],
@@ -3057,7 +3057,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
                 "note": "",
                 "lessonShow": true,
                 "teachers": [
-                  {"id": 5256, "firstName": "Vania", "lastName": "Vidotto"}
+                  {"id": 5256, "firstName": "Max", "lastName": "Mustermann"}
                 ],
                 "teachersToNotify": [],
                 "teacherMyself": null,
@@ -3134,7 +3134,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
                     "note": "",
                     "lessonShow": true,
                     "teachers": [
-                      {"id": 5256, "firstName": "Vania", "lastName": "Vidotto"}
+                      {"id": 5256, "firstName": "Max", "lastName": "Mustermann"}
                     ],
                     "teachersToNotify": [],
                     "teacherMyself": null,
@@ -3215,8 +3215,8 @@ final _demoRequestsAndResponses = <String, dynamic>{
                 "teachers": [
                   {
                     "id": 5971,
-                    "firstName": "Barbara",
-                    "lastName": "Mitterrutzner"
+                    "firstName": "Max",
+                    "lastName": "Mustermann"
                   }
                 ],
                 "teachersToNotify": [],
@@ -3288,7 +3288,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
                 "note": "",
                 "lessonShow": true,
                 "teachers": [
-                  {"id": 3808, "firstName": "Konrad", "lastName": "Willeit"}
+                  {"id": 3808, "firstName": "Max", "lastName": "Mustermann"}
                 ],
                 "teachersToNotify": [],
                 "teacherMyself": null,
@@ -3359,7 +3359,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
                 "note": "",
                 "lessonShow": true,
                 "teachers": [
-                  {"id": 1642, "firstName": "Gernot", "lastName": "Wachtler"}
+                  {"id": 1642, "firstName": "Max", "lastName": "Mustermann"}
                 ],
                 "teachersToNotify": [],
                 "teacherMyself": null,
@@ -3430,7 +3430,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
                 "note": "",
                 "lessonShow": true,
                 "teachers": [
-                  {"id": 1643, "firstName": "Manuel", "lastName": "Winkler"}
+                  {"id": 1643, "firstName": "Max", "lastName": "Mustermann"}
                 ],
                 "teachersToNotify": [],
                 "teacherMyself": null,
@@ -3489,7 +3489,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
                     "note": "",
                     "lessonShow": true,
                     "teachers": [
-                      {"id": 1643, "firstName": "Manuel", "lastName": "Winkler"}
+                      {"id": 1643, "firstName": "Max", "lastName": "Mustermann"}
                     ],
                     "teachersToNotify": [],
                     "teacherMyself": null,
@@ -3592,7 +3592,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
                 "note": "",
                 "lessonShow": true,
                 "teachers": [
-                  {"id": 1624, "firstName": "Otmar", "lastName": "Kollmann"}
+                  {"id": 1624, "firstName": "Max", "lastName": "Mustermann"}
                 ],
                 "teachersToNotify": [],
                 "teacherMyself": null,
@@ -3668,7 +3668,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
                     "note": "",
                     "lessonShow": true,
                     "teachers": [
-                      {"id": 1624, "firstName": "Otmar", "lastName": "Kollmann"}
+                      {"id": 1624, "firstName": "Max", "lastName": "Mustermann"}
                     ],
                     "teachersToNotify": [],
                     "teacherMyself": null,
@@ -3747,7 +3747,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
                 "note": "",
                 "lessonShow": true,
                 "teachers": [
-                  {"id": 1628, "firstName": "Christof", "lastName": "Obkircher"}
+                  {"id": 1628, "firstName": "Max", "lastName": "Mustermann"}
                 ],
                 "teachersToNotify": [],
                 "teacherMyself": null,
@@ -3818,7 +3818,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
                 "note": "",
                 "lessonShow": true,
                 "teachers": [
-                  {"id": 1624, "firstName": "Otmar", "lastName": "Kollmann"}
+                  {"id": 1624, "firstName": "Max", "lastName": "Mustermann"}
                 ],
                 "teachersToNotify": [],
                 "teacherMyself": null,
@@ -3889,7 +3889,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
                 "note": "",
                 "lessonShow": true,
                 "teachers": [
-                  {"id": 1616, "firstName": "Eva", "lastName": "Gadner"}
+                  {"id": 1616, "firstName": "Max", "lastName": "Mustermann"}
                 ],
                 "teachersToNotify": [],
                 "teacherMyself": null,
@@ -3966,7 +3966,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
                     "note": "",
                     "lessonShow": true,
                     "teachers": [
-                      {"id": 1616, "firstName": "Eva", "lastName": "Gadner"}
+                      {"id": 1616, "firstName": "Max", "lastName": "Mustermann"}
                     ],
                     "teachersToNotify": [],
                     "teacherMyself": null,
@@ -4051,7 +4051,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
                 "note": "",
                 "lessonShow": true,
                 "teachers": [
-                  {"id": 1624, "firstName": "Otmar", "lastName": "Kollmann"}
+                  {"id": 1624, "firstName": "Max", "lastName": "Mustermann"}
                 ],
                 "teachersToNotify": [],
                 "teacherMyself": null,
@@ -4122,7 +4122,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
                 "note": "",
                 "lessonShow": true,
                 "teachers": [
-                  {"id": 1643, "firstName": "Manuel", "lastName": "Winkler"}
+                  {"id": 1643, "firstName": "Max", "lastName": "Mustermann"}
                 ],
                 "teachersToNotify": [],
                 "teacherMyself": null,
@@ -4184,7 +4184,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
                     "note": "",
                     "lessonShow": true,
                     "teachers": [
-                      {"id": 1643, "firstName": "Manuel", "lastName": "Winkler"}
+                      {"id": 1643, "firstName": "Max", "lastName": "Mustermann"}
                     ],
                     "teachersToNotify": [],
                     "teacherMyself": null,
@@ -4233,7 +4233,7 @@ final _demoRequestsAndResponses = <String, dynamic>{
     };
   },
   "student/certificate":
-      "<div class=\"student-subject-list\"><div class=\"default-page-container\"><h2 class=\"h2 margin-top\">Zeugnis Debertol Michael</h2>Zeugnis noch nicht verfügbar</div></div>",
+      "<div class=\"student-subject-list\"><div class=\"default-page-container\"><h2 class=\"h2 margin-top\">Zeugnis Mustermann Max</h2>Zeugnis noch nicht verfügbar</div></div>",
   "api/message/getMyMessages": [],
 };
 

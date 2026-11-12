@@ -154,6 +154,19 @@ export struct AbsenceItem {
     level: int, // 0 justified, 1 open, 2 not justified, 3 for school
 }
 
+// The certificate, as headings, paragraphs and tables.
+export struct CertRow {
+    cells: [string],
+}
+
+export struct CertBlock {
+    kind: int,      // 0 heading, 1 text, 2 table
+    level: int,
+    text: string,
+    header: bool,
+    rows: [CertRow],
+}
+
 export struct MessageItem {
     id: int,
     subject: string,
@@ -242,6 +255,10 @@ export global AppData {
     callback reset-move(string /* day */, int /* index */);
     callback homework-info(string /* day */, int /* index */);
     callback page-shown(int);
+    // --- certificate ---
+    in-out property <[CertBlock]> certificate;
+    in-out property <int> certificate-state; // 0 loading, 1 shown, 2 offline
+    in-out property <string> certificate-fetched;
     in-out property <string> info-title;
     in-out property <string> info-text;
 

@@ -119,6 +119,118 @@ pub fn strip_html(s: &str) -> String {
     result.trim_end().to_owned()
 }
 
+/// A piece of an HTML page that the app can show without a browser.
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+pub enum Block {
+    Heading(u8, String),
+    Text(String),
+    /// Rows of cells; the first row is a header when it was made of <th>.
+    Table { header: bool, rows: Vec<Vec<String>> },
+}
+
+/// Turns HTML (e.g. the certificate) into headings, paragraphs and tables.
+pub fn html_blocks(html: &str) -> Vec<Block> {
+    let mut blocks: Vec<Block> = Vec::new();
+    let mut text = String::new();
+    let mut heading: Option<u8> = None;
+    let mut table: Option<(bool, Vec<Vec<String>>)> = None;
+    let mut cell: Option<String> = None;
+    let mut skip = 0u32; // inside <script> or <style>
+    let flush = |text: &mut String, blocks: &mut Vec<Block>, heading: Option<u8>| {
+        let t = decode_entities(text.split_whitespace().collect::<Vec<_>>().join(" ").trim());
+        if !t.is_empty() {
+            blocks.push(match heading {
+                Some(level) => Block::Heading(level, t),
+                None => Block::Text(t),
+            });
+        }
+        text.clear();
+    };
+    let mut rest = html;
+    while !rest.is_empty() {
+        let Some(start) = rest.find('<') else {
+            if skip == 0 {
+                match &mut cell {
+                    Some(c) => c.push_str(rest),
+                    None => text.push_str(rest),
+                }
+            }
+            break;
+        };
+        let (before, after) = rest.split_at(start);
+        if skip == 0 {
+            match &mut cell {
+                Some(c) => c.push_str(before),
+                None => text.push_str(before),
+            }
+        }
+        let Some(end) = after.find('>') else { break };
+        let tag = after[1..end].trim();
+        rest = &after[end + 1..];
+        let closing = tag.starts_with('/');
+        let name: String = tag
+            .trim_start_matches('/')
+            .chars()
+            .take_while(|c| c.is_ascii_alphanumeric())
+            .collect::<String>()
+            .to_ascii_lowercase();
+        match name.as_str() {
+            "script" | "style" => skip = if closing { skip.saturating_sub(1) } else { skip + 1 },
+            "h1" | "h2" | "h3" | "h4" | "h5" | "h6" if cell.is_none() => {
+                flush(&mut text, &mut blocks, heading);
+                heading = if closing { None } else { name[1..].parse().ok() };
+            }
+            "br" | "p" | "div" | "li" | "ul" | "ol" | "hr" => match &mut cell {
+                Some(c) => c.push('\n'),
+                None => flush(&mut text, &mut blocks, heading),
+            },
+            "table" if !closing => {
+                flush(&mut text, &mut blocks, heading);
+                table = Some((false, Vec::new()));
+            }
+            "table" => {
+                if let Some((header, rows)) = table.take() {
+                    let rows: Vec<Vec<String>> = rows.into_iter().filter(|r| r.iter().any(|c| !c.is_empty())).collect();
+                    if !rows.is_empty() {
+                        blocks.push(Block::Table { header, rows });
+                    }
+                }
+            }
+            "tr" if !closing => {
+                if let Some((_, rows)) = &mut table {
+                    rows.push(Vec::new());
+                }
+            }
+            "td" | "th" if !closing => {
+                cell = Some(String::new());
+                if name == "th"
+                    && let Some((header, rows)) = &mut table
+                    && rows.len() <= 1
+                {
+                    *header = true;
+                }
+            }
+            "td" | "th" => {
+                if let (Some(c), Some((_, rows))) = (cell.take(), &mut table) {
+                    let c = decode_entities(
+                        &c.lines().map(|l| l.split_whitespace().collect::<Vec<_>>().join(" ")).collect::<Vec<_>>().join("\n"),
+                    )
+                    .trim()
+                    .to_owned();
+                    if let Some(row) = rows.last_mut() {
+                        row.push(c);
+                    } else {
+                        rows.push(vec![c]);
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+    flush(&mut text, &mut blocks, heading);
+    blocks
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -136,5 +248,19 @@ mod tests {
     #[test]
     fn html_to_text() {
         assert_eq!(strip_html("<p>Erkl&auml;rung</p><p>zwei<br>drei</p>"), "Erklärung\n\nzwei\ndrei");
+    }
+
+    #[test]
+    fn certificate_html() {
+        let html = r#"<div class="student-subject-list"><div><h2 class="h2">Zeugnis Mustermann Max</h2>Zeugnis noch nicht verfügbar</div></div>"#;
+        assert_eq!(
+            html_blocks(html),
+            vec![Block::Heading(2, "Zeugnis Mustermann Max".into()), Block::Text("Zeugnis noch nicht verfügbar".into())]
+        );
+        let table = "<table><tr><th>Fach</th><th>Note</th></tr><tr><td>Deutsch</td><td>8</td></tr></table>";
+        assert_eq!(
+            html_blocks(table),
+            vec![Block::Table { header: true, rows: vec![vec!["Fach".into(), "Note".into()], vec!["Deutsch".into(), "8".into()]] }]
+        );
     }
 }

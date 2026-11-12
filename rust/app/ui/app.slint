@@ -4,7 +4,7 @@ import { Backdrop, PrimaryButton } from "widgets.slint";
 import { LoginPage } from "login.slint";
 import { TodayPage, HomeworkPage, StudyPlanDialog, InfoDialog } from "pages.slint";
 import { GradesPage, ChartPage, CalculatorPage } from "grades.slint";
-import { CalendarPage, AbsencesPage, AbsenceForm, MessagesPage, SettingsPage } from "pages2.slint";
+import { CalendarPage, AbsencesPage, AbsenceForm, MessagesPage, SettingsPage, CertificatePage } from "pages2.slint";
 
 export { Theme, AppData, Nav, Deco, DecoItem, Competence, GradeGroup, ForecastResult, CalcGrade, DetailCard, DetailRow, TeacherView, TestItem, TargetChip, WeakSubject, HomeworkItem, HomeworkDay, GradeItem, SubjectItem, ChartLine, Lesson, WeekDay, AbsenceItem, MessageItem, SchoolItem }
 
@@ -315,6 +315,21 @@ export component AppWindow inherits Window {
                 if Nav.page == 4: CalendarPage { }
                 if Nav.page == 5: MessagesPage { }
                 if Nav.page == 6: SettingsPage { }
+                if Nav.page == 7: CertificatePage { }
+                // LastFetchedOverlay: offline with saved data.
+                if Nav.page == 7 && AppData.certificate-fetched != "": Rectangle {
+                    x: parent.width - self.width;
+                    y: parent.height - self.height;
+                    width: offline-text.preferred-width + 16px;
+                    height: offline-text.preferred-height + 6px;
+                    background: #0000008c;
+                    border-radius: 5px;
+                    offline-text := Text {
+                        text: AppData.certificate-fetched;
+                        color: white;
+                        font-size: 14px;
+                    }
+                }
                 if Nav.page == 8: CalculatorPage { }
                 if Nav.page == 3 && AppData.absence-can-edit: PrimaryButton {
                     x: parent.width - self.width - 16px;
