@@ -780,6 +780,48 @@ pub fn run() -> Result<(), slint::PlatformError> {
                 view::apply(&weak.unwrap(), &mut state);
             }
             state.last_page = page;
+            // The certificate is loaded each time it is opened (like Flutter).
+            if page == 7 {
+                drop(state);
+                let worker = shared.clone();
+                let w = weak.clone();
+                std::thread::spawn(move || {
+                    // Right after the start the login may still be on its way.
+                    let mut client = None;
+                    for _ in 0..40 {
+                        client = worker.lock().unwrap().client.clone();
+                        if client.is_some() {
+                            break;
+                        }
+                        std::thread::sleep(std::time::Duration::from_millis(250));
+                    }
+                    let mut data = worker.lock().unwrap().data.clone();
+                    let ok = client.is_some_and(|c| data.load_certificate(&c).is_ok());
+                    if ok {
+                        let mut state = worker.lock().unwrap();
+                        state.data.certificate = data.certificate;
+                        state.data.certificate_fetched = data.certificate_fetched;
+                        let w2 = w.clone();
+                        let _ = w2.upgrade_in_event_loop(|ui| ui.global::<AppData>().set_certificate_fetched("".into()));
+                        if state.remember {
+                            let _ = state.data.save(&data_path());
+                        }
+                        drop(state);
+                        update(w, worker, None);
+                    } else {
+                        let fetched = worker.lock().unwrap().data.certificate.as_ref().and(data.certificate_fetched);
+                        let _ = w.upgrade_in_event_loop(move |ui| {
+                            let d = ui.global::<AppData>();
+                            match fetched {
+                                Some(t) => d.set_certificate_fetched(
+                                    format!("Offline-Modus aktiv. Zuletzt synchronisiert {}.", view::time_ago(t)).into(),
+                                ),
+                                None => d.set_certificate_state(2),
+                            }
+                        });
+                    }
+                });
+            }
         }
     });
 

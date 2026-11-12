@@ -2,7 +2,7 @@ import { Theme } from "theme.slint";
 import { AppData, Nav, Lesson, AbsenceItem, DetailCard, TeacherView } from "data.slint";
 import { GlowCard, HoloPanel, HudLabel, SectionLabel, StatusPill, NeonRing, IconButton, OutlineButton, PrimaryButton, TextButton, Meter, EmptyState, Field, HoloToggle } from "widgets.slint";
 import { Page, AbsenceMeter, AbsenceYearOutlook } from "pages.slint";
-import { Switch, SpinBox, ScrollView } from "std-widgets.slint";
+import { Switch, SpinBox, ScrollView, Spinner } from "std-widgets.slint";
 
 // --- Grades ---------------------------------------------------------------
 
@@ -917,4 +917,82 @@ export component SettingsPage inherits Page {
             }
         }
     }
+}
+
+// --- Certificate (Zeugnis) -----------------------------------------------
+
+export component CertificatePage inherits Page {
+    if AppData.certificate-state == 0: HorizontalLayout {
+        alignment: center;
+        padding-top: 60px;
+        Spinner {
+            indeterminate: true;
+            width: 40px;
+            height: 40px;
+        }
+    }
+    // NoInternet
+    if AppData.certificate-state == 2: VerticalLayout {
+        alignment: start;
+        padding-top: 80px;
+        spacing: 20px;
+        Text {
+            text: "Keine Verbindung";
+            color: #f44336;
+            font-family: Theme.font-display;
+            font-size: 22px;
+            horizontal-alignment: center;
+        }
+        Text {
+            text: ":(";
+            color: #ff5252;
+            font-size: 50px;
+            horizontal-alignment: center;
+        }
+    }
+    if AppData.certificate-state == 1: VerticalLayout {
+        alignment: start;
+        VerticalLayout {
+            padding: 8px;
+            spacing: 10px;
+            for b in AppData.certificate: VerticalLayout {
+                spacing: 4px;
+                if b.kind == 0: Text {
+                    text: b.text;
+                    color: Theme.text;
+                    font-family: Theme.font-display;
+                    font-weight: 700;
+                    font-size: b.level <= 1 ? 26px : (b.level == 2 ? 21px : 17px);
+                    wrap: word-wrap;
+                }
+                if b.kind == 1: Text {
+                    text: b.text;
+                    color: Theme.text;
+                    font-family: Theme.font-body;
+                    font-size: 15px;
+                    wrap: word-wrap;
+                }
+                if b.kind == 2: VerticalLayout {
+                    for r[ri] in b.rows: Rectangle {
+                        background: b.header && ri == 0 ? Theme.cyan.transparentize(85%) : (Math.mod(ri, 2) == 1 ? Theme.outline.transparentize(70%) : transparent);
+                        HorizontalLayout {
+                            padding: 6px;
+                            spacing: 8px;
+                            for c[ci] in r.cells: Text {
+                                horizontal-stretch: ci == 0 ? 2 : 1;
+                                text: c;
+                                color: Theme.text;
+                                font-family: Theme.font-body;
+                                font-size: 14px;
+                                font-weight: b.header && ri == 0 ? 700 : 400;
+                                horizontal-alignment: ci == 0 ? left : center;
+                                wrap: word-wrap;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    Rectangle { vertical-stretch: 1; }
 }

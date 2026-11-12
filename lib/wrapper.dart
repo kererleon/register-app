@@ -124,7 +124,7 @@ class Wrapper {
         (b) => b
           ..autoLogoutSeconds = 300
           ..currentSemesterMaybe = 1
-          ..fullName = "Demo User"
+          ..fullName = "Max Mustermann"
           ..imgSource =
               "https://vinzentinum.digitalesregister.it/v2/theme/icons/profile_empty.png"
           ..isStudentOrParent = true

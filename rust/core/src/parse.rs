@@ -391,7 +391,7 @@ mod tests {
         let first = &monday.hours[0];
         assert_eq!(first.subject, "Englisch");
         assert_eq!(first.start(), "07:45");
-        assert_eq!(first.teachers[0].last_name, "Mitterrutzner");
+        assert_eq!(first.teachers[0].last_name, "Mustermann");
     }
 
     #[test]

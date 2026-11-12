@@ -14,7 +14,7 @@ use slint::{Color, ComponentHandle, Image, ModelRc, SharedString, VecModel};
 
 use crate::{format, photos, subject_icons};
 use crate::{
-    AbsenceItem, AppData, AppWindow, ChartLine, GradeItem, HomeworkDay, HomeworkItem, Lesson, MessageItem, State,
+    AbsenceItem, AppData, AppWindow, CertBlock, CertRow, ChartLine, GradeItem, HomeworkDay, HomeworkItem, Lesson, MessageItem, State,
     CalcGrade, Competence, DetailCard, DetailRow, GradeGroup, SubjectItem, TargetChip, TeacherView, TestItem, WeakSubject, WeekDay,
 };
 
@@ -85,6 +85,31 @@ pub fn apply(ui: &AppWindow, state: &mut State) {
     apply_calendar(&d, state);
     apply_absences(&d, state);
     apply_messages(&d, &state.data);
+    apply_certificate(&d, &state.data);
+}
+
+fn apply_certificate(d: &AppData, data: &register_core::data::Data) {
+    use register_core::json::Block;
+    let Some(blocks) = &data.certificate else {
+        return;
+    };
+    d.set_certificate(model(
+        blocks
+            .iter()
+            .map(|b| match b {
+                Block::Heading(level, t) => CertBlock { kind: 0, level: *level as i32, text: s(t), ..Default::default() },
+                Block::Text(t) => CertBlock { kind: 1, text: s(t), ..Default::default() },
+                Block::Table { header, rows } => CertBlock {
+                    kind: 2,
+                    header: *header,
+                    rows: model(rows.iter().map(|r| CertRow { cells: model(r.iter().map(s).collect()) }).collect()),
+                    ..Default::default()
+                },
+            })
+            .collect(),
+    ));
+    d.set_certificate_state(1);
+
 }
 
 fn parse_time(t: &str) -> Option<NaiveTime> {
@@ -914,6 +939,21 @@ fn apply_absences(d: &AppData, state: &State) {
             })
             .collect(),
     ));
+}
+
+/// "vor 3 Stunden" (formatTimeAgo).
+pub fn time_ago(timestamp: i64) -> String {
+    let diff = (Local::now().timestamp() - timestamp).max(0);
+    let (n, one, many) = if diff >= 86400 {
+        (diff / 86400, "Tag", "Tagen")
+    } else if diff >= 3600 {
+        (diff / 3600, "Stunde", "Stunden")
+    } else if diff >= 60 {
+        (diff / 60, "Minute", "Minuten")
+    } else {
+        (diff, "Sekunde", "Sekunden")
+    };
+    format!("vor {n} {}", if n == 1 { one } else { many })
 }
 
 fn date_time(t: Option<NaiveDateTime>) -> String {

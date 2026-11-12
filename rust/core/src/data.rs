@@ -55,6 +55,11 @@ pub struct Data {
     /// New or changed entries the user has not looked at yet.
     #[serde(default)]
     pub unseen: std::collections::BTreeSet<String>,
+    /// The certificate as shown by the register, and when it was loaded.
+    #[serde(default)]
+    pub certificate: Option<Vec<crate::json::Block>>,
+    #[serde(default)]
+    pub certificate_fetched: Option<i64>,
 }
 
 /// Which parts failed to load, with the first error.
@@ -342,6 +347,14 @@ impl Data {
             client.send("api/student/dashboard/delete_reminder", json!({ "id": m.reminder_id }))?;
         }
         self.reload_dashboard(client)
+    }
+
+    /// The certificate (Zeugnis).
+    pub fn load_certificate(&mut self, client: &Client) -> Result<(), Error> {
+        let html = client.get_text("student/certificate")?;
+        self.certificate = Some(crate::json::html_blocks(&html));
+        self.certificate_fetched = Some(Local::now().timestamp());
+        Ok(())
     }
 
     /// Upcoming tests (today and later), soonest first.
