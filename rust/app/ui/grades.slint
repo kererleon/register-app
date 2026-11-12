@@ -3,7 +3,7 @@
 // (grade_calculator.dart).
 
 import { Theme } from "theme.slint";
-import { AppData, Nav, SubjectItem, GradeItem, GradeGroup, ForecastResult, CalcGrade } from "data.slint";
+import { AppData, Nav, Prefs, SubjectItem, GradeItem, GradeGroup, ForecastResult, CalcGrade } from "data.slint";
 import { GlowCard, HoloPanel, HudLabel, SectionLabel, StatusPill, NeonRing, IconButton, OutlineButton, PrimaryButton, TextButton, EmptyState, Field } from "widgets.slint";
 import { Page } from "pages.slint";
 import { ScrollView, Slider } from "std-widgets.slint";
@@ -402,10 +402,10 @@ component SubjectPanel inherits HoloPanel {
 export component GradesPage inherits Page {
     property <int> open: Nav.open-subject;
 
-    GlowCard {
+    if Prefs.show-average || (Prefs.show-diagram && AppData.chart.length > 0): GlowCard {
         VerticalLayout {
             spacing: 12px;
-            HorizontalLayout {
+            if Prefs.show-average: HorizontalLayout {
                 spacing: 16px;
                 NeonRing {
                     size: 76px;
@@ -439,10 +439,13 @@ export component GradesPage inherits Page {
                 IconButton {
                     icon: @image-url("icons/tune.svg");
                     tint: Theme.text;
-                    clicked => { Nav.page = 6; }
+                    clicked => {
+                        Prefs.section = 3;
+                        Nav.page = 6;
+                    }
                 }
             }
-            if AppData.chart.length > 0: VerticalLayout {
+            if Prefs.show-diagram && AppData.chart.length > 0: VerticalLayout {
                 spacing: 8px;
                 HudLabel { text: "VERLAUF"; }
                 Rectangle {

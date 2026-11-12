@@ -349,6 +349,23 @@ impl Data {
         self.reload_dashboard(client)
     }
 
+    /// Drops entries the server sends twice for a day ("Doppelte Einträge
+    /// ignorieren"): same text, subject, grade and kind.
+    pub fn dedupe_dashboard(&mut self) {
+        for day in &mut self.dashboard {
+            let mut kept: Vec<Homework> = Vec::with_capacity(day.homework.len());
+            for h in day.homework.drain(..) {
+                let twice = kept.iter().any(|k| {
+                    k.title == h.title && k.subtitle == h.subtitle && k.label == h.label && k.grade == h.grade && k.kind == h.kind
+                });
+                if !twice {
+                    kept.push(h);
+                }
+            }
+            day.homework = kept;
+        }
+    }
+
     /// The certificate (Zeugnis).
     pub fn load_certificate(&mut self, client: &Client) -> Result<(), Error> {
         let html = client.get_text("student/certificate")?;

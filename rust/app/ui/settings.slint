@@ -1,0 +1,1132 @@
+// The settings page (settings_page_widget.dart) and its dialogs.
+
+import { Theme } from "theme.slint";
+import { AppData, Nav, Prefs } from "data.slint";
+import { HoloPanel, HudLabel, IconButton, TextButton, PrimaryButton, Field, GlowCard } from "widgets.slint";
+import { Page } from "pages.slint";
+import { ScrollView, Slider } from "std-widgets.slint";
+
+// _SettingsHeader: icon tile, title and a fading line.
+component Header inherits Rectangle {
+    in property <string> title;
+    in property <image> icon;
+    height: 60px;
+    HorizontalLayout {
+        padding-left: 16px;
+        padding-right: 16px;
+        padding-top: 20px;
+        padding-bottom: 6px;
+        spacing: 12px;
+        Rectangle {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            background: Theme.accent-gradient;
+            drop-shadow-blur: 14px;
+            drop-shadow-color: Theme.violet.transparentize(55%);
+            Image {
+                width: 19px;
+                height: 19px;
+                source: root.icon;
+                colorize: white;
+            }
+        }
+        Text {
+            text: root.title;
+            color: Theme.text;
+            font-family: Theme.font-display;
+            font-size: 22px;
+            font-weight: Theme.display-weight;
+            vertical-alignment: center;
+        }
+        Rectangle {
+            Rectangle {
+                y: (parent.height - 1px) / 2;
+                height: 1px;
+                background: @linear-gradient(90deg, Theme.violet.transparentize(40%) 0%, Theme.cyan.transparentize(100%) 100%);
+            }
+        }
+    }
+}
+
+// The two lines of a ListTile.
+component TileText inherits VerticalLayout {
+    in property <string> title;
+    in property <string> subtitle;
+    in property <bool> enabled: true;
+    in property <color> title-color: Theme.text;
+    alignment: center;
+    spacing: 2px;
+    Text {
+        text: root.title;
+        color: root.title-color;
+        opacity: root.enabled ? 1 : 0.4;
+        font-family: Theme.font-body;
+        font-size: 16px;
+        wrap: word-wrap;
+    }
+    if root.subtitle != "": Text {
+        text: root.subtitle;
+        color: Theme.muted;
+        opacity: root.enabled ? 1 : 0.4;
+        font-family: Theme.font-body;
+        font-size: 14px;
+        wrap: word-wrap;
+    }
+}
+
+// SwitchListTile
+component SwitchTile inherits Rectangle {
+    in property <string> title;
+    in property <string> subtitle;
+    in property <bool> enabled: true;
+    in-out property <bool> checked;
+    callback toggled();
+    min-height: subtitle == "" ? 56px : 72px;
+    border-radius: 12px;
+    background: ta.has-hover && enabled ? Theme.text.transparentize(95%) : transparent;
+    HorizontalLayout {
+        padding-left: 16px;
+        padding-right: 16px;
+        padding-top: 8px;
+        padding-bottom: 8px;
+        spacing: 16px;
+        TileText {
+            title: root.title;
+            subtitle: root.subtitle;
+            enabled: root.enabled;
+        }
+        VerticalLayout {
+            alignment: center;
+            Rectangle {
+                width: 52px;
+                height: 32px;
+                border-radius: 16px;
+                opacity: root.enabled ? 1 : 0.4;
+                background: root.checked ? Theme.primary : Theme.surface-high;
+                border-width: root.checked ? 0px : 2px;
+                border-color: Theme.muted;
+                animate background { duration: 150ms; }
+                Rectangle {
+                    width: root.checked ? 24px : 16px;
+                    height: self.width;
+                    border-radius: self.width / 2;
+                    x: root.checked ? 24px : 8px;
+                    background: root.checked ? white : Theme.muted;
+                    animate x, width { duration: 150ms; easing: ease-out; }
+                }
+            }
+        }
+    }
+    ta := TouchArea {
+        mouse-cursor: root.enabled ? pointer : default;
+        clicked => {
+            if root.enabled {
+                root.checked = !root.checked;
+                root.toggled();
+            }
+        }
+    }
+}
+
+// RadioListTile
+component RadioTile inherits Rectangle {
+    in property <string> title;
+    in property <bool> selected;
+    callback chosen();
+    height: 56px;
+    border-radius: 12px;
+    background: ta.has-hover ? Theme.text.transparentize(95%) : transparent;
+    HorizontalLayout {
+        padding-left: 18px;
+        padding-right: 16px;
+        spacing: 26px;
+        VerticalLayout {
+            alignment: center;
+            Rectangle {
+                width: 20px;
+                height: 20px;
+                border-radius: 10px;
+                border-width: 2px;
+                border-color: root.selected ? Theme.primary : Theme.muted;
+                if root.selected: Rectangle {
+                    width: 10px;
+                    height: 10px;
+                    border-radius: 5px;
+                    background: Theme.primary;
+                }
+            }
+        }
+        TileText { title: root.title; }
+    }
+    ta := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.chosen(); }
+    }
+}
+
+// ExpansionTile's head.
+component ExpandTile inherits Rectangle {
+    in property <string> title;
+    in-out property <bool> open;
+    height: 56px;
+    border-radius: 12px;
+    background: ta.has-hover ? Theme.text.transparentize(95%) : transparent;
+    HorizontalLayout {
+        padding-left: 16px;
+        padding-right: 16px;
+        TileText {
+            title: root.title;
+            title-color: root.open ? Theme.primary : Theme.text;
+        }
+        VerticalLayout {
+            alignment: center;
+            Image {
+                width: 24px;
+                height: 24px;
+                source: @image-url("icons/expand_more.svg");
+                colorize: root.open ? Theme.primary : Theme.muted;
+                transform-rotation: root.open ? 180deg : 0deg;
+                animate transform-rotation { duration: 200ms; }
+            }
+        }
+    }
+    ta := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.open = !root.open; }
+    }
+}
+
+// A ListTile with icons before and after.
+component LinkTile inherits Rectangle {
+    in property <string> title;
+    in property <string> subtitle;
+    in property <image> leading;
+    in property <bool> has-leading: false;
+    in property <image> trailing;
+    in property <bool> has-trailing: false;
+    callback clicked();
+    min-height: subtitle == "" ? 56px : 72px;
+    border-radius: 12px;
+    background: ta.has-hover ? Theme.text.transparentize(95%) : transparent;
+    HorizontalLayout {
+        padding-left: 16px;
+        padding-right: 16px;
+        padding-top: 8px;
+        padding-bottom: 8px;
+        spacing: 16px;
+        if root.has-leading: VerticalLayout {
+            alignment: center;
+            Image {
+                width: 24px;
+                height: 24px;
+                source: root.leading;
+                colorize: Theme.muted;
+            }
+        }
+        TileText {
+            title: root.title;
+            subtitle: root.subtitle;
+        }
+        if root.has-trailing: VerticalLayout {
+            alignment: center;
+            Image {
+                width: 24px;
+                height: 24px;
+                source: root.trailing;
+                colorize: Theme.muted;
+            }
+        }
+    }
+    ta := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+// One look in the style picker (_StyleCard).
+component StyleCard inherits Rectangle {
+    in property <int> style;
+    in property <string> title;
+    in property <string> subtitle;
+    in property <[color]> colors;
+    in property <string> emoji;
+    in property <image> icon;
+    in property <bool> has-icon: false;
+    property <bool> selected: Theme.style == root.style;
+    border-radius: 16px;
+    background: selected ? @linear-gradient(90deg, root.colors[1] 0%, root.colors[2] 100%) : transparent;
+    border-width: selected ? 0px : 1.5px;
+    border-color: Theme.outline;
+    Rectangle {
+        x: 3px;
+        y: 3px;
+        width: parent.width - 6px;
+        height: parent.height - 6px;
+        border-radius: 13px;
+        background: root.colors[0];
+        VerticalLayout {
+            padding: 14px;
+            spacing: 10px;
+            alignment: start;
+            HorizontalLayout {
+                height: 28px;
+                if !root.has-icon: Text {
+                    text: root.emoji;
+                    font-size: 22px;
+                    color: root.colors[2];
+                    vertical-alignment: center;
+                }
+                // ✦ and ◐ are not in the app's fonts: drawn instead.
+                if root.has-icon: Image {
+                    y: (parent.height - self.height) / 2;
+                    width: 22px;
+                    height: 22px;
+                    source: root.icon;
+                    colorize: root.colors[2];
+                }
+                Rectangle { }
+                if root.selected: Image {
+                    y: (parent.height - self.height) / 2;
+                    source: @image-url("icons/check_circle_round.svg");
+                    width: 20px;
+                    height: 20px;
+                    colorize: root.colors[2];
+                }
+            }
+            HorizontalLayout {
+                spacing: 4px;
+                alignment: start;
+                Rectangle {
+                    width: 26px;
+                    height: 8px;
+                    border-radius: 4px;
+                    background: root.colors[1];
+                }
+                Rectangle {
+                    width: 26px;
+                    height: 8px;
+                    border-radius: 4px;
+                    background: root.colors[2];
+                }
+            }
+            VerticalLayout {
+                Text {
+                    text: root.title;
+                    color: white;
+                    font-family: root.style == 2 ? "Rubik" : (root.style == 1 ? "Bangers" : "Sora");
+                    font-size: root.style == 1 ? 22px : 18px;
+                    font-weight: root.style == 1 ? 400 : 700;
+                    letter-spacing: root.style == 1 ? 1.2px : 0px;
+                }
+                Text {
+                    text: root.subtitle;
+                    color: #ffffffb3;
+                    font-family: "Inter";
+                    font-size: 12px;
+                    wrap: word-wrap;
+                }
+            }
+        }
+    }
+    TouchArea {
+        mouse-cursor: pointer;
+        clicked => { Theme.style = root.style; }
+    }
+}
+
+struct Look {
+    title: string,
+    subtitle: string,
+    colors: [color],
+    emoji: string,
+    icon: image,
+    has-icon: bool,
+}
+
+export component SettingsPage inherits Page {
+    property <[color]> accents: [#2563EB, #7C3AED, #DB2777, #DC2626, #EA580C, #CA8A04, #16A34A, #0D9488, #0891B2, #52525B];
+    property <bool> accent-is-preset: Theme.accent-choice == #2563EB || Theme.accent-choice == #7C3AED || Theme.accent-choice == #DB2777 || Theme.accent-choice == #DC2626 || Theme.accent-choice == #EA580C || Theme.accent-choice == #CA8A04 || Theme.accent-choice == #16A34A || Theme.accent-choice == #0D9488 || Theme.accent-choice == #0891B2 || Theme.accent-choice == #52525B;
+    property <[Look]> looks: [
+        { title: "Holo", subtitle: "Futuristisch, clean, leuchtend", colors: [#0A0E1A, #7C5CFF, #22D3EE], emoji: "", icon: @image-url("icons/look_holo.svg"), has-icon: true },
+        { title: "Brainrot", subtitle: "Skibidi, sigma, no cap", colors: [#14001F, #FF2E93, #B6FF00], emoji: "💀" },
+        { title: "Israel", subtitle: "Shalom, Sababa, Yalla", colors: [#06102E, #0038B8, #FFFFFF], emoji: "🇮🇱" },
+        { title: "Clean", subtitle: "Ruhig, modern, eine Akzentfarbe", colors: [#18181B, #2563EB, #E4E4E7], emoji: "○" },
+        { title: "Liquid Glass", subtitle: "Glas, Licht und weiche Farben", colors: [#1C2A4A, #0A84FF, #BF5AF2], emoji: "", icon: @image-url("icons/look_glass.svg"), has-icon: true },
+    ];
+    property <bool> colors-open: false;
+    property <bool> nicks-open: Prefs.section == 6;
+
+    // Opened from the grades page: starts at the grades.
+    init => {
+        if Prefs.section == 3 {
+            self.content-y = -(grades-header.y + 8px);
+        } else if Prefs.section == 6 {
+            self.content-y = -(calendar-header.y + 8px);
+        }
+        Prefs.section = -1;
+    }
+
+    if !Prefs.demo: HoloPanel {
+        HorizontalLayout {
+            spacing: 14px;
+            Rectangle {
+                width: 40px;
+                height: 40px;
+                border-radius: 12px;
+                background: Theme.violet.transparentize(84%);
+                border-width: 1.4px;
+                border-color: Theme.violet.transparentize(30%);
+                Text {
+                    text: "P";
+                    color: Theme.violet.mix(white, 65%);
+                    font-family: Theme.font-display;
+                    font-size: 18px;
+                    font-weight: 700;
+                }
+            }
+            VerticalLayout {
+                alignment: center;
+                Text {
+                    text: "Profil";
+                    color: Theme.text;
+                    font-family: Theme.font-body;
+                    font-size: 16px;
+                    font-weight: 500;
+                }
+                Text {
+                    text: AppData.full-name + " · " + AppData.school;
+                    color: Theme.muted;
+                    font-family: Theme.font-body;
+                    font-size: 12px;
+                    overflow: elide;
+                }
+            }
+        }
+    }
+
+    Header { title: "Anmeldung"; icon: @image-url("icons/lock_outline.svg"); }
+    SwitchTile {
+        title: "Angemeldet bleiben";
+        subtitle: "Deine Zugangsdaten werden lokal gespeichert";
+        checked <=> Prefs.remember;
+        toggled => { Prefs.changed(); }
+    }
+    SwitchTile {
+        title: "Daten lokal speichern";
+        subtitle: "Sehen, wann etwas eingetragen wurde";
+        checked <=> Prefs.save-data;
+        toggled => { Prefs.changed(); }
+    }
+    SwitchTile {
+        title: "Daten beim Ausloggen löschen";
+        enabled: Prefs.remember && Prefs.save-data;
+        checked <=> Prefs.delete-on-logout;
+        toggled => { Prefs.changed(); }
+    }
+
+    Header { title: "Aussehen"; icon: @image-url("icons/palette.svg"); }
+    VerticalLayout {
+        padding-left: 16px;
+        padding-right: 16px;
+        padding-top: 4px;
+        padding-bottom: 12px;
+        HudLabel { text: "STIL DER APP"; }
+        Rectangle { height: 10px; }
+        // Three cards in a row when there is room, else two.
+        cards := Rectangle {
+            property <int> per-row: self.width >= 540px ? 3 : 2;
+            property <length> card-width: (self.width - 12px * (per-row - 1)) / per-row;
+            property <length> card-height: 136px;
+            property <int> rows: per-row == 3 ? 2 : 3;
+            height: rows * card-height + (rows - 1) * 12px;
+            for look[i] in root.looks: StyleCard {
+                x: Math.mod(i, cards.per-row) * (cards.card-width + 12px);
+                y: Math.floor(i / cards.per-row) * (cards.card-height + 12px);
+                width: cards.card-width;
+                height: cards.card-height;
+                style: i;
+                title: look.title;
+                subtitle: look.subtitle;
+                colors: look.colors;
+                emoji: look.emoji;
+                icon: look.icon;
+                has-icon: look.has-icon;
+            }
+        }
+        if Theme.clean: VerticalLayout {
+            Rectangle { height: 16px; }
+            HudLabel { text: "AKZENTFARBE"; }
+            Rectangle { height: 10px; }
+            HorizontalLayout {
+                spacing: 6px;
+                alignment: start;
+                for c in root.accents: Rectangle {
+                    width: 36px;
+                    height: 36px;
+                    border-radius: 18px;
+                    border-width: 2px;
+                    border-color: Theme.accent-choice == c ? Theme.text : transparent;
+                    Rectangle {
+                        width: 26px;
+                        height: 26px;
+                        border-radius: 13px;
+                        background: c;
+                    }
+                    TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => {
+                            Theme.accent-choice = c;
+                            Prefs.changed();
+                        }
+                    }
+                }
+                Rectangle {
+                    width: 36px;
+                    height: 36px;
+                    border-radius: 18px;
+                    border-width: 2px;
+                    border-color: root.accent-is-preset ? transparent : Theme.text;
+                    Rectangle {
+                        width: 26px;
+                        height: 26px;
+                        border-radius: 13px;
+                        background: root.accent-is-preset ? Theme.surface-high : Theme.accent-choice;
+                        Image {
+                            width: 18px;
+                            height: 18px;
+                            source: root.accent-is-preset ? @image-url("icons/add.svg") : @image-url("icons/colorize.svg");
+                            colorize: root.accent-is-preset ? Theme.text : white;
+                        }
+                    }
+                    TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => {
+                            Prefs.dialog-target = "";
+                            Prefs.dialog-initial = Theme.accent-choice;
+                            Prefs.dialog-color = Theme.accent-choice;
+                            Prefs.dialog = 1;
+                        }
+                    }
+                }
+            }
+        }
+        Rectangle { height: 20px; }
+        HudLabel { text: "EIGENES HINTERGRUNDBILD"; }
+        Rectangle { height: 10px; }
+        HorizontalLayout {
+            alignment: start;
+            spacing: 8px;
+            if Prefs.has-bg: Rectangle {
+                width: 56px;
+                height: 56px;
+                border-radius: 8px;
+                clip: true;
+                Image {
+                    width: 100%;
+                    height: 100%;
+                    source: Prefs.bg-image;
+                    image-fit: cover;
+                }
+            }
+            if Prefs.has-bg: Rectangle { width: 4px; }
+            VerticalLayout {
+                alignment: center;
+                Rectangle {
+                    height: 40px;
+                    width: pick.preferred-width + 40px;
+                    border-radius: 20px;
+                    background: pick-ta.has-hover ? Theme.primary.transparentize(70%) : Theme.primary.transparentize(80%);
+                    pick := HorizontalLayout {
+                        x: 16px;
+                        spacing: 8px;
+                        Image {
+                            y: (parent.height - self.height) / 2;
+                            width: 18px;
+                            height: 18px;
+                            source: @image-url("icons/wallpaper.svg");
+                            colorize: Theme.text;
+                        }
+                        Text {
+                            text: Prefs.has-bg ? "Anderes Bild" : "Bild wählen";
+                            color: Theme.text;
+                            font-family: Theme.font-body;
+                            font-size: 14px;
+                            font-weight: 500;
+                            vertical-alignment: center;
+                        }
+                    }
+                    pick-ta := TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => { Prefs.pick-background(); }
+                    }
+                }
+            }
+            if Prefs.has-bg: VerticalLayout {
+                alignment: center;
+                TextButton {
+                    text: "Entfernen";
+                    clicked => { Prefs.remove-background(); }
+                }
+            }
+        }
+        Rectangle { height: 8px; }
+        if Prefs.has-bg: HorizontalLayout {
+            spacing: 8px;
+            Text {
+                text: "Abdunkeln";
+                color: Theme.text;
+                font-family: Theme.font-body;
+                font-size: 14px;
+                vertical-alignment: center;
+            }
+            Slider {
+                minimum: 0.2;
+                maximum: 0.9;
+                step: 0.1;
+                value: Prefs.bg-dim;
+                changed(v) => { Prefs.bg-dim = Math.round(v * 10) / 10; }
+                released(v) => { Prefs.changed(); }
+            }
+        }
+        if !Prefs.has-bg: Text {
+            text: "Das Bild bleibt nur auf diesem Gerät.";
+            color: Theme.muted;
+            font-family: Theme.font-body;
+            font-size: 12px;
+        }
+    }
+    RadioTile {
+        title: "Geräte-Theme folgen";
+        selected: Prefs.theme-mode == 0;
+        chosen => { Prefs.theme-mode = 0; Prefs.changed(); }
+    }
+    RadioTile {
+        title: "Hell";
+        selected: Prefs.theme-mode == 1;
+        chosen => { Prefs.theme-mode = 1; Prefs.changed(); }
+    }
+    RadioTile {
+        title: "Dunkel";
+        selected: Prefs.theme-mode == 2;
+        chosen => { Prefs.theme-mode = 2; Prefs.changed(); }
+    }
+    ExpandTile {
+        title: "Fächerfarben";
+        open <=> root.colors-open;
+    }
+    if root.colors-open: VerticalLayout {
+        for c in Prefs.subject-colors: Rectangle {
+            height: 56px;
+            border-radius: 12px;
+            background: color-ta.has-hover ? Theme.text.transparentize(95%) : transparent;
+            HorizontalLayout {
+                padding-left: 16px;
+                padding-right: 16px;
+                TileText { title: c.name; }
+                VerticalLayout {
+                    alignment: center;
+                    Rectangle {
+                        width: 50px;
+                        height: 20px;
+                        border-radius: 5px;
+                        background: c.color;
+                    }
+                }
+            }
+            color-ta := TouchArea {
+                mouse-cursor: pointer;
+                clicked => {
+                    Prefs.dialog-target = c.name;
+                    Prefs.dialog-initial = c.color;
+                    Prefs.dialog-color = c.color;
+                    Prefs.dialog = 1;
+                }
+            }
+        }
+    }
+    SwitchTile {
+        title: "Hausaufgaben mit diesen Farben umrahmen";
+        checked <=> Prefs.color-borders;
+        toggled => { Prefs.changed(); }
+    }
+    SwitchTile {
+        title: "Stunden im Kalender mit diesen Farben färben";
+        checked <=> Prefs.calendar-color;
+        toggled => { Prefs.changed(); }
+    }
+    SwitchTile {
+        title: "Tests immer rot umrahmen";
+        checked <=> Prefs.tests-red;
+        toggled => { Prefs.changed(); }
+    }
+
+    Header { title: "Merkheft"; icon: @image-url("icons/dashboard.svg"); }
+    SwitchTile {
+        title: "Neue oder geänderte Einträge markieren";
+        checked <=> Prefs.mark-new;
+        toggled => { Prefs.changed(); }
+    }
+    SwitchTile {
+        title: "Doppelte Einträge ignorieren";
+        checked <=> Prefs.dedupe;
+        toggled => { Prefs.changed(); }
+    }
+    SwitchTile {
+        title: "Beim Löschen von Erinnerungen fragen";
+        checked <=> Prefs.ask-delete;
+        toggled => { Prefs.changed(); }
+    }
+
+    grades-header := Header { title: "Noten"; icon: @image-url("icons/insights.svg"); }
+    SwitchTile {
+        title: "Noten in einem Diagramm darstellen";
+        checked <=> Prefs.show-diagram;
+        toggled => { Prefs.changed(); }
+    }
+    SwitchTile {
+        title: "Durchschnitt aller Fächer anzeigen";
+        checked <=> Prefs.show-average;
+        toggled => { Prefs.changed(); }
+    }
+    Rectangle {
+        height: 56px;
+        HorizontalLayout {
+            padding-left: 16px;
+            padding-right: 10px;
+            TileText { title: "Fächer aus dem Notendurchschnitt ausschließen"; }
+            VerticalLayout {
+                alignment: center;
+                IconButton {
+                    icon: @image-url("icons/add.svg");
+                    tint: Theme.text;
+                    icon-size: 24px;
+                    clicked => { Prefs.dialog = 2; }
+                }
+            }
+        }
+    }
+    if Prefs.ignored.length == 0: Rectangle {
+        height: 56px;
+        Text {
+            x: 32px;
+            text: "Kein Fach ausgeschlossen";
+            color: #9e9e9e;
+            font-family: Theme.font-body;
+            font-size: 16px;
+            vertical-alignment: center;
+            height: parent.height;
+        }
+    }
+    for subject in Prefs.ignored: Rectangle {
+        height: 56px;
+        HorizontalLayout {
+            padding-left: 32px;
+            padding-right: 10px;
+            TileText { title: subject; }
+            VerticalLayout {
+                alignment: center;
+                IconButton {
+                    icon: @image-url("icons/close.svg");
+                    tint: Theme.text;
+                    icon-size: 24px;
+                    clicked => { Prefs.remove-ignored(subject); }
+                }
+            }
+        }
+    }
+
+    calendar-header := Header { title: "Kalender"; icon: @image-url("icons/calendar_month.svg"); }
+    SwitchTile {
+        title: "Fotos der Lehrpersonen";
+        subtitle: "Profilbilder in der Stunden-Detailkarte (im Brainrot-Stil auch als Hintergrund), von der Webseite deiner Schule";
+        checked <=> Prefs.show-photos;
+        toggled => { Prefs.changed(); }
+    }
+    if Prefs.show-photos: LinkTile {
+        title: "Seite mit den Fotos";
+        subtitle: Prefs.staff-page != "" ? Prefs.staff-page : "Noch nicht gefunden – öffne den Kalender oder trag die Seite selbst ein";
+        has-leading: true;
+        leading: @image-url("icons/travel_explore.svg");
+        has-trailing: true;
+        trailing: @image-url("icons/edit_outline.svg");
+        clicked => {
+            Prefs.dialog-nick = Prefs.custom-staff-page != "" ? Prefs.custom-staff-page : Prefs.staff-page;
+            Prefs.dialog = 4;
+        }
+    }
+    ExpandTile {
+        title: "Fächerkürzel";
+        open <=> root.nicks-open;
+    }
+    if root.nicks-open: VerticalLayout {
+        HorizontalLayout {
+            alignment: end;
+            padding-right: 10px;
+            height: 56px;
+            VerticalLayout {
+                alignment: center;
+                IconButton {
+                    icon: @image-url("icons/add.svg");
+                    tint: Theme.text;
+                    icon-size: 24px;
+                    clicked => {
+                        Prefs.dialog-target = "";
+                        Prefs.dialog-nick = "";
+                        Prefs.dialog = 3;
+                    }
+                }
+            }
+        }
+        for n in Prefs.nicks: Rectangle {
+            height: 64px;
+            HorizontalLayout {
+                padding-left: 16px;
+                padding-right: 10px;
+                TileText {
+                    title: n.subject;
+                    subtitle: n.nick;
+                }
+                VerticalLayout {
+                    alignment: center;
+                    IconButton {
+                        icon: @image-url("icons/delete.svg");
+                        tint: Theme.text;
+                        icon-size: 24px;
+                        clicked => { Prefs.remove-nick(n.subject); }
+                    }
+                }
+                VerticalLayout {
+                    alignment: center;
+                    IconButton {
+                        icon: @image-url("icons/edit.svg");
+                        tint: Theme.text;
+                        icon-size: 24px;
+                        clicked => {
+                            Prefs.dialog-target = n.subject;
+                            Prefs.dialog-nick = n.nick;
+                            Prefs.dialog = 3;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    SwitchTile {
+        title: "Hinweis zum Bearbeiten von Kürzeln";
+        subtitle: "Wird angezeigt, wenn für ein Fach kein Kürzel vorhanden ist";
+        checked <=> Prefs.nick-bar;
+        toggled => { Prefs.changed(); }
+    }
+
+    Header { title: "Erweitert"; icon: @image-url("icons/tune.svg"); }
+    LinkTile {
+        title: "Quellcode & Downloads";
+        subtitle: "github.com/kererleon/register-app";
+        has-leading: true;
+        leading: @image-url("icons/code.svg");
+        has-trailing: true;
+        trailing: @image-url("icons/open_in_new.svg");
+        clicked => { Prefs.open-url("https://github.com/kererleon/register-app"); }
+    }
+    LinkTile {
+        title: "Über diese App";
+        has-leading: true;
+        leading: @image-url("icons/info_outline.svg");
+        clicked => { Prefs.dialog = 5; }
+    }
+}
+
+// A dialog over the whole window.
+component Dialog inherits Rectangle {
+    in property <string> title;
+    background: #00000099;
+    TouchArea {
+        clicked => { Prefs.dialog = 0; }
+    }
+    GlowCard {
+        x: (parent.width - self.width) / 2;
+        y: (parent.height - self.height) / 2;
+        width: min(440px, parent.width - 24px);
+        height: min(self.preferred-height, parent.height - 24px);
+        TouchArea { }
+        VerticalLayout {
+            spacing: 14px;
+            Text {
+                text: root.title;
+                color: Theme.text;
+                font-family: Theme.font-display;
+                font-size: 20px;
+                font-weight: Theme.display-weight;
+                wrap: word-wrap;
+            }
+            @children
+        }
+    }
+}
+
+component Link inherits Text {
+    in property <string> url;
+    color: Theme.cyan;
+    font-family: Theme.font-body;
+    font-size: 14px;
+    TouchArea {
+        mouse-cursor: pointer;
+        clicked => { Prefs.open-url(root.url); }
+    }
+}
+
+export component SettingsDialogs inherits Rectangle {
+    property <[color]> material: [#F44336, #E91E63, #9C27B0, #673AB7, #3F51B5, #2196F3, #03A9F4, #00BCD4, #009688, #4CAF50, #8BC34A, #CDDC39, #FFEB3B, #FFC107, #FF9800, #FF5722, #795548, #9E9E9E, #607D8B, #000000];
+    // The colour whose shades are offered.
+    property <color> base: Prefs.dialog-initial;
+
+    // _ColorPicker
+    if Prefs.dialog == 1: Dialog {
+        title: "Farbe auswählen";
+        Rectangle {
+            height: 4 * 44px;
+            for c[i] in root.material: Rectangle {
+                x: Math.mod(i, 5) * (parent.width / 5) + (parent.width / 5 - 36px) / 2;
+                y: Math.floor(i / 5) * 44px + 4px;
+                width: 36px;
+                height: 36px;
+                border-radius: 18px;
+                background: c;
+                border-width: root.base == c ? 3px : 0px;
+                border-color: Theme.text;
+                TouchArea {
+                    mouse-cursor: pointer;
+                    clicked => {
+                        root.base = c;
+                        Prefs.dialog-color = c;
+                    }
+                }
+            }
+        }
+        HorizontalLayout {
+            spacing: 6px;
+            for shade in [root.base.brighter(60%), root.base.brighter(30%), root.base, root.base.darker(25%), root.base.darker(50%)]: Rectangle {
+                height: 40px;
+                border-radius: 8px;
+                background: shade;
+                border-width: Prefs.dialog-color == shade ? 3px : 0px;
+                border-color: Theme.text;
+                TouchArea {
+                    mouse-cursor: pointer;
+                    clicked => { Prefs.dialog-color = shade; }
+                }
+            }
+        }
+        HorizontalLayout {
+            alignment: end;
+            spacing: 8px;
+            TextButton {
+                text: "Abbrechen";
+                clicked => { Prefs.dialog = 0; }
+            }
+            PrimaryButton {
+                width: 130px;
+                text: "Auswählen";
+                enabled: Prefs.dialog-color != Prefs.dialog-initial;
+                clicked => {
+                    if Prefs.dialog-target == "" {
+                        Theme.accent-choice = Prefs.dialog-color;
+                        Prefs.changed();
+                    } else {
+                        Prefs.set-subject-color(Prefs.dialog-target, Prefs.dialog-color);
+                    }
+                    Prefs.dialog = 0;
+                }
+            }
+        }
+    }
+
+    // AddSubject
+    if Prefs.dialog == 2: Dialog {
+        title: "Fach hinzufügen";
+        if Prefs.ignorable.length == 0: Text {
+            text: "Alle Fächer sind schon ausgeschlossen.";
+            color: Theme.muted;
+            font-family: Theme.font-body;
+            font-size: 14px;
+        }
+        ScrollView {
+            height: min(360px, Prefs.ignorable.length * 48px);
+            VerticalLayout {
+                for subject in Prefs.ignorable: Rectangle {
+                    height: 48px;
+                    border-radius: 10px;
+                    background: add-ta.has-hover ? Theme.text.transparentize(92%) : transparent;
+                    Text {
+                        x: 12px;
+                        text: subject;
+                        color: Theme.text;
+                        font-family: Theme.font-body;
+                        font-size: 16px;
+                        vertical-alignment: center;
+                        height: parent.height;
+                    }
+                    add-ta := TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => {
+                            Prefs.add-ignored(subject);
+                            Prefs.dialog = 0;
+                        }
+                    }
+                }
+            }
+        }
+        HorizontalLayout {
+            alignment: end;
+            TextButton {
+                text: "Abbrechen";
+                clicked => { Prefs.dialog = 0; }
+            }
+        }
+    }
+
+    // EditSubjectsNicks
+    if Prefs.dialog == 3: Dialog {
+        title: Prefs.dialog-target == "" ? "Kürzel hinzufügen" : "Kürzel bearbeiten";
+        HudLabel { text: "FACH"; }
+        subject := Field {
+            placeholder: "Fach";
+            text: Prefs.dialog-target;
+        }
+        if Prefs.nickable.length > 0 && subject.text == "": HorizontalLayout {
+            spacing: 6px;
+            alignment: start;
+            for name[i] in Prefs.nickable: Rectangle {
+                visible: i < 3;
+                width: i < 3 ? chip.preferred-width + 20px : 0px;
+                height: 30px;
+                border-radius: 15px;
+                background: Theme.primary.transparentize(82%);
+                chip := Text {
+                    text: name;
+                    color: Theme.text;
+                    font-family: Theme.font-body;
+                    font-size: 13px;
+                }
+                TouchArea {
+                    mouse-cursor: pointer;
+                    clicked => { subject.text = name; }
+                }
+            }
+        }
+        HudLabel { text: "KÜRZEL"; }
+        nick := Field {
+            placeholder: "Kürzel";
+            text: Prefs.dialog-nick;
+        }
+        HorizontalLayout {
+            alignment: end;
+            spacing: 8px;
+            TextButton {
+                text: "Abbrechen";
+                clicked => { Prefs.dialog = 0; }
+            }
+            PrimaryButton {
+                width: 110px;
+                text: "Fertig";
+                enabled: subject.text != "" && nick.text != "";
+                clicked => {
+                    Prefs.set-nick(Prefs.dialog-target, subject.text, nick.text);
+                    Prefs.dialog = 0;
+                }
+            }
+        }
+    }
+
+    // _editStaffPage
+    if Prefs.dialog == 4: Dialog {
+        title: "Seite mit den Fotos";
+        Text {
+            text: "Die Seite deiner Schule, auf der die Lehrpersonen mit Foto stehen. Leer lassen, damit die App sie selbst sucht.";
+            color: Theme.text;
+            font-family: Theme.font-body;
+            font-size: 14px;
+            wrap: word-wrap;
+        }
+        page := Field {
+            placeholder: "https://www.meine-schule.it/lehrpersonen/";
+            text: Prefs.dialog-nick;
+        }
+        HorizontalLayout {
+            alignment: end;
+            spacing: 8px;
+            TextButton {
+                text: "Automatisch suchen";
+                clicked => {
+                    Prefs.set-staff-page("");
+                    Prefs.dialog = 0;
+                }
+            }
+            PrimaryButton {
+                width: 120px;
+                text: "Speichern";
+                clicked => {
+                    Prefs.set-staff-page(page.text);
+                    Prefs.dialog = 0;
+                }
+            }
+        }
+    }
+
+    // AboutListTile
+    if Prefs.dialog == 5: Dialog {
+        title: "Register";
+        Text {
+            text: Prefs.version + "\nCopyright Michael Debertol und Simon Wachtler 2019-2022";
+            color: Theme.muted;
+            font-family: Theme.font-body;
+            font-size: 13px;
+            wrap: word-wrap;
+        }
+        Text {
+            text: "Eine inoffizielle App für das Digitale Register. Basiert auf digitales_register von Michael Debertol.";
+            color: Theme.text;
+            font-family: Theme.font-body;
+            font-size: 14px;
+            wrap: word-wrap;
+        }
+        HorizontalLayout {
+            alignment: start;
+            spacing: 4px;
+            Text {
+                text: "Entwickelt von";
+                color: Theme.text;
+                font-family: Theme.font-body;
+                font-size: 14px;
+            }
+            Link { text: "Michael Debertol"; url: "https://blog.debertol.com"; }
+            Text {
+                text: "@";
+                color: Theme.text;
+                font-family: Theme.font-body;
+                font-size: 14px;
+            }
+            Link { text: "evvvolution.com"; url: "https://evvvolution.com"; }
+        }
+        Text {
+            text: "This is free software, and you are welcome to redistribute it under certain conditions.\nThis program comes with ABSOLUTELY NO WARRANTY.";
+            color: Theme.text;
+            font-family: Theme.font-body;
+            font-size: 14px;
+            wrap: word-wrap;
+        }
+        Link {
+            text: "See the GNU General Public License for more details.";
+            url: "https://www.gnu.org/licenses/gpl-3.0.html";
+            wrap: word-wrap;
+        }
+        HorizontalLayout {
+            alignment: end;
+            TextButton {
+                text: "Schließen";
+                clicked => { Prefs.dialog = 0; }
+            }
+        }
+    }
+}

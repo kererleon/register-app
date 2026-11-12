@@ -1,12 +1,13 @@
 import { Theme } from "theme.slint";
-import { AppData, Nav, Deco, DecoItem, Competence, GradeGroup, ForecastResult, CalcGrade, DetailCard, DetailRow, TeacherView, TestItem, TargetChip, WeakSubject, HomeworkItem, HomeworkDay, GradeItem, SubjectItem, ChartLine, Lesson, WeekDay, AbsenceItem, MessageItem, SchoolItem } from "data.slint";
+import { AppData, Nav, Deco, DecoItem, Competence, GradeGroup, ForecastResult, CalcGrade, DetailCard, DetailRow, TeacherView, TestItem, TargetChip, WeakSubject, HomeworkItem, HomeworkDay, GradeItem, SubjectItem, ChartLine, Lesson, WeekDay, AbsenceItem, MessageItem, SchoolItem, Prefs, NickItem, ColorItem } from "data.slint";
 import { Backdrop, PrimaryButton } from "widgets.slint";
 import { LoginPage } from "login.slint";
 import { TodayPage, HomeworkPage, StudyPlanDialog, InfoDialog } from "pages.slint";
 import { GradesPage, ChartPage, CalculatorPage } from "grades.slint";
-import { CalendarPage, AbsencesPage, AbsenceForm, MessagesPage, SettingsPage, CertificatePage, NotificationsPage } from "pages2.slint";
+import { CalendarPage, AbsencesPage, AbsenceForm, MessagesPage, CertificatePage, NotificationsPage } from "pages2.slint";
+import { SettingsPage, SettingsDialogs } from "settings.slint";
 
-export { Theme, AppData, Nav, Deco, DecoItem, Competence, GradeGroup, ForecastResult, CalcGrade, DetailCard, DetailRow, TeacherView, TestItem, TargetChip, WeakSubject, HomeworkItem, HomeworkDay, GradeItem, SubjectItem, ChartLine, Lesson, WeekDay, AbsenceItem, MessageItem, SchoolItem }
+export { Theme, AppData, Nav, Deco, DecoItem, Competence, GradeGroup, ForecastResult, CalcGrade, DetailCard, DetailRow, TeacherView, TestItem, TargetChip, WeakSubject, HomeworkItem, HomeworkDay, GradeItem, SubjectItem, ChartLine, Lesson, WeekDay, AbsenceItem, MessageItem, SchoolItem, Prefs, NickItem, ColorItem }
 
 struct NavEntry {
     icon: image,
@@ -432,6 +433,11 @@ export component AppWindow inherits Window {
     }
 
     if Nav.notifications: NotificationsPage {
+        width: 100%;
+        height: 100%;
+    }
+
+    if Prefs.dialog != 0: SettingsDialogs {
         width: 100%;
         height: 100%;
     }

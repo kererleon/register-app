@@ -537,7 +537,7 @@ component HomeworkPanel inherits HoloPanel {
     in property <HomeworkItem> item;
     property <color> type-color: item.type-icon == 1 ? Theme.danger : (item.type-icon == 2 ? Theme.success : (item.type-icon == 3 || item.type-icon == 4 ? Theme.secondary : Theme.primary));
     has-accent: item.accent != 0;
-    accent: item.accent == 1 ? Theme.danger : Theme.success;
+    accent: item.accent == 1 ? Theme.danger : (item.accent == 3 ? item.tint : Theme.success);
     highlighted: item.badge != "";
     inner-padding: 10px;
     HorizontalLayout {

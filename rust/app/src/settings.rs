@@ -52,7 +52,45 @@ pub struct Settings {
     pub subject_thick: BTreeMap<String, i32>,
     /// Subjects left out of the overall average.
     pub ignored_subjects: Vec<String>,
+    /// "Angemeldet bleiben": the login is kept on the device.
+    pub remember: bool,
+    /// "Daten lokal speichern".
+    pub save_data: bool,
+    pub delete_on_logout: bool,
+    /// 0 follows the device, 1 light, 2 dark.
+    pub theme_mode: i32,
+    /// Homework framed in the subject's colour / lessons filled with it.
+    pub color_borders: bool,
+    pub calendar_color: bool,
+    pub tests_red: bool,
+    pub mark_new: bool,
+    pub dedupe: bool,
+    pub ask_delete: bool,
+    pub show_diagram: bool,
+    pub show_average: bool,
+    /// Short names of subjects, in the order the user sees them.
+    pub nicks: Vec<(String, String)>,
+    pub nick_bar: bool,
+    /// An own background picture and how much it is toned down.
+    pub background: Option<String>,
+    pub background_dim: f32,
 }
+
+/// The short names the app starts with.
+const DEFAULT_NICKS: [(&str, &str); 12] = [
+    ("Deutsch", "Deu"),
+    ("Mathematik", "Mat"),
+    ("Latein", "Lat"),
+    ("Religion", "Rel"),
+    ("Englisch", "Eng"),
+    ("Naturwissenschaften", "Nat"),
+    ("Geschichte", "Gesch"),
+    ("Italienisch", "Ita"),
+    ("Bewegung und Sport", "Sport"),
+    ("Recht und Wirtschaft", "Rw"),
+    ("Griechisch", "Gr"),
+    ("FÜ", "Fü"),
+];
 
 /// The staff page entered by hand for the school at [host].
 pub fn custom_staff_page(host: &str) -> Option<String> {
@@ -115,6 +153,30 @@ impl Settings {
                 .as_array()
                 .map(|a| a.iter().filter_map(|x| x.as_str().map(str::to_owned)).collect())
                 .unwrap_or_default(),
+            remember: v["remember"].as_bool().unwrap_or(true),
+            save_data: v["saveData"].as_bool().unwrap_or(true),
+            delete_on_logout: v["deleteOnLogout"].as_bool().unwrap_or(false),
+            theme_mode: v["themeMode"]
+                .as_i64()
+                .map(|m| m as i32)
+                .unwrap_or(if v["dark"].as_bool().unwrap_or(true) { 2 } else { 1 }),
+            color_borders: v["colorBorders"].as_bool().unwrap_or(false),
+            calendar_color: v["calendarColor"].as_bool().unwrap_or(false),
+            tests_red: v["testsRed"].as_bool().unwrap_or(true),
+            mark_new: v["markNew"].as_bool().unwrap_or(true),
+            dedupe: v["dedupe"].as_bool().unwrap_or(true),
+            ask_delete: v["askDelete"].as_bool().unwrap_or(false),
+            show_diagram: v["showDiagram"].as_bool().unwrap_or(true),
+            show_average: v["showAverage"].as_bool().unwrap_or(true),
+            nicks: v["nicks"]
+                .as_array()
+                .map(|a| {
+                    a.iter().filter_map(|e| Some((e[0].as_str()?.to_owned(), e[1].as_str()?.to_owned()))).collect()
+                })
+                .unwrap_or_else(|| DEFAULT_NICKS.iter().map(|(a, b)| (a.to_string(), b.to_string())).collect()),
+            nick_bar: v["nickBar"].as_bool().unwrap_or(true),
+            background: v["background"].as_str().map(str::to_owned).filter(|p| std::path::Path::new(p).exists()),
+            background_dim: v["backgroundDim"].as_f64().unwrap_or(0.6) as f32,
             subject_colors: v["subjectColors"]
                 .as_object()
                 .map(|m| m.iter().filter_map(|(k, c)| Some((k.clone(), c.as_u64()? as u32))).collect())
@@ -134,6 +196,22 @@ impl Settings {
             "staffPages": self.staff_pages,
             "subjectThick": self.subject_thick,
             "ignoredSubjects": self.ignored_subjects,
+            "remember": self.remember,
+            "saveData": self.save_data,
+            "deleteOnLogout": self.delete_on_logout,
+            "themeMode": self.theme_mode,
+            "colorBorders": self.color_borders,
+            "calendarColor": self.calendar_color,
+            "testsRed": self.tests_red,
+            "markNew": self.mark_new,
+            "dedupe": self.dedupe,
+            "askDelete": self.ask_delete,
+            "showDiagram": self.show_diagram,
+            "showAverage": self.show_average,
+            "nicks": self.nicks,
+            "nickBar": self.nick_bar,
+            "background": self.background,
+            "backgroundDim": self.background_dim,
         });
         let _ = std::fs::create_dir_all(dir());
         let _ = std::fs::write(Self::path(), v.to_string());

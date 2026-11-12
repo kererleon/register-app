@@ -117,6 +117,10 @@ impl Client {
     pub fn is_demo(&self) -> bool {
         self.demo
     }
+    /// For keeping the login on the device when the user asks for it later.
+    pub fn password(&self) -> &str {
+        &self.pass
+    }
 
     fn address(&self, path: &str) -> String {
         format!("{}/v2/{path}", self.url)
