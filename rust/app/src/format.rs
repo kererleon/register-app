@@ -58,3 +58,36 @@ pub fn percent(value: f64) -> String {
 pub fn month(m: u32) -> &'static str {
     MONTHS[(m as usize).saturating_sub(1) % 12]
 }
+
+/// "13.11.2026", "13.11.26" or "13.11." (this school year).
+pub fn parse_date(text: &str, today: NaiveDate) -> Option<NaiveDate> {
+    let parts: Vec<&str> = text.trim().trim_end_matches('.').split('.').map(str::trim).collect();
+    let day: u32 = parts.first()?.parse().ok()?;
+    let month: u32 = parts.get(1)?.parse().ok()?;
+    let year = match parts.get(2).filter(|y| !y.is_empty()) {
+        Some(y) => {
+            let y: i32 = y.parse().ok()?;
+            if y < 100 { 2000 + y } else { y }
+        }
+        // Without a year: the next such date from today on.
+        None => {
+            let this = NaiveDate::from_ymd_opt(today.year(), month, day)?;
+            if this < today { today.year() + 1 } else { today.year() }
+        }
+    };
+    NaiveDate::from_ymd_opt(year, month, day)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn dates() {
+        let today = NaiveDate::from_ymd_opt(2026, 11, 12).unwrap();
+        assert_eq!(parse_date("13.11.2026", today), NaiveDate::from_ymd_opt(2026, 11, 13));
+        assert_eq!(parse_date("13.11.", today), NaiveDate::from_ymd_opt(2026, 11, 13));
+        assert_eq!(parse_date("8.1.", today), NaiveDate::from_ymd_opt(2027, 1, 8));
+        assert_eq!(parse_date("31.02.2027", today), None);
+    }
+}

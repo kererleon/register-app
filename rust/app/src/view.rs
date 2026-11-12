@@ -308,6 +308,9 @@ fn level_number(level: Level) -> i32 {
 fn apply_absences(d: &AppData, state: &State) {
     let a = &state.data.absences;
     let stat = &a.statistic;
+    d.set_absence_can_edit(a.can_edit && !state.client.as_ref().is_some_and(|c| c.is_demo()));
+    let tomorrow = today() + Duration::days(1);
+    d.set_tomorrow_date(s(tomorrow.format("%d.%m.%Y").to_string()));
     match stat.percentage {
         Some(p) => {
             let level = absences::level(p);

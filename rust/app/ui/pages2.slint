@@ -1,8 +1,8 @@
 import { Theme } from "theme.slint";
 import { AppData, Lesson, AbsenceItem } from "data.slint";
-import { Card, SectionLabel, Pill, Meter, EmptyState, GhostButton, PrimaryButton } from "widgets.slint";
+import { Card, SectionLabel, Pill, Meter, EmptyState, GhostButton, PrimaryButton, Field } from "widgets.slint";
 import { Page } from "pages.slint";
-import { Switch } from "std-widgets.slint";
+import { Switch, SpinBox } from "std-widgets.slint";
 
 component Segment inherits Rectangle {
     in property <[string]> options;
@@ -263,6 +263,7 @@ export component CalendarPage inherits Page {
 
 component AbsenceRow inherits HorizontalLayout {
     in property <AbsenceItem> item;
+    in property <int> index: -1;
     padding: 12px;
     spacing: 12px;
     Rectangle {
@@ -286,6 +287,10 @@ component AbsenceRow inherits HorizontalLayout {
             wrap: word-wrap;
         }
     }
+    if root.index >= 0: GhostButton {
+        text: "Löschen";
+        clicked => { AppData.remove-future-absence(root.index); }
+    }
     Pill {
         y: 4px;
         text: item.status;
@@ -306,12 +311,14 @@ export component AbsencesPage inherits Page {
             HorizontalLayout {
                 spacing: 8px;
                 Text {
+                    horizontal-stretch: 0;
                     text: AppData.absence-percent == "" ? "–" : AppData.absence-percent;
                     color: Theme.accent;
                     font-size: 40px;
                     font-weight: 800;
                 }
                 VerticalLayout {
+                    horizontal-stretch: 0;
                     alignment: end;
                     padding-bottom: 9px;
                     Text {
@@ -369,10 +376,57 @@ export component AbsencesPage inherits Page {
         }
     }
 
+    if AppData.absence-can-edit: SectionLabel { text: "ABWESENHEIT MELDEN"; }
+    if AppData.absence-can-edit: Card {
+        VerticalLayout {
+            padding: 16px;
+            spacing: 10px;
+            HorizontalLayout {
+                spacing: 10px;
+                VerticalLayout {
+                    spacing: 4px;
+                    Text { text: "Von"; color: Theme.muted; font-size: Theme.font-small; }
+                    from-date := Field { text: AppData.tomorrow-date; placeholder: "TT.MM.JJJJ"; }
+                }
+                VerticalLayout {
+                    spacing: 4px;
+                    Text { text: "Bis"; color: Theme.muted; font-size: Theme.font-small; }
+                    to-date := Field { text: AppData.tomorrow-date; placeholder: "TT.MM.JJJJ"; }
+                }
+            }
+            HorizontalLayout {
+                spacing: 10px;
+                VerticalLayout {
+                    spacing: 4px;
+                    Text { text: "Ab Stunde"; color: Theme.muted; font-size: Theme.font-small; }
+                    first-hour := SpinBox { minimum: 1; maximum: 12; value: 1; }
+                }
+                VerticalLayout {
+                    spacing: 4px;
+                    Text { text: "Bis Stunde"; color: Theme.muted; font-size: Theme.font-small; }
+                    last-hour := SpinBox { minimum: 1; maximum: 12; value: 8; }
+                }
+            }
+            reason := Field { placeholder: "Grund, z. B. Arzttermin"; }
+            signature := Field { text: AppData.full-name; placeholder: "Unterschrift"; }
+            PrimaryButton {
+                text: "Abwesenheit melden";
+                busy: AppData.busy;
+                enabled: from-date.text != "" && reason.text != "" && signature.text != "";
+                clicked => {
+                    AppData.report-absence(from-date.text, to-date.text, first-hour.value, last-hour.value, reason.text, signature.text);
+                }
+            }
+        }
+    }
+
     if AppData.future-absences.length > 0: SectionLabel { text: "GEMELDET"; }
     if AppData.future-absences.length > 0: Card {
         VerticalLayout {
-            for item in AppData.future-absences: AbsenceRow { item: item; }
+            for item[i] in AppData.future-absences: AbsenceRow {
+                item: item;
+                index: AppData.absence-can-edit ? i : -1;
+            }
         }
     }
 
