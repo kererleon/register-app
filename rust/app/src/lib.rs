@@ -373,6 +373,53 @@ pub fn run() -> Result<(), slint::PlatformError> {
         }
     });
 
+    data.on_report_absence({
+        let weak = ui.as_weak();
+        let shared = shared.clone();
+        move |from, to, first, last, reason, signature| {
+            let ui = weak.unwrap();
+            let today = today();
+            let (Some(start), Some(end)) = (format::parse_date(&from, today), format::parse_date(&to, today)) else {
+                ui.global::<AppData>().set_status("Datum bitte als TT.MM.JJJJ eingeben".into());
+                return;
+            };
+            if end < start || last < first {
+                ui.global::<AppData>().set_status("Das Ende liegt vor dem Anfang".into());
+                return;
+            }
+            ui.global::<AppData>().set_busy(true);
+            let (reason, signature) = (reason.to_string(), signature.to_string());
+            background(&ui, &shared, move |s| {
+                let client = s.lock().unwrap().client.clone()?;
+                let mut data = s.lock().unwrap().data.clone();
+                let result = data.add_future_absence(&client, start, end, first, last, &reason, &signature);
+                s.lock().unwrap().data = data;
+                Some(match result {
+                    Ok(()) => "Abwesenheit gemeldet".into(),
+                    Err(e) => format!("Nicht gemeldet: {e}"),
+                })
+            });
+        }
+    });
+
+    data.on_remove_future_absence({
+        let weak = ui.as_weak();
+        let shared = shared.clone();
+        move |index| {
+            let ui = weak.unwrap();
+            background(&ui, &shared, move |s| {
+                let client = s.lock().unwrap().client.clone()?;
+                let mut data = s.lock().unwrap().data.clone();
+                let result = data.remove_future_absence(&client, index as usize);
+                s.lock().unwrap().data = data;
+                Some(match result {
+                    Ok(()) => "Abwesenheit gelöscht".into(),
+                    Err(e) => format!("Nicht gelöscht: {e}"),
+                })
+            });
+        }
+    });
+
     // The "now" card and the lesson markers follow the clock.
     let timer = slint::Timer::default();
     timer.start(slint::TimerMode::Repeated, std::time::Duration::from_secs(30), {

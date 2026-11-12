@@ -147,6 +147,10 @@ export global AppData {
     in-out property <string> absence-counts;
     in-out property <[AbsenceItem]> absences;
     in-out property <[AbsenceItem]> future-absences;
+    in-out property <bool> absence-can-edit: false;
+    in-out property <string> tomorrow-date;
+    callback report-absence(string /* from */, string /* to */, int /* first hour */, int /* last hour */, string /* reason */, string /* signature */);
+    callback remove-future-absence(int);
 
     // --- messages ---
     in-out property <[MessageItem]> messages;

@@ -155,6 +155,49 @@ impl Data {
         Ok(())
     }
 
+    /// Reports an absence in advance (e.g. a doctor's appointment).
+    #[allow(clippy::too_many_arguments)]
+    pub fn add_future_absence(
+        &mut self,
+        client: &Client,
+        start: NaiveDate,
+        end: NaiveDate,
+        start_hour: i32,
+        end_hour: i32,
+        reason: &str,
+        signature: &str,
+    ) -> Result<(), Error> {
+        client.send(
+            "api/student/dashboard/absence_future",
+            json!({ "futureAbsence": {
+                "startDate": start.format("%Y-%m-%d").to_string(),
+                "endDate": end.format("%Y-%m-%d").to_string(),
+                "startTime": start_hour,
+                "endTime": end_hour,
+                "reason": reason,
+                "reason_signature": signature,
+            }}),
+        )?;
+        self.reload_absences(client)
+    }
+
+    /// Deletes the [index]th reported absence. The server wants back the
+    /// complete entry it sent, so it is fetched again.
+    pub fn remove_future_absence(&mut self, client: &Client, index: usize) -> Result<(), Error> {
+        let raw = client.send("api/student/dashboard/absences", json!({}))?;
+        let entry = raw["futureAbsences"]
+            .get(index)
+            .cloned()
+            .ok_or_else(|| Error::Server("Diese Abwesenheit gibt es nicht mehr".into()))?;
+        client.send("api/student/dashboard/remove_absence_future", json!({ "futureAbsence": entry }))?;
+        self.reload_absences(client)
+    }
+
+    fn reload_absences(&mut self, client: &Client) -> Result<(), Error> {
+        self.absences = parse::absences(&client.send("api/student/dashboard/absences", json!({}))?);
+        Ok(())
+    }
+
     /// Upcoming tests (today and later), soonest first.
     pub fn upcoming_tests(&self) -> Vec<(NaiveDate, &Homework)> {
         let today = today();
