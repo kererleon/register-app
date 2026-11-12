@@ -61,7 +61,7 @@ export component LoginPage inherits Rectangle {
                                 border-color: Theme.border;
                                 clip: true;
                                 list := Flickable {
-                                    viewport-height: AppData.schools.length * 40px;
+                                    content-height: AppData.schools.length * 40px;
                                     for school[i] in AppData.schools: Rectangle {
                                         y: i * 40px;
                                         height: 40px;

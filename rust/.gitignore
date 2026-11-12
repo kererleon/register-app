@@ -1,1 +1,5 @@
 /target
+/packaging/ios/Team.xcconfig
+/packaging/ios/build
+/packaging/ios/RegisterRust.xcodeproj
+/packaging/ios/Shell/Info.plist
