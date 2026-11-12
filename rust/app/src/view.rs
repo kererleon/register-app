@@ -14,7 +14,7 @@ use slint::{Color, ComponentHandle, Image, ModelRc, SharedString, VecModel};
 
 use crate::{format, photos, subject_icons};
 use crate::{
-    AbsenceItem, AppData, AppWindow, AttachmentItem, CertBlock, CertRow, ChartLine, GradeItem, HomeworkDay, HomeworkItem, Lesson, MessageItem, State,
+    AbsenceItem, AppData, AppWindow, AttachmentItem, CertBlock, ColorItem, NickItem, Prefs, CertRow, ChartLine, GradeItem, HomeworkDay, HomeworkItem, Lesson, MessageItem, State,
     CalcGrade, Competence, DetailCard, DetailRow, GradeGroup, SubjectItem, TargetChip, TeacherView, TestItem, WeakSubject, WeekDay,
 };
 
@@ -31,23 +31,24 @@ fn rgb(c: u32) -> Color {
 }
 
 /// The Flutter app's default abbreviations; other subjects keep their name.
+/// What the pages need from the settings while they are built.
+#[derive(Default)]
+struct Look {
+    nicks: Vec<(String, String)>,
+    tests_red: bool,
+    color_borders: bool,
+    colors: BTreeMap<String, u32>,
+}
+
+thread_local! {
+    static LOOK: std::cell::RefCell<Look> = std::cell::RefCell::new(Look::default());
+}
+
+/// The short name of [subject], or the subject itself.
 fn nick(subject: &str) -> String {
-    match subject {
-        "Deutsch" => "Deu",
-        "Mathematik" => "Mat",
-        "Latein" => "Lat",
-        "Religion" => "Rel",
-        "Englisch" => "Eng",
-        "Naturwissenschaften" => "Nat",
-        "Geschichte" => "Gesch",
-        "Italienisch" => "Ita",
-        "Bewegung und Sport" => "Sport",
-        "Recht und Wirtschaft" => "Rw",
-        "Griechisch" => "Gr",
-        "FÜ" => "Fü",
-        other => other,
-    }
-    .to_owned()
+    LOOK.with(|l| {
+        l.borrow().nicks.iter().find(|(name, _)| name == subject).map(|(_, n)| n.clone()).unwrap_or_else(|| subject.to_owned())
+    })
 }
 
 /// "Mo", "Di" … (two letters of the weekday).
@@ -66,6 +67,16 @@ pub fn apply(ui: &AppWindow, state: &mut State) {
     if state.settings.subject_colors.len() != before {
         state.settings.save();
     }
+
+    LOOK.with(|l| {
+        *l.borrow_mut() = Look {
+            nicks: state.settings.nicks.clone(),
+            tests_red: state.settings.tests_red,
+            color_borders: state.settings.color_borders,
+            colors: state.settings.subject_colors.clone(),
+        }
+    });
+    apply_prefs(ui, state);
 
     let d = ui.global::<AppData>();
     let data = &state.data;
@@ -154,6 +165,20 @@ fn homework_item(h: &Homework, header: String) -> HomeworkItem {
         title = format!("{title} · {}", grades::format_grade(g));
     }
     let test = h.is_test();
+    // _accent: the stripe on the entry's edge.
+    let (accent, tint) = LOOK.with(|l| {
+        let l = l.borrow();
+        let subject = h.label.as_ref().and_then(|label| l.colors.get(label)).filter(|_| l.color_borders);
+        if test && l.tests_red {
+            (1, Color::default())
+        } else if let Some(&c) = subject {
+            (3, rgb(c))
+        } else if h.kind == HomeworkKind::Grade || h.checked {
+            (2, Color::default())
+        } else {
+            (0, Color::default())
+        }
+    });
     HomeworkItem {
         id: h.id as i32,
         kind: s(format::kind_name(h.kind)),
@@ -177,7 +202,8 @@ fn homework_item(h: &Homework, header: String) -> HomeworkItem {
                 _ => 0,
             }
         },
-        accent: if test { 1 } else if h.kind == HomeworkKind::Grade || h.checked { 2 } else { 0 },
+        accent,
+        tint,
         badge: SharedString::new(),
         moved_to: SharedString::new(),
         day_date: SharedString::new(),
@@ -363,7 +389,7 @@ fn apply_homework(d: &AppData, state: &State) {
                 let mut item = homework_item(h, h.label.as_deref().unwrap_or("").to_uppercase());
                 item.day_date = s(&key_date);
                 item.index = i as i32;
-                if data.unseen.contains(&key) {
+                if state.settings.mark_new && data.unseen.contains(&key) {
                     item.badge = s(if data.previous.contains_key(&key) { "geändert" } else { "neu" });
                 }
                 if let Some(m) = data.moved.get(&key) {
@@ -956,10 +982,6 @@ pub fn time_ago(timestamp: i64) -> String {
     format!("vor {n} {}", if n == 1 { one } else { many })
 }
 
-fn date_time(t: Option<NaiveDateTime>) -> String {
-    t.map(|t| format!("{} {:02}:{:02}", t.date().format("%d.%m.%Y"), t.hour(), t.minute())).unwrap_or_default()
-}
-
 const WEEKDAYS: [&str; 7] = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"];
 const MONTHS: [&str; 12] = [
     "Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November",
@@ -1030,4 +1052,36 @@ fn apply_messages(d: &AppData, data: &register_core::data::Data) {
             .collect(),
     ));
     d.set_unread(unread_count(data));
+}
+
+/// The lists of the settings page.
+fn apply_prefs(ui: &AppWindow, state: &State) {
+    let p = ui.global::<Prefs>();
+    let st = &state.settings;
+    let subjects: Vec<String> = {
+        let mut names: Vec<String> = state.data.subjects.iter().map(|s| s.name.clone()).collect();
+        for name in state.data.calendar.values().flat_map(|d| d.hours.iter().map(|h| &h.subject)) {
+            if !names.contains(name) {
+                names.push(name.clone());
+            }
+        }
+        names
+    };
+    p.set_ignored(model(st.ignored_subjects.iter().map(s).collect()));
+    p.set_ignorable(model(
+        state.data.subjects.iter().map(|x| &x.name).filter(|n| !st.ignored_subjects.contains(n)).map(s).collect(),
+    ));
+    p.set_nicks(model(st.nicks.iter().map(|(a, b)| NickItem { subject: s(a), nick: s(b) }).collect()));
+    p.set_nickable(model(subjects.iter().filter(|n| !st.nicks.iter().any(|(a, _)| a == *n)).map(s).collect()));
+    p.set_subject_colors(model(st.subject_colors.iter().map(|(n, c)| ColorItem { name: s(n), color: rgb(*c) }).collect()));
+    let host = state
+        .client
+        .as_ref()
+        .and_then(|c| url::Url::parse(c.url()).ok())
+        .and_then(|u| u.host_str().map(str::to_owned));
+    p.set_custom_staff_page(s(host.and_then(|h| st.staff_pages.get(&h).cloned()).unwrap_or_default()));
+    p.set_staff_page(s(photos::page().unwrap_or_default()));
+    p.set_demo(state.client.as_ref().is_some_and(|c| c.is_demo()));
+    // Chosen at the login, too.
+    p.set_remember(st.remember);
 }

@@ -9,6 +9,7 @@ mod subject_icon_data;
 mod subject_icons;
 mod format;
 mod photos;
+mod prefs;
 mod notify;
 mod settings;
 mod view;
@@ -91,6 +92,9 @@ fn refresh(shared: &Shared) -> Option<String> {
     let before = shared.lock().unwrap().data.clone();
     let mut data = before.clone();
     let report = data.refresh(&client);
+    if shared.lock().unwrap().settings.dedupe {
+        data.dedupe_dashboard();
+    }
     notify::announce(&register_core::changes::between(&before, &data, today()));
     // Teacher photos: the list from the school's website, then the photos of
     // this and next week's teachers.
@@ -102,7 +106,7 @@ fn refresh(shared: &Shared) -> Option<String> {
     }
     let mut state = shared.lock().unwrap();
     state.data = data;
-    if state.remember && !client.is_demo() {
+    if state.settings.save_data && !client.is_demo() {
         let _ = state.data.save(&data_path());
     }
     match report.error {
@@ -146,6 +150,7 @@ fn login(ui: &AppWindow, shared: &Shared, url: String, user: String, pass: Strin
                     state.data.config = Some(config);
                     state.client = Some(client.clone());
                     state.remember = remember;
+                    state.settings.remember = remember;
                     state.settings.school = schools::SCHOOLS
                         .iter()
                         .find(|(_, u)| *u == client.url())
@@ -194,7 +199,7 @@ pub fn run() -> Result<(), slint::PlatformError> {
     if let Some(style) = std::env::var("REGISTER_STYLE").ok().and_then(|s| s.parse().ok()) {
         theme.set_style(style);
     }
-    theme.set_dark(settings.dark);
+    theme.set_dark(prefs::dark(settings.theme_mode));
     theme.set_accent_choice(slint::Color::from_argb_encoded(settings.accent));
 
     let shared: Shared = Arc::new(Mutex::new(State {
@@ -213,6 +218,15 @@ pub fn run() -> Result<(), slint::PlatformError> {
     }));
 
     let data = ui.global::<AppData>();
+    prefs::setup(&ui, &shared);
+
+    // For trying out the settings: REGISTER_SECTION=3 opens them at the grades.
+    if let Some(section) = std::env::var("REGISTER_SECTION").ok().and_then(|p| p.parse().ok()) {
+        ui.global::<Prefs>().set_section(section);
+    }
+    if let Some(dialog) = std::env::var("REGISTER_DIALOG").ok().and_then(|p| p.parse().ok()) {
+        ui.global::<Prefs>().set_dialog(dialog);
+    }
     // For trying out the notifications page and an opened message.
     if std::env::var_os("REGISTER_NOTIFICATIONS").is_some() {
         ui.global::<Nav>().set_notifications(true);
@@ -357,9 +371,13 @@ pub fn run() -> Result<(), slint::PlatformError> {
             let ui = weak.unwrap();
             let mut state = shared.lock().unwrap();
             state.client = None;
-            state.data = Data::default();
             settings::forget_login();
-            let _ = std::fs::remove_file(data_path());
+            // "Daten beim Ausloggen löschen"; kept data is only shown again
+            // to the same account.
+            if state.settings.delete_on_logout || !state.settings.save_data {
+                state.data = Data::default();
+                let _ = std::fs::remove_file(data_path());
+            }
             view::apply(&ui, &mut state);
             let data = ui.global::<AppData>();
             data.set_logged_in(false);
@@ -717,7 +735,7 @@ pub fn run() -> Result<(), slint::PlatformError> {
                     Some(m) if !m.read => m.read = true,
                     _ => return,
                 }
-                if state.remember {
+                if state.settings.save_data {
                     let _ = state.data.save(&data_path());
                 }
                 update_message(&ui, &state, id as i64, None);
@@ -785,7 +803,7 @@ pub fn run() -> Result<(), slint::PlatformError> {
             {
                 let mut state = shared.lock().unwrap();
                 state.data.notifications.retain(|n| n.id != id as i64);
-                if state.remember {
+                if state.settings.save_data {
                     let _ = state.data.save(&data_path());
                 }
                 view::apply(&ui, &mut state);
@@ -819,7 +837,7 @@ pub fn run() -> Result<(), slint::PlatformError> {
                     m.read = true;
                 }
                 state.data.notifications.clear();
-                if state.remember {
+                if state.settings.save_data {
                     let _ = state.data.save(&data_path());
                 }
                 view::apply(&ui, &mut state);
@@ -908,7 +926,7 @@ pub fn run() -> Result<(), slint::PlatformError> {
             // Leaving the homework page: what was new has been seen.
             if state.last_page == 1 && page != 1 && !state.data.unseen.is_empty() {
                 state.data.unseen.clear();
-                if state.remember {
+                if state.settings.save_data {
                     let _ = state.data.save(&data_path());
                 }
                 view::apply(&weak.unwrap(), &mut state);
@@ -937,7 +955,7 @@ pub fn run() -> Result<(), slint::PlatformError> {
                         state.data.certificate_fetched = data.certificate_fetched;
                         let w2 = w.clone();
                         let _ = w2.upgrade_in_event_loop(|ui| ui.global::<AppData>().set_certificate_fetched("".into()));
-                        if state.remember {
+                        if state.settings.save_data {
                             let _ = state.data.save(&data_path());
                         }
                         drop(state);
@@ -1139,7 +1157,6 @@ pub fn run() -> Result<(), slint::PlatformError> {
     let mut state = shared.lock().unwrap();
     let theme = ui.global::<Theme>();
     state.settings.style = theme.get_style();
-    state.settings.dark = theme.get_dark();
     state.settings.accent = theme.get_accent_choice().as_argb_encoded();
     state.settings.save();
     Ok(())

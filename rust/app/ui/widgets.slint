@@ -1,5 +1,5 @@
 import { Theme } from "theme.slint";
-import { Deco } from "data.slint";
+import { Deco, Prefs } from "data.slint";
 
 // The page background of each look (AuroraBackdrop / _AuroraPainter):
 // holo glow and grid, brainrot stripes and emojis, the israel flag with
@@ -168,6 +168,22 @@ export component Backdrop inherits Rectangle {
                 letter-spacing: 0.5px;
                 color: Theme.violet-deep.transparentize(Theme.dark ? 45% : 50%);
             }
+        }
+    }
+
+    // The own picture replaces the style's pattern, toned down so that text
+    // stays readable.
+    if Prefs.has-bg: Rectangle {
+        background: Theme.bg;
+        Image {
+            width: 100%;
+            height: 100%;
+            source: Prefs.bg-image;
+            image-fit: cover;
+        }
+        Rectangle {
+            background: Theme.bg;
+            opacity: Prefs.bg-dim;
         }
     }
 }

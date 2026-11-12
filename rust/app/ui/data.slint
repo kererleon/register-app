@@ -15,7 +15,8 @@ export struct HomeworkItem {
     checked: bool,
     deletable: bool,
     type-icon: int,   // 0 assignment, 1 test, 2 grade, 3 observation, 4 test group, 5 reminder
-    accent: int,      // 0 none, 1 red (test), 2 green (grade or done)
+    accent: int,      // 0 none, 1 red (test), 2 green (grade or done), 3 the subject's colour
+    tint: color,
     badge: string,    // "neu", "geändert"
     moved-to: string, // "Fr. 13.11."
     day-date: string, // the entry's day, to find it again
@@ -355,6 +356,66 @@ export global AppData {
 
 // The page shown (0 Heute, 1 Hausaufgaben, 2 Noten, 3 Absenzen, 4 Kalender,
 // 5 Mitteilungen, 6 Einstellungen, 7 Zeugnis, 8 Notenrechner).
+export struct NickItem {
+    subject: string,
+    nick: string,
+}
+
+export struct ColorItem {
+    name: string,
+    color: color,
+}
+
+// The settings page: switches Rust keeps on the device, lists and dialogs.
+export global Prefs {
+    in-out property <bool> remember: true;
+    in-out property <bool> save-data: true;
+    in-out property <bool> delete-on-logout: false;
+    in-out property <int> theme-mode: 2; // 0 device, 1 light, 2 dark
+    in-out property <bool> color-borders: false;
+    in-out property <bool> calendar-color: false;
+    in-out property <bool> tests-red: true;
+    in-out property <bool> mark-new: true;
+    in-out property <bool> dedupe: true;
+    in-out property <bool> ask-delete: false;
+    in-out property <bool> show-diagram: true;
+    in-out property <bool> show-average: true;
+    in-out property <bool> show-photos: true;
+    in-out property <bool> nick-bar: true;
+    in property <bool> demo;
+    in property <string> version;
+    // The staff page in use, and the one entered by hand.
+    in property <string> staff-page;
+    in property <string> custom-staff-page;
+    in property <image> bg-image;
+    in property <bool> has-bg;
+    in-out property <float> bg-dim: 0.6;
+    in property <[string]> ignored;
+    in property <[string]> ignorable;
+    in property <[NickItem]> nicks;
+    in property <[string]> nickable;
+    in property <[ColorItem]> subject-colors;
+    // A switch or choice changed: Rust saves and applies it.
+    callback changed();
+    callback add-ignored(string);
+    callback remove-ignored(string);
+    callback set-nick(string /* old subject, "" for a new one */, string /* subject */, string /* nick */);
+    callback remove-nick(string);
+    callback set-subject-color(string, color);
+    callback set-staff-page(string);
+    callback pick-background();
+    callback remove-background();
+    callback open-url(string);
+    // 0 none, 1 colour, 2 add subject, 3 nick, 4 staff page, 5 about
+    in-out property <int> dialog: 0;
+    in-out property <color> dialog-color;
+    in-out property <color> dialog-initial;
+    in-out property <string> dialog-target; // the subject, "" for the accent
+    in-out property <string> dialog-nick;
+    // The section the page opens at (3 grades), -1 for the top.
+    in-out property <int> section: -1;
+}
+
 export global Nav {
     in-out property <int> page: 0;
     in-out property <bool> absence-form: false;
