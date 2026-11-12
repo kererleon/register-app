@@ -6,7 +6,7 @@ use std::path::Path;
 
 use chrono::{Datelike, Duration, Local, NaiveDate};
 use serde::{Deserialize, Serialize};
-use serde_json::json;
+use serde_json::{Value, json};
 
 use crate::client::{Client, Error};
 use crate::model::*;
@@ -239,6 +239,24 @@ impl Data {
             .cloned()
             .ok_or_else(|| Error::Server("Diese Abwesenheit gibt es nicht mehr".into()))?;
         client.send("api/student/dashboard/remove_absence_future", json!({ "futureAbsence": entry }))?;
+        self.reload_absences(client)
+    }
+
+    /// Justifies the [index]th absence. The server wants back the complete
+    /// entry it sent, so it is fetched again.
+    pub fn justify_absence(&mut self, client: &Client, index: usize, reason: &str, signature: &str) -> Result<(), Error> {
+        let raw = client.send("api/student/dashboard/absences", json!({}))?;
+        let mut entry = raw["absences"]
+            .get(index)
+            .cloned()
+            .filter(Value::is_object)
+            .ok_or_else(|| Error::Server("Diese Absenz gibt es nicht mehr".into()))?;
+        entry["reason"] = json!(reason);
+        entry["reason_signature"] = json!(signature);
+        entry["reason_timestamp"] = json!(chrono::Utc::now().format("%Y-%m-%dT%H:%M:%S%.6fZ").to_string());
+        entry["selfdecl_id"] = json!(0);
+        entry["selfdecl_input"] = json!("");
+        client.send("api/student/dashboard/absence_reason", json!({ "absenceGroup": entry }))?;
         self.reload_absences(client)
     }
 

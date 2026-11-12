@@ -153,6 +153,13 @@ export struct AbsenceItem {
     footer: string,
     status: string,
     level: int, // 0 justified, 1 open, 2 not justified, 3 for school
+    can-justify: bool,
+}
+
+export struct ProtocolItem {
+    address: string,
+    parameters: string,
+    response: string,
 }
 
 // The certificate, as headings, paragraphs and tables.
@@ -346,6 +353,9 @@ export global AppData {
     in-out property <[MessageItem]> messages;
     in-out property <[MessageItem]> notifications;
     in-out property <int> unread;
+    callback justify-absence(int, string /* reason */, string /* signature */);
+    // A subject of the shown week has no short name (EditNickBar).
+    in property <bool> nick-bar: false;
     callback mark-read(int);
     // The message a notification leads to; shown opened.
     in-out property <int> show-message: -1;
@@ -387,6 +397,8 @@ export global Prefs {
     // The staff page in use, and the one entered by hand.
     in property <string> staff-page;
     in property <string> custom-staff-page;
+    // Choosing a picture needs a file dialog (desktop).
+    in property <bool> can-pick: true;
     in property <image> bg-image;
     in property <bool> has-bg;
     in-out property <float> bg-dim: 0.6;
@@ -407,6 +419,12 @@ export global Prefs {
     in-out property <string> profile-message;
     in-out property <bool> profile-failed;
     in-out property <bool> profile-busy;
+    // --- network protocol, password reset ---
+    in property <[ProtocolItem]> protocol;
+    callback load-protocol();
+    callback copy(string);
+    in-out property <string> reset-url;
+    callback request-reset(string /* user */, string /* email */);
     callback load-profile();
     callback set-notify-emails(bool);
     callback change-email(string /* password */, string /* email */);
@@ -438,7 +456,11 @@ export global Nav {
     in-out property <bool> info: false;
     in-out property <bool> chart: false;
     in-out property <bool> notifications: false;
-    in-out property <int> profile: 0; // 1 profile, 2 change email, 3 change password
+    in-out property <int> profile: 0; // 1 profile, 2 change email, 3 change password, 4 forgot password
+    in-out property <bool> protocol: false;
+    in-out property <int> confirm-delete: -1; // the reminder to delete
+    in-out property <int> justify: -1;        // the absence to justify
+    in-out property <string> justify-title;
     in-out property <int> open-subject: -1;
 }
 

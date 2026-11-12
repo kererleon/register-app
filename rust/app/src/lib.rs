@@ -224,6 +224,22 @@ pub fn run() -> Result<(), slint::PlatformError> {
     if let Some(section) = std::env::var("REGISTER_SECTION").ok().and_then(|p| p.parse().ok()) {
         ui.global::<Prefs>().set_section(section);
     }
+    // For trying out the phone layout: REGISTER_SIZE=390x800.
+    if let Some((w, h)) = std::env::var("REGISTER_SIZE")
+        .ok()
+        .and_then(|v| v.split_once('x').and_then(|(w, h)| Some((w.parse::<f32>().ok()?, h.parse::<f32>().ok()?))))
+    {
+        ui.window().set_size(slint::LogicalSize::new(w, h));
+    }
+    if std::env::var_os("REGISTER_PROTOCOL").is_some() {
+        ui.global::<Nav>().set_protocol(true);
+        let weak = ui.as_weak();
+        slint::Timer::single_shot(std::time::Duration::from_secs(3), move || {
+            if let Some(ui) = weak.upgrade() {
+                ui.global::<Prefs>().invoke_load_protocol();
+            }
+        });
+    }
     // REGISTER_PROFILE=1 the profile, 2 change email, 3 change password.
     if let Some(profile) = std::env::var("REGISTER_PROFILE").ok().and_then(|p| p.parse::<i32>().ok()) {
         ui.global::<Nav>().set_profile(profile);
@@ -1100,6 +1116,29 @@ pub fn run() -> Result<(), slint::PlatformError> {
                 Some(match result {
                     Ok(()) => "Abwesenheit gemeldet".into(),
                     Err(e) => format!("Nicht gemeldet: {e}"),
+                })
+            });
+        }
+    });
+
+    data.on_justify_absence({
+        let weak = ui.as_weak();
+        let shared = shared.clone();
+        move |index, reason, signature| {
+            let ui = weak.unwrap();
+            if index < 0 {
+                return;
+            }
+            ui.global::<AppData>().set_busy(true);
+            let (reason, signature) = (reason.trim().to_owned(), signature.trim().to_owned());
+            background(&ui, &shared, move |s| {
+                let client = s.lock().unwrap().client.clone()?;
+                let mut data = s.lock().unwrap().data.clone();
+                let result = data.justify_absence(&client, index as usize, &reason, &signature);
+                s.lock().unwrap().data = data;
+                Some(match result {
+                    Ok(()) => "Absenz entschuldigt".into(),
+                    Err(_) => "Die Absenz konnte nicht entschuldigt werden".into(),
                 })
             });
         }

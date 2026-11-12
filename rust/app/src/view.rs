@@ -674,6 +674,12 @@ pub fn apply_calculator(d: &AppData, state: &State) {
 }
 
 fn apply_calendar(d: &AppData, state: &State) {
+    // EditNickBar: a subject of the shown week has no short name.
+    let monday = monday_of(today()) + Duration::weeks(state.week_offset);
+    let missing = state.data.calendar.range(monday..monday + Duration::days(7)).any(|(_, day)| {
+        day.hours.iter().any(|h| !state.settings.nicks.iter().any(|(name, _)| name.eq_ignore_ascii_case(&h.subject)))
+    });
+    d.set_nick_bar(missing && state.settings.nick_bar);
     let now = Local::now().naive_local();
     let today = now.date();
     let colors = &state.settings.subject_colors;
@@ -886,13 +892,16 @@ fn apply_absences(d: &AppData, state: &State) {
     d.set_count_not_justified(n(stat.not_justified));
     d.set_count_delayed(n(stat.delayed));
 
-    let mut groups: Vec<&AbsenceGroup> = a.groups.iter().collect();
+    let groups: Vec<&AbsenceGroup> = a.groups.iter().collect();
     let first = |g: &AbsenceGroup| g.hours.iter().map(|h| h.date).min();
-    groups.sort_by(|x, y| first(y).cmp(&first(x)));
+    let can_edit = a.can_edit;
+    // Each keeps its place in the server's list, which justifying needs.
+    let mut groups: Vec<(usize, &AbsenceGroup)> = groups.into_iter().enumerate().collect();
+    groups.sort_by(|x, y| first(y.1).cmp(&first(x.1)));
     d.set_absences(model(
         groups
             .into_iter()
-            .map(|g| {
+            .map(|(place, g)| {
                 let (level, status) = justified(g.justified);
                 let mut hours: Vec<&MissedHour> = g.hours.iter().collect();
                 hours.sort_by_key(|h| (h.date, h.hour));
@@ -927,7 +936,8 @@ fn apply_absences(d: &AppData, state: &State) {
                     (None, None) => String::new(),
                 };
                 AbsenceItem {
-                    index: -1,
+                    index: place as i32,
+                    can_justify: can_edit && g.justified == Justified::NotYet,
                     title: s(title),
                     subtitle: s(subtitle),
                     reason: s(g.reason.as_deref().unwrap_or("")),
@@ -950,6 +960,7 @@ fn apply_absences(d: &AppData, state: &State) {
                     format!("{}.–{}. Stunde", f.start_hour, f.end_hour)
                 };
                 AbsenceItem {
+                    can_justify: false,
                     index: i as i32,
                     title: s(if f.start == f.end {
                         format!("{}, {hours}", day_long(f.start))

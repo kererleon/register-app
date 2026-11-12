@@ -6,7 +6,7 @@ use register_core::client::Client;
 use serde_json::json;
 use slint::{ComponentHandle, SharedString};
 
-use crate::{AppData, AppWindow, Nav, Prefs, Shared, Theme, data_path, photos, settings, view};
+use crate::{AppData, AppWindow, Nav, Prefs, ProtocolItem, Shared, Theme, data_path, photos, settings, view};
 
 /// Whether [mode] (0 device, 1 light, 2 dark) means the dark look.
 pub fn dark(mode: i32) -> bool {
@@ -76,6 +76,30 @@ fn open_url(url: &str) {
     let _ = std::process::Command::new("xdg-open").arg(url).spawn();
 }
 
+/// Puts [text] on the clipboard with the system's own tool.
+fn copy(text: &str) -> bool {
+    use std::io::Write;
+    use std::process::{Command, Stdio};
+    #[cfg(target_os = "macos")]
+    let tools: &[&[&str]] = &[&["pbcopy"]];
+    #[cfg(target_os = "windows")]
+    let tools: &[&[&str]] = &[&["clip"]];
+    #[cfg(all(unix, not(any(target_os = "macos", target_os = "android", target_os = "ios"))))]
+    let tools: &[&[&str]] = &[&["wl-copy"], &["xclip", "-selection", "clipboard"]];
+    #[cfg(any(target_os = "android", target_os = "ios"))]
+    let tools: &[&[&str]] = &[];
+    for tool in tools {
+        let child = Command::new(tool[0]).args(&tool[1..]).stdin(Stdio::piped()).spawn();
+        if let Ok(mut child) = child {
+            let written = child.stdin.take().is_some_and(|mut stdin| stdin.write_all(text.as_bytes()).is_ok());
+            if child.wait().is_ok_and(|s| s.success()) && written {
+                return true;
+            }
+        }
+    }
+    false
+}
+
 pub fn setup(ui: &AppWindow, shared: &Shared) {
     let p = ui.global::<Prefs>();
     {
@@ -96,6 +120,7 @@ pub fn setup(ui: &AppWindow, shared: &Shared) {
         p.set_show_photos(st.show_photos);
         p.set_nick_bar(st.nick_bar);
         p.set_bg_dim(st.background_dim);
+        p.set_can_pick(cfg!(not(any(target_os = "android", target_os = "ios"))));
         p.set_version(concat!("Rust-Version ", env!("CARGO_PKG_VERSION")).into());
         show_background(ui, st.background.as_deref());
     }
@@ -285,6 +310,57 @@ pub fn setup(ui: &AppWindow, shared: &Shared) {
     });
 
     p.on_open_url(|url| open_url(url.as_str()));
+
+    p.on_load_protocol({
+        let weak = ui.as_weak();
+        let shared = shared.clone();
+        move || {
+            let items = shared.lock().unwrap().client.as_ref().map(|c| c.protocol()).unwrap_or_default();
+            let items: Vec<ProtocolItem> = items
+                .into_iter()
+                .map(|i| ProtocolItem {
+                    address: i.address.into(),
+                    parameters: i.parameters.into(),
+                    response: i.response.into(),
+                })
+                .collect();
+            weak.unwrap().global::<Prefs>().set_protocol(slint::ModelRc::new(slint::VecModel::from(items)));
+        }
+    });
+
+    p.on_copy({
+        let weak = ui.as_weak();
+        move |text| {
+            if copy(text.as_str()) {
+                weak.unwrap().global::<AppData>().set_status("In die Zwischenablage kopiert".into());
+            }
+        }
+    });
+
+    p.on_request_reset({
+        let weak = ui.as_weak();
+        move |user, email| {
+            let ui = weak.unwrap();
+            let p = ui.global::<Prefs>();
+            p.set_profile_busy(true);
+            p.set_profile_message(SharedString::new());
+            let url = p.get_reset_url().to_string();
+            let (user, email) = (user.trim().to_owned(), email.trim().to_owned());
+            let weak = weak.clone();
+            std::thread::spawn(move || {
+                let result = register_core::client::request_password_reset(&url, &user, &email);
+                let _ = weak.upgrade_in_event_loop(move |ui| {
+                    let p = ui.global::<Prefs>();
+                    p.set_profile_busy(false);
+                    p.set_profile_failed(result.is_err());
+                    p.set_profile_message(match result {
+                        Ok(message) => message.into(),
+                        Err(e) => e.to_string().into(),
+                    });
+                });
+            });
+        }
+    });
 
     // --- profile ---
 

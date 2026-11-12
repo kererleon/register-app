@@ -387,7 +387,54 @@ component DetailPanel inherits Rectangle {
 export component CalendarPage inherits Rectangle {
     property <bool> side-by-side: self.width >= 820px;
     HorizontalLayout {
-        if !AppData.detail-open || root.side-by-side: WeekGrid { }
+        if !AppData.detail-open || root.side-by-side: VerticalLayout {
+            WeekGrid { }
+            // EditNickBar
+            if AppData.nick-bar: Rectangle {
+                height: 48px;
+                background: Theme.surface;
+                drop-shadow-blur: 4px;
+                drop-shadow-offset-y: -1.5px;
+                drop-shadow-color: #0000001f;
+                HorizontalLayout {
+                    padding-left: 8px;
+                    padding-right: 6px;
+                    Rectangle {
+                        border-radius: 8px;
+                        background: bar-ta.has-hover ? Theme.primary.transparentize(90%) : transparent;
+                        Text {
+                            x: 16px;
+                            text: "Kürzel bearbeiten";
+                            color: Theme.primary;
+                            font-family: Theme.font-body;
+                            font-size: 14px;
+                            font-weight: 500;
+                            vertical-alignment: center;
+                            height: parent.height;
+                        }
+                        bar-ta := TouchArea {
+                            mouse-cursor: pointer;
+                            clicked => {
+                                Prefs.section = 6;
+                                Nav.page = 6;
+                            }
+                        }
+                    }
+                    VerticalLayout {
+                        alignment: center;
+                        IconButton {
+                            icon: @image-url("icons/close.svg");
+                            tint: Theme.text;
+                            icon-size: 24px;
+                            clicked => {
+                                Prefs.nick-bar = false;
+                                Prefs.changed();
+                            }
+                        }
+                    }
+                }
+            }
+        }
         if AppData.detail-open: DetailPanel {
             width: root.side-by-side ? 340px : root.width;
         }
@@ -444,6 +491,38 @@ component AbsencePanel inherits HoloPanel {
                 vertical-alignment: center;
             }
             Rectangle { }
+            if item.can-justify: Rectangle {
+                height: 40px;
+                width: justify.preferred-width + 36px;
+                border-radius: 20px;
+                background: justify-ta.has-hover ? Theme.primary.transparentize(70%) : Theme.primary.transparentize(80%);
+                justify := HorizontalLayout {
+                    x: 14px;
+                    spacing: 8px;
+                    Image {
+                        y: (parent.height - self.height) / 2;
+                        width: 20px;
+                        height: 20px;
+                        source: @image-url("icons/edit_note.svg");
+                        colorize: Theme.text;
+                    }
+                    Text {
+                        text: "Entschuldigen";
+                        color: Theme.text;
+                        font-family: Theme.font-body;
+                        font-size: 14px;
+                        font-weight: 500;
+                        vertical-alignment: center;
+                    }
+                }
+                justify-ta := TouchArea {
+                    mouse-cursor: pointer;
+                    clicked => {
+                        Nav.justify-title = item.title;
+                        Nav.justify = item.index;
+                    }
+                }
+            }
             if root.removable: IconButton {
                 icon: @image-url("icons/delete_outline.svg");
                 clicked => { AppData.remove-future-absence(item.index); }
@@ -634,6 +713,54 @@ export component AbsenceForm inherits Rectangle {
                         AppData.report-absence(from-date.text, to-date.text, first-hour.value, last-hour.value, reason.text, signature.text);
                         Nav.absence-form = false;
                     }
+                }
+            }
+        }
+    }
+}
+
+// "Absenz entschuldigen" (_JustifyForm).
+export component JustifyForm inherits Rectangle {
+    background: #00000099;
+    TouchArea {
+        clicked => { Nav.justify = -1; }
+    }
+    GlowCard {
+        x: (parent.width - self.width) / 2;
+        y: (parent.height - self.height) / 2;
+        width: min(460px, parent.width - 24px);
+        height: min(self.preferred-height, parent.height - 24px);
+        TouchArea { }
+        VerticalLayout {
+            spacing: 10px;
+            Text {
+                text: "Absenz entschuldigen";
+                color: Theme.text;
+                font-family: Theme.font-display;
+                font-size: 20px;
+                font-weight: 600;
+            }
+            Text {
+                text: Nav.justify-title;
+                color: Theme.muted;
+                font-family: Theme.font-body;
+                font-size: 13px;
+                wrap: word-wrap;
+            }
+            justify-reason := Field { placeholder: "Grund, z. B. Arzttermin"; }
+            justify-signature := Field {
+                placeholder: "Unterschrift (Name)";
+                text: AppData.full-name;
+            }
+            Rectangle { height: 8px; }
+            PrimaryButton {
+                text: "Entschuldigung abschicken";
+                has-icon: true;
+                icon: @image-url("icons/check.svg");
+                enabled: justify-reason.text != "" && justify-signature.text != "";
+                clicked => {
+                    AppData.justify-absence(Nav.justify, justify-reason.text, justify-signature.text);
+                    Nav.justify = -1;
                 }
             }
         }
