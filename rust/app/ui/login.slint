@@ -1,77 +1,59 @@
 import { Theme } from "theme.slint";
 import { AppData } from "data.slint";
-import { Card, Field, PrimaryButton, GhostButton, SectionLabel } from "widgets.slint";
+import { GlowCard, Field, PrimaryButton, TextButton, HudLabel } from "widgets.slint";
 import { CheckBox } from "std-widgets.slint";
 
 export component LoginPage inherits Rectangle {
     property <string> school-name;
     property <string> school-url;
     property <bool> remember: true;
-    property <string> code;
-    background: Theme.bg;
-
-    // Soft glow behind the card.
-    Rectangle {
-        x: parent.width / 2 - 260px;
-        y: parent.height / 2 - 320px;
-        width: 520px;
-        height: 520px;
-        border-radius: 260px;
-        background: @radial-gradient(circle, Theme.accent.transparentize(Theme.dark ? 86% : 94%) 0%, transparent 70%);
-    }
 
     VerticalLayout {
         alignment: center;
         padding: Theme.page-padding;
         HorizontalLayout {
             alignment: center;
-            Card {
+            GlowCard {
                 width: min(440px, root.width - 2 * Theme.page-padding);
                 VerticalLayout {
-                    padding: 24px;
-                    spacing: 14px;
+                    spacing: 12px;
                     Text {
                         text: "Register";
+                        color: Theme.accent-gradient;
+                        font-family: Theme.font-display;
                         font-size: 32px;
-                        font-weight: 800;
-                        color: Theme.accent;
+                        font-weight: 700;
                         horizontal-alignment: center;
                     }
-                    Text {
-                        text: "Rust-Version · schnell & sparsam";
-                        font-size: Theme.font-small;
-                        color: Theme.muted;
-                        horizontal-alignment: center;
-                    }
-
                     if !AppData.two-factor: VerticalLayout {
                         spacing: 10px;
-                        SectionLabel { text: "SCHULE"; }
+                        HudLabel { text: "SCHULE"; }
                         if root.school-url == "": VerticalLayout {
                             spacing: 6px;
-                            search := Field {
+                            Field {
                                 placeholder: "Schule suchen, z. B. Fallmerayer";
                                 edited(t) => { AppData.search-schools(t); }
                             }
                             Rectangle {
                                 height: min(220px, AppData.schools.length * 40px);
                                 visible: AppData.schools.length > 0;
-                                border-radius: Theme.radius-small;
+                                border-radius: 10px;
                                 border-width: 1px;
-                                border-color: Theme.border;
+                                border-color: Theme.outline;
                                 clip: true;
-                                list := Flickable {
+                                Flickable {
                                     content-height: AppData.schools.length * 40px;
                                     for school[i] in AppData.schools: Rectangle {
                                         y: i * 40px;
                                         height: 40px;
-                                        background: ta.has-hover ? Theme.card-hover : transparent;
+                                        background: ta.has-hover ? Theme.surface-high : transparent;
                                         Text {
                                             x: 12px;
                                             width: parent.width - 24px;
                                             text: school.name;
                                             color: Theme.text;
-                                            font-size: Theme.font;
+                                            font-family: Theme.font-body;
+                                            font-size: 14px;
                                             vertical-alignment: center;
                                             overflow: elide;
                                         }
@@ -91,12 +73,14 @@ export component LoginPage inherits Rectangle {
                             Text {
                                 text: root.school-name;
                                 color: Theme.text;
-                                font-size: Theme.font;
+                                font-family: Theme.font-body;
+                                font-size: 14px;
                                 font-weight: 600;
                                 vertical-alignment: center;
                                 wrap: word-wrap;
+                                horizontal-stretch: 1;
                             }
-                            GhostButton {
+                            TextButton {
                                 text: "Ändern";
                                 clicked => {
                                     root.school-url = "";
@@ -104,8 +88,7 @@ export component LoginPage inherits Rectangle {
                                 }
                             }
                         }
-
-                        SectionLabel { text: "ANMELDUNG"; }
+                        HudLabel { text: "ANMELDUNG"; }
                         user := Field { placeholder: "Benutzername"; }
                         pass := Field {
                             placeholder: "Passwort";
@@ -121,7 +104,8 @@ export component LoginPage inherits Rectangle {
                         if AppData.error != "": Text {
                             text: AppData.error;
                             color: Theme.danger;
-                            font-size: Theme.font;
+                            font-family: Theme.font-body;
+                            font-size: 14px;
                             wrap: word-wrap;
                         }
                         PrimaryButton {
@@ -134,7 +118,7 @@ export component LoginPage inherits Rectangle {
                         }
                         HorizontalLayout {
                             alignment: center;
-                            GhostButton {
+                            TextButton {
                                 text: "Ohne Konto ausprobieren (Demo)";
                                 clicked => {
                                     AppData.login("https://vinzentinum.digitalesregister.it", "demo-user-6540", "demo", false);
@@ -142,14 +126,14 @@ export component LoginPage inherits Rectangle {
                             }
                         }
                     }
-
                     if AppData.two-factor: VerticalLayout {
                         spacing: 10px;
                         Text {
                             text: "Zweiter Faktor wird benötigt";
                             color: Theme.text;
-                            font-size: Theme.font-big;
-                            font-weight: 700;
+                            font-family: Theme.font-display;
+                            font-size: 18px;
+                            font-weight: 600;
                         }
                         tfa := Field {
                             placeholder: "Code";

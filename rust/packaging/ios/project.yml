@@ -20,6 +20,9 @@ targets:
         CFBundleDisplayName: Register Rust
         CFBundleExecutable: RegisterRust
         UILaunchScreen: {}
+        # iOS 27 requires apps to declare the scene lifecycle.
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
         UIRequiresFullScreen: true
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         ITSAppUsesNonExemptEncryption: false

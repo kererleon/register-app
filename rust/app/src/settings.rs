@@ -1,6 +1,7 @@
 //! Settings in a small file; the login in the system's secure store
 //! (Keychain on macOS, Credential Manager on Windows).
 
+use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::sync::OnceLock;
 
@@ -38,6 +39,32 @@ pub struct Settings {
     /// The accent of the clean look, as 0xAARRGGBB.
     pub accent: u32,
     pub school: String,
+    /// Each subject keeps the colour it got first (0xRRGGBB).
+    pub subject_colors: BTreeMap<String, u32>,
+}
+
+/// Material's primary colours without the ones that look alike, as the
+/// Flutter app assigns them; the look-alikes come last.
+const SUBJECT_COLORS: [u32; 18] = [
+    0xF44336, 0xE91E63, 0x9C27B0, 0x673AB7, 0x3F51B5, 0x2196F3, 0x009688, 0x4CAF50, 0x8BC34A, 0xFFEB3B,
+    0xFF9800, 0xFF5722, 0x795548, 0x607D8B, 0xCDDC39, 0x03A9F4, 0x00BCD4, 0xFFC107,
+];
+
+impl Settings {
+    /// The colour of [subject]; new subjects get the next free one.
+    pub fn subject_color(&mut self, subject: &str) -> u32 {
+        if let Some(&c) = self.subject_colors.get(subject) {
+            return c;
+        }
+        let used: Vec<u32> = self.subject_colors.values().copied().collect();
+        let c = SUBJECT_COLORS
+            .iter()
+            .copied()
+            .find(|c| !used.contains(c))
+            .unwrap_or(SUBJECT_COLORS[self.subject_colors.len() % SUBJECT_COLORS.len()]);
+        self.subject_colors.insert(subject.to_owned(), c);
+        c
+    }
 }
 
 impl Settings {
@@ -54,11 +81,20 @@ impl Settings {
             dark: v["dark"].as_bool().unwrap_or(true),
             accent: v["accent"].as_u64().map(|a| a as u32).unwrap_or(0xff5b6cff),
             school: v["school"].as_str().unwrap_or_default().to_owned(),
+            subject_colors: v["subjectColors"]
+                .as_object()
+                .map(|m| m.iter().filter_map(|(k, c)| Some((k.clone(), c.as_u64()? as u32))).collect())
+                .unwrap_or_default(),
         }
     }
 
     pub fn save(&self) {
-        let v = json!({ "dark": self.dark, "accent": self.accent, "school": self.school });
+        let v = json!({
+            "dark": self.dark,
+            "accent": self.accent,
+            "school": self.school,
+            "subjectColors": self.subject_colors,
+        });
         let _ = std::fs::create_dir_all(dir());
         let _ = std::fs::write(Self::path(), v.to_string());
     }

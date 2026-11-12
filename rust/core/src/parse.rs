@@ -145,7 +145,8 @@ pub fn subjects(data: &Value, semester: usize, subjects: &mut Vec<Subject>) {
     }
     // Subjects that disappeared are no longer attended (new school year).
     subjects.retain(|s| seen.contains(&s.id));
-    subjects.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
+    // In the register's order, as the Flutter app shows them.
+    subjects.sort_by_key(|s| seen.iter().position(|id| *id == s.id));
 }
 
 /// The details of one subject. The register sends them as a JSON string.
@@ -259,6 +260,7 @@ pub fn absences(data: &Value) -> Absences {
             justified: Justified::from_code(int(&g["justified"]).unwrap_or(1)),
             reason: non_empty(&g["reason"]),
             signature: non_empty(&g["reason_signature"]),
+            reason_time: date_time(&g["reason_timestamp"]),
             note: non_empty(&g["note"]),
             hours: list(&g["group"])
                 .iter()

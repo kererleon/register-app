@@ -279,6 +279,9 @@ pub struct AbsenceGroup {
     pub justified: Justified,
     pub reason: Option<String>,
     pub signature: Option<String>,
+    /// When the reason was entered.
+    #[serde(default)]
+    pub reason_time: Option<NaiveDateTime>,
     pub note: Option<String>,
     pub hours: Vec<MissedHour>,
 }

@@ -28,17 +28,6 @@ pub fn long(date: NaiveDate) -> String {
     format!("{}, {}", weekday(date), day_month(date))
 }
 
-/// "heute", "morgen", "in 3 Tagen", "vor 2 Tagen"
-pub fn relative(date: NaiveDate, today: NaiveDate) -> String {
-    match (date - today).num_days() {
-        0 => "heute".into(),
-        1 => "morgen".into(),
-        -1 => "gestern".into(),
-        n if n > 1 => format!("in {n} Tagen"),
-        n => format!("vor {} Tagen", -n),
-    }
-}
-
 /// The name the register uses for the type (for toggling entries).
 pub fn kind_name(kind: HomeworkKind) -> &'static str {
     match kind {
