@@ -1,5 +1,5 @@
 import { Theme } from "theme.slint";
-import { AppData } from "data.slint";
+import { AppData, Nav, Prefs } from "data.slint";
 import { GlowCard, Field, PrimaryButton, TextButton, HudLabel } from "widgets.slint";
 import { CheckBox } from "std-widgets.slint";
 
@@ -97,9 +97,33 @@ export component LoginPage inherits Rectangle {
                                 AppData.login(root.school-url, user.text, pass.text, root.remember);
                             }
                         }
-                        CheckBox {
-                            text: "Angemeldet bleiben";
-                            checked <=> root.remember;
+                        HorizontalLayout {
+                            CheckBox {
+                                text: "Angemeldet bleiben";
+                                checked <=> root.remember;
+                            }
+                            Rectangle { }
+                            if root.school-url != "": Rectangle {
+                                width: forgot.preferred-width + 32px;
+                                height: 34px;
+                                border-radius: 8px;
+                                background: forgot-ta.has-hover ? #9e9e9e22 : transparent;
+                                forgot := Text {
+                                    text: "Passwort vergessen";
+                                    color: #9e9e9e;
+                                    font-family: Theme.font-body;
+                                    font-size: 14px;
+                                    font-weight: 500;
+                                }
+                                forgot-ta := TouchArea {
+                                    mouse-cursor: pointer;
+                                    clicked => {
+                                        Prefs.reset-url = root.school-url;
+                                        Prefs.profile-message = "";
+                                        Nav.profile = 4;
+                                    }
+                                }
+                            }
                         }
                         if AppData.error != "": Text {
                             text: AppData.error;

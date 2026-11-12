@@ -1,13 +1,13 @@
 import { Theme } from "theme.slint";
-import { AppData, Nav, Deco, DecoItem, Competence, GradeGroup, ForecastResult, CalcGrade, DetailCard, DetailRow, TeacherView, TestItem, TargetChip, WeakSubject, HomeworkItem, HomeworkDay, GradeItem, SubjectItem, ChartLine, Lesson, WeekDay, AbsenceItem, MessageItem, SchoolItem, Prefs, NickItem, ColorItem } from "data.slint";
+import { AppData, Nav, Deco, DecoItem, Competence, GradeGroup, ForecastResult, CalcGrade, DetailCard, DetailRow, TeacherView, TestItem, TargetChip, WeakSubject, HomeworkItem, HomeworkDay, GradeItem, SubjectItem, ChartLine, Lesson, WeekDay, AbsenceItem, MessageItem, SchoolItem, Prefs, NickItem, ColorItem, ProtocolItem } from "data.slint";
 import { Backdrop, PrimaryButton } from "widgets.slint";
 import { LoginPage } from "login.slint";
 import { TodayPage, HomeworkPage, StudyPlanDialog, InfoDialog } from "pages.slint";
 import { GradesPage, ChartPage, CalculatorPage } from "grades.slint";
-import { CalendarPage, AbsencesPage, AbsenceForm, MessagesPage, CertificatePage, NotificationsPage } from "pages2.slint";
-import { SettingsPage, SettingsDialogs, ProfilePages } from "settings.slint";
+import { CalendarPage, AbsencesPage, AbsenceForm, MessagesPage, CertificatePage, NotificationsPage, JustifyForm } from "pages2.slint";
+import { SettingsPage, SettingsDialogs, ProfilePages, ProtocolPage, ConfirmDelete } from "settings.slint";
 
-export { Theme, AppData, Nav, Deco, DecoItem, Competence, GradeGroup, ForecastResult, CalcGrade, DetailCard, DetailRow, TeacherView, TestItem, TargetChip, WeakSubject, HomeworkItem, HomeworkDay, GradeItem, SubjectItem, ChartLine, Lesson, WeekDay, AbsenceItem, MessageItem, SchoolItem, Prefs, NickItem, ColorItem }
+export { Theme, AppData, Nav, Deco, DecoItem, Competence, GradeGroup, ForecastResult, CalcGrade, DetailCard, DetailRow, TeacherView, TestItem, TargetChip, WeakSubject, HomeworkItem, HomeworkDay, GradeItem, SubjectItem, ChartLine, Lesson, WeekDay, AbsenceItem, MessageItem, SchoolItem, Prefs, NickItem, ColorItem, ProtocolItem }
 
 struct NavEntry {
     icon: image,
@@ -433,6 +433,21 @@ export component AppWindow inherits Window {
     }
 
     if Nav.notifications: NotificationsPage {
+        width: 100%;
+        height: 100%;
+    }
+
+    if Nav.protocol: ProtocolPage {
+        width: 100%;
+        height: 100%;
+    }
+
+    if Nav.confirm-delete >= 0: ConfirmDelete {
+        width: 100%;
+        height: 100%;
+    }
+
+    if Nav.justify >= 0: JustifyForm {
         width: 100%;
         height: 100%;
     }

@@ -529,10 +529,10 @@ export component SettingsPage inherits Page {
                 }
             }
         }
-        Rectangle { height: 20px; }
-        HudLabel { text: "EIGENES HINTERGRUNDBILD"; }
-        Rectangle { height: 10px; }
-        HorizontalLayout {
+        if Prefs.can-pick: Rectangle { height: 20px; }
+        if Prefs.can-pick: HudLabel { text: "EIGENES HINTERGRUNDBILD"; }
+        if Prefs.can-pick: Rectangle { height: 10px; }
+        if Prefs.can-pick: HorizontalLayout {
             alignment: start;
             spacing: 8px;
             if Prefs.has-bg: Rectangle {
@@ -607,7 +607,7 @@ export component SettingsPage inherits Page {
                 released(v) => { Prefs.changed(); }
             }
         }
-        if !Prefs.has-bg: Text {
+        if !Prefs.has-bg && Prefs.can-pick: Text {
             text: "Das Bild bleibt nur auf diesem Gerät.";
             color: Theme.muted;
             font-family: Theme.font-body;
@@ -838,6 +838,13 @@ export component SettingsPage inherits Page {
     }
 
     Header { title: "Erweitert"; icon: @image-url("icons/tune.svg"); }
+    LinkTile {
+        title: "Netzwerkprotokoll";
+        clicked => {
+            Prefs.load-protocol();
+            Nav.protocol = true;
+        }
+    }
     LinkTile {
         title: "Quellcode & Downloads";
         subtitle: "github.com/kererleon/register-app";
@@ -1199,6 +1206,130 @@ component Label inherits Text {
     font-size: 13px;
 }
 
+// One part of a request (_Detail).
+component ProtocolDetail inherits VerticalLayout {
+    in property <string> kind;
+    in property <string> content;
+    padding-left: 24px;
+    padding-bottom: 8px;
+    HorizontalLayout {
+        alignment: start;
+        spacing: 4px;
+        Text {
+            text: root.kind;
+            color: Theme.text;
+            font-family: Theme.font-body;
+            font-size: 14px;
+            vertical-alignment: center;
+        }
+        IconButton {
+            icon: @image-url("icons/assignment.svg");
+            tint: Theme.text;
+            clicked => { Prefs.copy(root.content); }
+        }
+    }
+    Text {
+        text: root.content;
+        color: Theme.text;
+        font-family: Theme.font-body;
+        font-size: 14px;
+        wrap: word-wrap;
+    }
+}
+
+component ProtocolEntry inherits VerticalLayout {
+    in property <string> address;
+    in property <string> parameters;
+    in property <string> response;
+    property <bool> open: false;
+    ExpandTile {
+        title: root.address;
+        open <=> root.open;
+    }
+    if root.open: ProtocolDetail {
+        kind: "Parameter";
+        content: root.parameters;
+    }
+    if root.open: ProtocolDetail {
+        kind: "Antwort";
+        content: root.response;
+    }
+}
+
+// NetworkProtocolPage
+export component ProtocolPage inherits SubPage {
+    title: "Netzwerkprotokoll";
+    back => { Nav.protocol = false; }
+    if Prefs.protocol.length == 0: Text {
+        text: "Nichts vorhanden";
+        color: Theme.text;
+        font-family: Theme.font-body;
+        font-size: 14px;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+    if Prefs.protocol.length > 0: ScrollView {
+        VerticalLayout {
+            alignment: start;
+            for item in Prefs.protocol: ProtocolEntry {
+                address: item.address;
+                parameters: item.parameters;
+                response: item.response;
+            }
+        }
+    }
+}
+
+// "Erinnerung löschen?" (_showConfirmDelete)
+export component ConfirmDelete inherits Rectangle {
+    property <bool> never: false;
+    background: #00000099;
+    TouchArea {
+        clicked => { Nav.confirm-delete = -1; }
+    }
+    GlowCard {
+        x: (parent.width - self.width) / 2;
+        y: (parent.height - self.height) / 2;
+        width: min(400px, parent.width - 24px);
+        height: min(self.preferred-height, parent.height - 24px);
+        TouchArea { }
+        VerticalLayout {
+            spacing: 10px;
+            Text {
+                text: "Erinnerung löschen?";
+                color: Theme.text;
+                font-family: Theme.font-display;
+                font-size: 20px;
+                font-weight: Theme.display-weight;
+            }
+            SwitchTile {
+                title: "Nie fragen";
+                checked <=> root.never;
+            }
+            HorizontalLayout {
+                alignment: end;
+                spacing: 8px;
+                TextButton {
+                    text: "Abbrechen";
+                    clicked => { Nav.confirm-delete = -1; }
+                }
+                PrimaryButton {
+                    width: 110px;
+                    text: "Löschen";
+                    clicked => {
+                        if root.never {
+                            Prefs.ask-delete = false;
+                            Prefs.changed();
+                        }
+                        AppData.delete-reminder(Nav.confirm-delete);
+                        Nav.confirm-delete = -1;
+                    }
+                }
+            }
+        }
+    }
+}
+
 export component ProfilePages inherits Rectangle {
     if Nav.profile == 1: SubPage {
         title: "Profil";
@@ -1417,6 +1548,32 @@ export component ProfilePages inherits Rectangle {
                     busy: Prefs.profile-busy;
                     enabled: old.text != "" && new1.text != "" && new1.text == new2.text && !Prefs.profile-busy;
                     clicked => { Prefs.change-password(old.text, new1.text); }
+                }
+                if Prefs.profile-message != "": Answer { }
+            }
+        }
+    }
+
+    // RequestPassReset
+    if Nav.profile == 4: SubPage {
+        title: "Passwort vergessen";
+        back => { Nav.profile = 0; }
+        HorizontalLayout {
+            alignment: center;
+            VerticalLayout {
+                alignment: center;
+                width: min(460px, root.width - 16px);
+                spacing: 8px;
+                Label { text: "Benutzername"; }
+                reset-user := Field { }
+                Label { text: "Email-Adresse"; }
+                reset-email := Field { }
+                Rectangle { height: 8px; }
+                PrimaryButton {
+                    text: "Anfrage zum Zurücksetzen senden";
+                    busy: Prefs.profile-busy;
+                    enabled: reset-user.text != "" && reset-email.text != "" && !Prefs.profile-busy;
+                    clicked => { Prefs.request-reset(reset-user.text, reset-email.text); }
                 }
                 if Prefs.profile-message != "": Answer { }
             }

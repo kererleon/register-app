@@ -1,5 +1,5 @@
 import { Theme } from "theme.slint";
-import { AppData, Nav, HomeworkItem, Lesson, TestItem, TargetChip } from "data.slint";
+import { AppData, Nav, Prefs, HomeworkItem, Lesson, TestItem, TargetChip } from "data.slint";
 import { GlowCard, HoloPanel, HudLabel, SectionLabel, StatusPill, HoloToggle, IconButton, TextButton, EmptyState, Field, PrimaryButton, NeonRing, Meter } from "widgets.slint";
 import { ScrollView, DatePickerPopup } from "std-widgets.slint";
 
@@ -548,7 +548,13 @@ component HomeworkPanel inherits HoloPanel {
             icon: @image-url("icons/close.svg");
             icon-size: 20px;
             tint: Theme.text;
-            clicked => { AppData.delete-reminder(item.id); }
+            clicked => {
+                if Prefs.ask-delete {
+                    Nav.confirm-delete = item.id;
+                } else {
+                    AppData.delete-reminder(item.id);
+                }
+            }
         }
         VerticalLayout {
             spacing: 4px;

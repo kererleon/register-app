@@ -83,6 +83,61 @@ pub struct Client {
     pass: String,
     demo: bool,
     session: Mutex<Session>,
+    /// The latest requests, for the network protocol page.
+    protocol: Mutex<Vec<ProtocolItem>>,
+}
+
+/// One request and its answer.
+#[derive(Debug, Clone, PartialEq)]
+pub struct ProtocolItem {
+    pub address: String,
+    pub parameters: String,
+    pub response: String,
+}
+
+/// Parameters as text, without what is secret.
+fn protocol_parameters(args: &Value) -> String {
+    let mut shown = args.clone();
+    if let Some(map) = shown.as_object_mut() {
+        for (key, value) in map.iter_mut() {
+            if key.to_ascii_lowercase().contains("password") {
+                *value = Value::String("•••".into());
+            }
+        }
+    }
+    serde_json::to_string_pretty(&shown).unwrap_or_default()
+}
+
+/// Asks the school's register to send a mail for a new password. Returns
+/// the server's message.
+pub fn request_password_reset(url: &str, user: &str, email: &str) -> Result<String, Error> {
+    let url = fix_url(url);
+    let agent: Agent = Agent::config_builder()
+        .user_agent(USER_AGENT)
+        .timeout_global(Some(Duration::from_secs(25)))
+        .http_status_as_error(false)
+        .build()
+        .into();
+    // This address has no /v2/ in its path, on purpose.
+    let response: Value = agent
+        .post(format!("{url}/api/auth/resetPassword"))
+        .send_json(json!({ "email": email, "username": user }))
+        .map_err(|e| match network_error(e) {
+            Error::NoInternet => Error::Server(format!("Keine Verbindung mit \"{url}\" möglich")),
+            other => other,
+        })?
+        .body_mut()
+        .read_json()
+        .map_err(|e| Error::Server(e.to_string()))?;
+    if response["error"].is_null() {
+        Ok(response["message"].as_str().unwrap_or_default().to_owned())
+    } else {
+        Err(Error::Server(format!(
+            "[{}]: {}",
+            response["error"].as_str().unwrap_or("error"),
+            response["message"].as_str().unwrap_or_default()
+        )))
+    }
 }
 
 impl Client {
@@ -101,6 +156,7 @@ impl Client {
             user: user.to_owned(),
             pass: pass.to_owned(),
             session: Mutex::new(Session::default()),
+            protocol: Mutex::new(Vec::new()),
         }
     }
 
@@ -215,10 +271,14 @@ impl Client {
     /// when it is not JSON). Logs in again when the session ended.
     pub fn send(&self, path: &str, args: Value) -> Result<Value, Error> {
         if self.demo {
-            return Ok(demo::response(path, &args));
+            let answer = demo::response(path, &args);
+            self.note(path, &args, &answer.to_string());
+            return Ok(answer);
         }
         self.ensure_logged_in()?;
-        let mut body = self.post_raw(path, &args)?;
+        let first = self.post_raw(path, &args);
+        self.note(path, &args, first.as_deref().unwrap_or(""));
+        let mut body = first?;
         if is_logout_redirect(&body) {
             // Logged out by the server (e.g. logged in elsewhere): once more.
             self.relogin()?;
@@ -234,6 +294,24 @@ impl Client {
             }
         }
         Ok(serde_json::from_str(&body).unwrap_or(Value::String(body)))
+    }
+
+    fn note(&self, path: &str, args: &Value, response: &str) {
+        let mut protocol = self.protocol.lock().unwrap();
+        // The newest 150 are plenty; long answers are cut.
+        if protocol.len() >= 150 {
+            protocol.remove(0);
+        }
+        let mut response: String = response.chars().take(6000).collect();
+        if response.is_empty() {
+            response = "Keine Antwort".into();
+        }
+        protocol.push(ProtocolItem { address: self.address(path), parameters: protocol_parameters(args), response });
+    }
+
+    /// The requests since the app started.
+    pub fn protocol(&self) -> Vec<ProtocolItem> {
+        self.protocol.lock().unwrap().clone()
     }
 
     /// A page of the register as text (GET), e.g. the certificate.
@@ -336,6 +414,17 @@ mod tests {
     fn urls() {
         assert_eq!(fix_url("fallmerayer.digitalesregister.it/v2/login"), "https://fallmerayer.digitalesregister.it");
         assert_eq!(fix_url("https://x.digitalesregister.it/"), "https://x.digitalesregister.it");
+    }
+
+    #[test]
+    fn protocol_hides_passwords() {
+        let shown = protocol_parameters(&json!({ "email": "a@b.c", "password": "geheim", "oldPassword": "x" }));
+        assert!(!shown.contains("geheim"));
+        assert!(shown.contains("a@b.c"));
+        let c = Client::new("https://vinzentinum.digitalesregister.it", "demo-user-6540", "x");
+        c.send("api/profile/get", json!({})).unwrap();
+        assert_eq!(c.protocol().len(), 1);
+        assert!(c.protocol()[0].address.ends_with("/v2/api/profile/get"));
     }
 
     #[test]
