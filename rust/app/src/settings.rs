@@ -6,9 +6,9 @@ use std::sync::OnceLock;
 
 use serde_json::{Value, json};
 
-#[cfg_attr(target_os = "android", allow(dead_code))]
+#[cfg_attr(any(target_os = "android", target_os = "ios"), allow(dead_code))]
 const SERVICE: &str = "Register-Rust";
-#[cfg_attr(target_os = "android", allow(dead_code))]
+#[cfg_attr(any(target_os = "android", target_os = "ios"), allow(dead_code))]
 const ACCOUNT: &str = "login";
 
 static DIR: OnceLock<PathBuf> = OnceLock::new();
@@ -21,6 +21,11 @@ pub fn set_dir(dir: PathBuf) {
 
 pub fn dir() -> PathBuf {
     DIR.get_or_init(|| {
+        // iOS: the app's own folder, encrypted while the iPhone is locked.
+        #[cfg(target_os = "ios")]
+        if let Some(home) = std::env::var_os("HOME") {
+            return PathBuf::from(home).join("Library/Application Support");
+        }
         directories::ProjectDirs::from("com", "webandgrow", "Register-Rust")
             .map(|d| d.data_dir().to_path_buf())
             .unwrap_or_else(|| std::env::temp_dir().join("register-rust"))
@@ -59,24 +64,23 @@ impl Settings {
     }
 }
 
-#[cfg(not(target_os = "android"))]
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 fn entry() -> Option<keyring::Entry> {
     keyring::Entry::new(SERVICE, ACCOUNT).ok()
 }
 
-/// Android has no keyring here; the app's own folder can only be read by
-/// the app itself.
-#[cfg(target_os = "android")]
+/// Android and iOS: the app's own folder, which only the app can read.
+#[cfg(any(target_os = "android", target_os = "ios"))]
 fn login_file() -> PathBuf {
     dir().join("login.json")
 }
 
 fn write_secret(secret: &str) {
-    #[cfg(not(target_os = "android"))]
+    #[cfg(not(any(target_os = "android", target_os = "ios")))]
     if let Some(e) = entry() {
         let _ = e.set_password(secret);
     }
-    #[cfg(target_os = "android")]
+    #[cfg(any(target_os = "android", target_os = "ios"))]
     {
         let _ = std::fs::create_dir_all(dir());
         let _ = std::fs::write(login_file(), secret);
@@ -84,9 +88,9 @@ fn write_secret(secret: &str) {
 }
 
 fn read_secret() -> Option<String> {
-    #[cfg(not(target_os = "android"))]
+    #[cfg(not(any(target_os = "android", target_os = "ios")))]
     return entry()?.get_password().ok();
-    #[cfg(target_os = "android")]
+    #[cfg(any(target_os = "android", target_os = "ios"))]
     return std::fs::read_to_string(login_file()).ok();
 }
 
@@ -104,10 +108,10 @@ pub fn load_login() -> Option<(String, String, String)> {
 }
 
 pub fn forget_login() {
-    #[cfg(not(target_os = "android"))]
+    #[cfg(not(any(target_os = "android", target_os = "ios")))]
     if let Some(e) = entry() {
         let _ = e.delete_credential();
     }
-    #[cfg(target_os = "android")]
+    #[cfg(any(target_os = "android", target_os = "ios"))]
     let _ = std::fs::remove_file(login_file());
 }

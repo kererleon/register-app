@@ -22,10 +22,10 @@ pub fn announce(changes: &[Change]) {
     }
 }
 
-#[cfg(not(target_os = "android"))]
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 fn show(title: &str, body: &str) {
     let _ = notify_rust::Notification::new().appname("Register").summary(title).body(body).show();
 }
 
-#[cfg(target_os = "android")]
+#[cfg(any(target_os = "android", target_os = "ios"))]
 fn show(_title: &str, _body: &str) {}
