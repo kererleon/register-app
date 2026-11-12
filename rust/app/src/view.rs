@@ -128,6 +128,7 @@ fn homework_item(h: &Homework, header: String) -> HomeworkItem {
     if let Some(g) = h.grade.as_deref().and_then(|g| register_core::parse::grade_value(Some(g))) {
         title = format!("{title} · {}", grades::format_grade(g));
     }
+    let test = h.is_test();
     HomeworkItem {
         id: h.id as i32,
         kind: s(format::kind_name(h.kind)),
@@ -135,17 +136,30 @@ fn homework_item(h: &Homework, header: String) -> HomeworkItem {
         header: s(header),
         title: s(title),
         subtitle: s(&h.subtitle),
-        is_test: h.is_test(),
+        is_test: test,
         is_grade: h.kind == HomeworkKind::Grade,
         checkable: h.checkable,
         checked: h.checked,
         deletable: h.is_reminder(),
+        type_icon: if test {
+            1
+        } else {
+            match h.kind {
+                HomeworkKind::Grade => 2,
+                HomeworkKind::Observation => 3,
+                HomeworkKind::GradeGroup => 4,
+                HomeworkKind::Homework => 5,
+                _ => 0,
+            }
+        },
+        accent: if test { 1 } else if h.kind == HomeworkKind::Grade || h.checked { 2 } else { 0 },
+        badge: SharedString::new(),
+        moved_to: SharedString::new(),
+        day_date: SharedString::new(),
+        index: 0,
     }
 }
 
-fn label_caps(h: &Homework) -> String {
-    h.label.as_deref().unwrap_or(if h.is_reminder() { "Erinnerung" } else { "" }).to_uppercase()
-}
 
 /// "Fr. 13.11." (EE dd.MM.)
 pub fn day_short(date: NaiveDate) -> String {
@@ -301,6 +315,7 @@ pub fn study_days(test: NaiveDate, today: NaiveDate, sessions: usize) -> Vec<Nai
 fn apply_homework(d: &AppData, state: &State) {
     let today = today();
     let past = state.show_past;
+    let data = &state.data;
     let mut days: Vec<HomeworkDay> = Vec::new();
     let mut add = |date: NaiveDate, items: &[Homework]| {
         let title = match (date - today).num_days() {
@@ -314,31 +329,87 @@ fn apply_homework(d: &AppData, state: &State) {
         } else {
             format!("{}. · {}", wd2(date).to_uppercase(), date.format("%d.%m.%Y"))
         };
+        let key_date = date.format("%d.%m.%Y").to_string();
+        let items: Vec<HomeworkItem> = items
+            .iter()
+            .enumerate()
+            .map(|(i, h)| {
+                let key = register_core::data::homework_key(h);
+                let mut item = homework_item(h, h.label.as_deref().unwrap_or("").to_uppercase());
+                item.day_date = s(&key_date);
+                item.index = i as i32;
+                if data.unseen.contains(&key) {
+                    item.badge = s(if data.previous.contains_key(&key) { "geändert" } else { "neu" });
+                }
+                if let Some(m) = data.moved.get(&key) {
+                    item.moved_to = s(day_short(m.to));
+                }
+                item
+            })
+            .collect();
         days.push(HomeworkDay {
-            date: s(date.format("%d.%m.%Y").to_string()),
+            date: s(key_date),
             header: s(header),
             title: s(title),
             is_today: date == today,
-            items: model(items.iter().map(|h| homework_item(h, label_caps(h))).collect()),
+            items: model(items),
         });
     };
     if past {
-        let mut list: Vec<_> = state.data.dashboard.iter().filter(|d| d.date < today && !d.homework.is_empty()).collect();
+        let mut list: Vec<_> = data.dashboard.iter().filter(|d| d.date < today && !d.homework.is_empty()).collect();
         list.reverse();
         for day in list {
             add(day.date, &day.homework);
         }
     } else {
-        // Today and tomorrow are always shown, to add reminders.
-        for date in [today, today + Duration::days(1)] {
-            add(date, state.data.homework_on(date));
-        }
-        for day in state.data.dashboard.iter().filter(|d| d.date > today + Duration::days(1) && !d.homework.is_empty()) {
-            add(day.date, &day.homework);
+        // Every day from today to the last entry, so reminders can be added
+        // to any of them.
+        let last = data.dashboard.iter().map(|d| d.date).max().unwrap_or(today).max(today + Duration::days(1));
+        let mut date = today;
+        while date <= last {
+            add(date, data.homework_on(date));
+            date += Duration::days(1);
         }
     }
     d.set_show_past(past);
     d.set_homework(model(days));
+}
+
+/// Details of an entry for the info dialog.
+pub fn homework_info(data: &register_core::data::Data, h: &Homework, date: NaiveDate) -> String {
+    let key = register_core::data::homework_key(h);
+    let mut lines = Vec::new();
+    let kind = match h.kind {
+        HomeworkKind::LessonHomework => "Hausaufgabe aus dem Unterricht",
+        HomeworkKind::GradeGroup => if h.is_test() { "Test / Schularbeit" } else { "Prüfung oder Abgabe" },
+        HomeworkKind::Grade => "Note",
+        HomeworkKind::Observation => "Beobachtung",
+        HomeworkKind::Homework => "Eigene Erinnerung",
+        HomeworkKind::Other => "Eintrag",
+    };
+    lines.push(format!("{kind} für {}", format::long(date)));
+    if let Some(label) = &h.label {
+        lines.push(format!("Fach: {label}"));
+    }
+    if let Some(deadline) = h.deadline {
+        lines.push(format!("Fällig: {} um {:02}:{:02}", deadline.date().format("%d.%m.%Y"), deadline.hour(), deadline.minute()));
+    }
+    let stamp = |t: i64| {
+        chrono::DateTime::from_timestamp(t, 0)
+            .map(|t| t.with_timezone(&Local).format("%d.%m.%Y, %H:%M").to_string())
+            .unwrap_or_default()
+    };
+    if let Some(&t) = data.first_seen.get(&key) {
+        lines.push(format!("Zuerst gesehen: {}", stamp(t)));
+    }
+    if let Some(p) = data.previous.get(&key) {
+        lines.push(format!("Geändert: {}", stamp(p.changed_at)));
+        lines.push(format!("Vorher: {}{}", p.title, if p.subtitle.is_empty() { String::new() } else { format!(" – {}", p.subtitle) }));
+    }
+    if let Some(m) = data.moved.get(&key) {
+        lines.push(format!("Verschoben auf {}", format::long(m.to)));
+    }
+    lines.join("\n")
 }
 
 fn semester_of(index: i32) -> Semester {

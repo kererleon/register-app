@@ -1,7 +1,7 @@
 import { Theme } from "theme.slint";
 import { AppData, Nav, HomeworkItem, Lesson, TestItem, TargetChip } from "data.slint";
 import { GlowCard, HoloPanel, HudLabel, SectionLabel, StatusPill, HoloToggle, IconButton, TextButton, EmptyState, Field, PrimaryButton, NeonRing, Meter } from "widgets.slint";
-import { ScrollView } from "std-widgets.slint";
+import { ScrollView, DatePickerPopup } from "std-widgets.slint";
 
 // Scrollable content, centred and at most 860 px wide (readablePadding).
 export component Page inherits ScrollView {
@@ -535,36 +535,51 @@ component NeonCheck inherits Rectangle {
 
 component HomeworkPanel inherits HoloPanel {
     in property <HomeworkItem> item;
-    has-accent: item.is-test;
-    accent: Theme.danger;
-    inner-padding: 12px;
+    property <color> type-color: item.type-icon == 1 ? Theme.danger : (item.type-icon == 2 ? Theme.success : (item.type-icon == 3 || item.type-icon == 4 ? Theme.secondary : Theme.primary));
+    has-accent: item.accent != 0;
+    accent: item.accent == 1 ? Theme.danger : Theme.success;
+    highlighted: item.badge != "";
+    inner-padding: 10px;
     HorizontalLayout {
-        spacing: 10px;
+        spacing: 6px;
+        if item.deletable: IconButton {
+            width: 30px;
+            height: 30px;
+            icon: @image-url("icons/close.svg");
+            icon-size: 20px;
+            tint: Theme.text;
+            clicked => { AppData.delete-reminder(item.id); }
+        }
         VerticalLayout {
-            spacing: 5px;
+            spacing: 4px;
             horizontal-stretch: 1;
+            padding-left: 2px;
             HorizontalLayout {
                 spacing: 6px;
                 Image {
-                    width: 15px;
-                    height: 15px;
+                    width: 16px;
+                    height: 16px;
                     y: (parent.height - self.height) / 2;
-                    source: item.is-test ? @image-url("icons/bolt.svg") : (item.is-grade ? @image-url("icons/star.svg") : @image-url("icons/assignment.svg"));
-                    colorize: item.is-test ? Theme.danger : Theme.cyan;
+                    source: item.type-icon == 1 ? @image-url("icons/bolt.svg") : (item.type-icon == 2 ? @image-url("icons/insights.svg") : (item.type-icon == 3 ? @image-url("icons/visibility.svg") : (item.type-icon == 4 ? @image-url("icons/event_note.svg") : (item.type-icon == 5 ? @image-url("icons/edit_note.svg") : @image-url("icons/assignment.svg")))));
+                    colorize: root.type-color;
                 }
-                HudLabel {
+                if item.header != "": HudLabel {
                     text: item.header;
-                    color: item.is-test ? Theme.danger : Theme.cyan;
+                    color: root.type-color;
                     vertical-alignment: center;
+                }
+                if item.badge != "": StatusPill {
+                    text: item.badge;
+                    tint: Theme.cyan;
                 }
                 Rectangle { }
             }
             Text {
                 text: item.title;
-                color: item.checked ? Theme.muted : Theme.text;
+                color: Theme.text;
                 font-family: Theme.font-body;
                 font-size: 16px;
-                font-weight: 500;
+                font-weight: 600;
                 wrap: word-wrap;
             }
             if item.subtitle != "": Text {
@@ -574,21 +589,101 @@ component HomeworkPanel inherits HoloPanel {
                 font-size: 14px;
                 wrap: word-wrap;
             }
+            if item.moved-to != "": HorizontalLayout {
+                padding-top: 4px;
+                spacing: 8px;
+                alignment: start;
+                StatusPill {
+                    text: "verschoben";
+                    tint: Theme.warning;
+                    icon: @image-url("icons/event_repeat.svg");
+                    has-icon: true;
+                }
+                HudLabel {
+                    text: "AUF " + item.moved-to;
+                    vertical-alignment: center;
+                }
+                TextButton {
+                    text: "Zurücksetzen";
+                    icon: @image-url("icons/undo.svg");
+                    has-icon: true;
+                    clicked => { AppData.reset-move(item.day-date, item.index); }
+                }
+            }
         }
         VerticalLayout {
-            width: 28px;
-            spacing: 6px;
+            spacing: 0px;
             alignment: start;
-            if item.deletable: IconButton {
-                width: 28px;
-                height: 28px;
-                icon: @image-url("icons/delete_outline.svg");
-                icon-size: 19px;
-                clicked => { AppData.delete-reminder(item.id); }
+            IconButton {
+                width: 34px;
+                height: 34px;
+                icon: @image-url("icons/event_repeat.svg");
+                icon-size: 20px;
+                tint: Theme.text;
+                clicked => { picker.show(); }
             }
-            if item.checkable: NeonCheck {
-                value: item.checked;
-                toggled => { AppData.toggle-done(item.id, item.kind, !item.checked); }
+            IconButton {
+                width: 34px;
+                height: 34px;
+                icon: @image-url("icons/info_outline.svg");
+                icon-size: 20px;
+                tint: Theme.text;
+                clicked => { AppData.homework-info(item.day-date, item.index); }
+            }
+            if item.checkable: HorizontalLayout {
+                alignment: center;
+                padding-top: 4px;
+                NeonCheck {
+                    value: item.checked;
+                    toggled => { AppData.toggle-done(item.id, item.kind, !item.checked); }
+                }
+            }
+        }
+    }
+    picker := DatePickerPopup {
+        title: item.deletable ? "Erinnerung verschieben" : "Als Erinnerung verschieben";
+        accepted(date) => {
+            picker.close();
+            AppData.move-homework(item.day-date, item.index, date.year, date.month, date.day);
+        }
+        canceled => { picker.close(); }
+    }
+}
+
+// The details of an entry (_showHistory / info).
+export component InfoDialog inherits Rectangle {
+    background: #00000099;
+    TouchArea {
+        clicked => { Nav.info = false; }
+    }
+    GlowCard {
+        x: (parent.width - self.width) / 2;
+        y: (parent.height - self.height) / 2;
+        width: min(460px, parent.width - 24px);
+        TouchArea { }
+        VerticalLayout {
+            spacing: 12px;
+            Text {
+                text: AppData.info-title;
+                color: Theme.text;
+                font-family: Theme.font-display;
+                font-size: 20px;
+                font-weight: Theme.display-weight;
+                wrap: word-wrap;
+            }
+            Text {
+                text: AppData.info-text;
+                color: Theme.text;
+                font-family: Theme.font-body;
+                font-size: 14px;
+                wrap: word-wrap;
+            }
+            HorizontalLayout {
+                alignment: end;
+                TextButton {
+                    text: "OK";
+                    clicked => { Nav.info = false; }
+                }
             }
         }
     }

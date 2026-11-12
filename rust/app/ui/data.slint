@@ -14,6 +14,12 @@ export struct HomeworkItem {
     checkable: bool,
     checked: bool,
     deletable: bool,
+    type-icon: int,   // 0 assignment, 1 test, 2 grade, 3 observation, 4 test group, 5 reminder
+    accent: int,      // 0 none, 1 red (test), 2 green (grade or done)
+    badge: string,    // "neu", "geändert"
+    moved-to: string, // "Fr. 13.11."
+    day-date: string, // the entry's day, to find it again
+    index: int,       // its place on that day
 }
 
 export struct HomeworkDay {
@@ -201,6 +207,12 @@ export global AppData {
     callback set-show-past(bool);
     callback add-reminder(string /* date */, string /* text */);
     callback delete-reminder(int);
+    callback move-homework(string /* day */, int /* index */, int /* year */, int /* month */, int /* day */);
+    callback reset-move(string /* day */, int /* index */);
+    callback homework-info(string /* day */, int /* index */);
+    callback page-shown(int);
+    in-out property <string> info-title;
+    in-out property <string> info-text;
 
     // --- grades ---
     in-out property <[SubjectItem]> subjects;
@@ -266,6 +278,7 @@ export global Nav {
     in-out property <int> page: 0;
     in-out property <bool> absence-form: false;
     in-out property <int> study-plan: -1; // the test whose plan is open
+    in-out property <bool> info: false;
 }
 
 // Decorations of the brainrot and israel backgrounds: emojis, stars and
