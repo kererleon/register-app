@@ -109,6 +109,20 @@ pub fn response(path: &str, args: &Value) -> Value {
             shift(&mut v, start - ymd(CALENDAR_MONDAY));
             v
         }
+        // The demo has no messages; REGISTER_TEST_MESSAGES shows some for trying the pages.
+        "api/notification/unread" if std::env::var_os("REGISTER_TEST_MESSAGES").is_some() => serde_json::json!([
+            {"id": 1, "title": "Neue Note in Mathematik", "subTitle": "Schularbeit: 8", "type": "grade", "timeSent": "2026-11-11 10:05:00"},
+            {"id": 2, "title": "Neue Mitteilung", "subTitle": "Elternsprechtag", "type": "message", "objectId": 7, "timeSent": "2026-11-10 08:15:00"}
+        ]),
+        "api/message/getMyMessages" if std::env::var_os("REGISTER_TEST_MESSAGES").is_some() => serde_json::json!([
+            {"id": 7, "subject": "Elternsprechtag", "fromName": "Max Mustermann", "recipientString": "Klasse 4A",
+             "text": "{\"ops\":[{\"insert\":\"Liebe Eltern,\\nder Elternsprechtag findet am 20. November statt. Der Plan liegt bei.\\n\"}]}",
+             "timeSent": "2026-11-10 08:15:00", "timeRead": null,
+             "submissions": [{"id": 3, "messageId": 7, "type": "file", "isDownloadable": 1, "originalName": "Plan.txt", "file": "abc.txt"}]},
+            {"id": 5, "subject": "Ausflug nach Bozen", "fromName": "Max Mustermann", "recipientString": "Klasse 4A",
+             "text": "{\"ops\":[{\"insert\":\"Treffpunkt ist um 7:30 Uhr am Bahnhof.\\n\"}]}",
+             "timeSent": "2026-10-28 14:40:00", "timeRead": "2026-10-28 16:00:00", "submissions": []}
+        ]),
         "api/notification/unread" | "api/message/getMyMessages" => Value::Array(Vec::new()),
         _ => serde_json::json!({ "success": true }),
     }

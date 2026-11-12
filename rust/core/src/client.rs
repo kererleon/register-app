@@ -255,6 +255,28 @@ impl Client {
         Ok(body)
     }
 
+    /// Downloads a file (GET with query parameters), e.g. an attachment.
+    pub fn download(&self, path: &str, query: &[(&str, String)]) -> Result<Vec<u8>, Error> {
+        if self.demo {
+            return Ok(b"Das ist ein Anhang der Demo.\n".to_vec());
+        }
+        self.ensure_logged_in()?;
+        let mut request = self.agent.get(self.address(path));
+        for (key, value) in query {
+            request = request.query(key, value);
+        }
+        let mut response = request.call().map_err(network_error)?;
+        if response.status() != 200 {
+            return Err(Error::Server(format!("Der Server antwortet mit Fehler {}", response.status().as_u16())));
+        }
+        response
+            .body_mut()
+            .with_config()
+            .limit(200 * 1024 * 1024)
+            .read_to_vec()
+            .map_err(|e| Error::Server(e.to_string()))
+    }
+
     /// The semester the server answers for (grades).
     pub fn select_semester(&self, semester: u8) -> Result<(), Error> {
         if self.demo {

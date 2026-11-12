@@ -2,6 +2,7 @@
 // device; the register is asked in the background, all parts at the same
 // time, and the window updates when the answers are there.
 
+mod attachments;
 mod dart_random;
 mod decor;
 mod subject_icon_data;
@@ -212,6 +213,13 @@ pub fn run() -> Result<(), slint::PlatformError> {
     }));
 
     let data = ui.global::<AppData>();
+    // For trying out the notifications page and an opened message.
+    if std::env::var_os("REGISTER_NOTIFICATIONS").is_some() {
+        ui.global::<Nav>().set_notifications(true);
+    }
+    if let Some(id) = std::env::var("REGISTER_SHOW_MESSAGE").ok().and_then(|p| p.parse().ok()) {
+        ui.global::<AppData>().set_show_message(id);
+    }
     // For trying out notifications: REGISTER_TEST_NOTIFY=1.
     if std::env::var_os("REGISTER_TEST_NOTIFY").is_some() {
         notify::announce(&[register_core::changes::Change {
@@ -685,6 +693,19 @@ pub fn run() -> Result<(), slint::PlatformError> {
         }
     });
 
+    // The row of a message is changed in place, so an opened message stays open.
+    fn update_message(ui: &AppWindow, state: &State, id: i64, downloading: Option<i64>) {
+        use slint::Model;
+        let d = ui.global::<AppData>();
+        let rows = d.get_messages();
+        if let (Some(row), Some(m)) =
+            (rows.iter().position(|r| r.id as i64 == id), state.data.messages.iter().find(|m| m.id == id))
+        {
+            rows.set_row_data(row, view::message_item(m, downloading));
+        }
+        d.set_unread(view::unread_count(&state.data));
+    }
+
     data.on_mark_read({
         let weak = ui.as_weak();
         let shared = shared.clone();
@@ -692,14 +713,127 @@ pub fn run() -> Result<(), slint::PlatformError> {
             let ui = weak.unwrap();
             {
                 let mut state = shared.lock().unwrap();
-                if let Some(m) = state.data.messages.iter_mut().find(|m| m.id == id as i64) {
-                    m.read = true;
+                match state.data.messages.iter_mut().find(|m| m.id == id as i64) {
+                    Some(m) if !m.read => m.read = true,
+                    _ => return,
+                }
+                if state.remember {
+                    let _ = state.data.save(&data_path());
+                }
+                update_message(&ui, &state, id as i64, None);
+            }
+            let shared = shared.clone();
+            std::thread::spawn(move || {
+                let client = shared.lock().unwrap().client.clone();
+                if let Some(client) = client {
+                    let _ = client.send("api/message/markAsRead", json!({ "messageId": id }));
+                }
+            });
+        }
+    });
+
+    // An attachment: downloaded once into the downloads folder, then opened.
+    data.on_open_attachment({
+        let weak = ui.as_weak();
+        let shared = shared.clone();
+        move |message, attachment| {
+            let ui = weak.unwrap();
+            let (client, file) = {
+                let state = shared.lock().unwrap();
+                let file = state
+                    .data
+                    .messages
+                    .iter()
+                    .find(|m| m.id == message as i64)
+                    .and_then(|m| m.attachments.iter().find(|a| a.id == attachment as i64))
+                    .cloned();
+                (state.client.clone(), file)
+            };
+            let Some(file) = file else { return };
+            let path = attachments::path(&file.unique_name());
+            if path.exists() {
+                attachments::open(&path);
+                return;
+            }
+            let Some(client) = client else { return };
+            update_message(&ui, &shared.lock().unwrap(), message as i64, Some(file.id));
+            let weak = weak.clone();
+            let shared = shared.clone();
+            std::thread::spawn(move || {
+                let result = client
+                    .download(
+                        "api/message/messageSubmissionDownloadEntry",
+                        &[("messageId", file.message_id.to_string()), ("submissionId", file.id.to_string())],
+                    )
+                    .and_then(|bytes| attachments::save(&path, &bytes).map_err(|e| Error::Server(e.to_string())));
+                let _ = weak.upgrade_in_event_loop(move |ui| {
+                    update_message(&ui, &shared.lock().unwrap(), message as i64, None);
+                    match result {
+                        Ok(()) => attachments::open(&path),
+                        Err(e) => ui.global::<AppData>().set_status(format!("Anhang nicht geladen: {e}").into()),
+                    }
+                });
+            });
+        }
+    });
+
+    data.on_delete_notification({
+        let weak = ui.as_weak();
+        let shared = shared.clone();
+        move |id| {
+            let ui = weak.unwrap();
+            {
+                let mut state = shared.lock().unwrap();
+                state.data.notifications.retain(|n| n.id != id as i64);
+                if state.remember {
+                    let _ = state.data.save(&data_path());
                 }
                 view::apply(&ui, &mut state);
             }
-            background(&ui, &shared, move |s| {
-                let client = s.lock().unwrap().client.clone()?;
-                client.send("api/message/markAsRead", json!({ "messageId": id })).err().map(|e| e.to_string())
+            let shared = shared.clone();
+            std::thread::spawn(move || {
+                let client = shared.lock().unwrap().client.clone();
+                if let Some(client) = client {
+                    let _ = client.send("api/notification/markAsRead", json!({ "id": id }));
+                }
+            });
+        }
+    });
+
+    data.on_delete_all_notifications({
+        let weak = ui.as_weak();
+        let shared = shared.clone();
+        move || {
+            let ui = weak.unwrap();
+            // Notifications about messages mark their message as read, too.
+            let messages: Vec<i64> = {
+                let mut state = shared.lock().unwrap();
+                let messages: Vec<i64> = state
+                    .data
+                    .notifications
+                    .iter()
+                    .filter(|n| n.kind == "message")
+                    .filter_map(|n| n.object_id)
+                    .collect();
+                for m in state.data.messages.iter_mut().filter(|m| messages.contains(&m.id)) {
+                    m.read = true;
+                }
+                state.data.notifications.clear();
+                if state.remember {
+                    let _ = state.data.save(&data_path());
+                }
+                view::apply(&ui, &mut state);
+                messages
+            };
+            let shared = shared.clone();
+            std::thread::spawn(move || {
+                let client = shared.lock().unwrap().client.clone();
+                if let Some(client) = client {
+                    for id in messages {
+                        let _ = client.send("api/message/markAsRead", json!({ "messageId": id }));
+                    }
+                    let _ = client.send("api/notification/markAsRead", json!({}));
+                }
             });
         }
     });

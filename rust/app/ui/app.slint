@@ -4,7 +4,7 @@ import { Backdrop, PrimaryButton } from "widgets.slint";
 import { LoginPage } from "login.slint";
 import { TodayPage, HomeworkPage, StudyPlanDialog, InfoDialog } from "pages.slint";
 import { GradesPage, ChartPage, CalculatorPage } from "grades.slint";
-import { CalendarPage, AbsencesPage, AbsenceForm, MessagesPage, SettingsPage, CertificatePage } from "pages2.slint";
+import { CalendarPage, AbsencesPage, AbsenceForm, MessagesPage, SettingsPage, CertificatePage, NotificationsPage } from "pages2.slint";
 
 export { Theme, AppData, Nav, Deco, DecoItem, Competence, GradeGroup, ForecastResult, CalcGrade, DetailCard, DetailRow, TeacherView, TestItem, TargetChip, WeakSubject, HomeworkItem, HomeworkDay, GradeItem, SubjectItem, ChartLine, Lesson, WeekDay, AbsenceItem, MessageItem, SchoolItem }
 
@@ -147,7 +147,12 @@ export component AppWindow inherits Window {
         { icon: @image-url("icons/list.svg"), label: "Mehr", page: -2 },
     ];
     property <bool> narrow: self.width < 720px;
-    changed page => { AppData.page-shown(self.page); }
+    changed page => {
+        AppData.page-shown(self.page);
+        if self.page != 5 {
+            AppData.show-message = -1;
+        }
+    }
     changed narrow => { Theme.narrow = self.narrow; }
     init => { Theme.narrow = self.narrow; }
 
@@ -293,6 +298,33 @@ export component AppWindow inherits Window {
                             clicked => { AppData.set-semester(Math.mod(AppData.semester + 1, 3)); }
                         }
                     }
+                    // NotificationIcon: the bell with the number of notifications.
+                    if AppData.notifications.length > 0 && (Nav.page == 0 || Nav.page == 1): Rectangle {
+                        width: 48px;
+                        Image {
+                            width: 24px;
+                            height: 24px;
+                            source: @image-url("icons/notifications.svg");
+                            colorize: Theme.text;
+                        }
+                        Rectangle {
+                            x: parent.width / 2 + 2px;
+                            y: parent.height / 2 + 1px;
+                            width: max(18px, count.preferred-width + 8px);
+                            height: 18px;
+                            border-radius: 9px;
+                            background: #f44336;
+                            count := Text {
+                                text: AppData.notifications.length;
+                                color: white;
+                                font-size: 11.5px;
+                            }
+                        }
+                        TouchArea {
+                            mouse-cursor: pointer;
+                            clicked => { Nav.notifications = true; }
+                        }
+                    }
                     if AppData.status != "" && !root.narrow: Text {
                         text: AppData.status;
                         color: Theme.muted;
@@ -395,6 +427,11 @@ export component AppWindow inherits Window {
     }
 
     if Nav.chart: ChartPage {
+        width: 100%;
+        height: 100%;
+    }
+
+    if Nav.notifications: NotificationsPage {
         width: 100%;
         height: 100%;
     }
