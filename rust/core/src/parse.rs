@@ -322,8 +322,33 @@ pub fn notifications(data: &Value) -> Vec<Notification> {
             subtitle: text(&n["subTitle"]),
             kind: text(&n["type"]),
             time_sent: date_time(&n["timeSent"]),
+            object_id: int(&n["objectId"]),
         })
         .collect()
+}
+
+/// A message's text: a Quill delta ({"ops":[{"insert":"…"}]}), on old
+/// servers HTML.
+pub fn message_text(raw: &str) -> String {
+    match serde_json::from_str::<Value>(raw) {
+        Ok(delta) if delta["ops"].is_array() => {
+            let text: String = list(&delta["ops"]).iter().filter_map(|op| op["insert"].as_str()).collect();
+            text.trim_end().to_owned()
+        }
+        _ => strip_html(raw),
+    }
+}
+
+fn attachment(a: &Value) -> Option<Attachment> {
+    if a["type"].as_str() != Some("file") || boolean(&a["isDownloadable"]) != Some(true) {
+        return None;
+    }
+    Some(Attachment {
+        id: int(&a["id"])?,
+        message_id: int(&a["messageId"])?,
+        original_name: string(&a["originalName"])?,
+        file: string(&a["file"])?,
+    })
 }
 
 pub fn messages(data: &Value) -> Vec<Message> {
@@ -332,11 +357,12 @@ pub fn messages(data: &Value) -> Vec<Message> {
         .map(|m| Message {
             id: int(&m["id"]).unwrap_or(0),
             subject: text(&m["subject"]),
-            text: strip_html(&string(&m["text"]).unwrap_or_default()),
+            text: message_text(&string(&m["text"]).unwrap_or_default()),
             from: text(&m["fromName"]),
             recipients: text(&m["recipientString"]),
             time_sent: date_time(&m["timeSent"]),
             read: !m["timeRead"].is_null(),
+            attachments: list(&m["submissions"]).iter().filter_map(attachment).collect(),
         })
         .collect();
     messages.sort_by(|a, b| b.time_sent.cmp(&a.time_sent));
@@ -350,6 +376,24 @@ mod tests {
     fn demo(name: &str) -> Value {
         let path = format!("{}/../demo/{name}.json", env!("CARGO_MANIFEST_DIR"));
         serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap()
+    }
+
+    #[test]
+    fn message_with_attachment() {
+        let data = serde_json::json!([{
+            "id": 7, "subject": "Elternsprechtag", "fromName": "Max Mustermann", "recipientString": "Klasse 4A",
+            "text": "{\"ops\":[{\"insert\":\"Liebe Eltern,\\n\"},{\"insert\":\"bis bald\",\"attributes\":{\"bold\":true}},{\"insert\":\"\\n\"}]}",
+            "timeSent": "2026-11-10 08:15:00", "timeRead": null,
+            "submissions": [
+                {"id": 3, "messageId": 7, "type": "file", "isDownloadable": 1, "originalName": "Plan.pdf", "file": "abc.pdf"},
+                {"id": 4, "messageId": 7, "type": "link", "isDownloadable": 1, "originalName": "x", "file": "y"}
+            ]
+        }]);
+        let m = &messages(&data)[0];
+        assert_eq!(m.text, "Liebe Eltern,\nbis bald");
+        assert!(!m.read);
+        assert_eq!(m.attachments.len(), 1);
+        assert_eq!(m.attachments[0].unique_name(), "msg_7_3_Plan.pdf");
     }
 
     #[test]

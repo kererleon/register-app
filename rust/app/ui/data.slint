@@ -167,13 +167,26 @@ export struct CertBlock {
     rows: [CertRow],
 }
 
+export struct AttachmentItem {
+    id: int,
+    name: string,
+    downloading: bool,
+}
+
+// A message, or a notification (title in subject, subtitle in text).
 export struct MessageItem {
     id: int,
     subject: string,
     from: string,
-    date: string,
+    glyph: string,       // first letter of the sender
+    date: string,        // "10.11.26 · 08:15 · Sender", for notifications "10.11.26 8:15"
+    sent: string,        // "Dienstag, 10. November 2026, 08:15"
+    recipients: string,
     text: string,
     unread: bool,
+    attachments: [AttachmentItem],
+    is-message: bool,    // notification about a message
+    object-id: int,
 }
 
 // "Ø6 → 7½" under a test (TestTargets).
@@ -333,6 +346,11 @@ export global AppData {
     in-out property <[MessageItem]> notifications;
     in-out property <int> unread;
     callback mark-read(int);
+    // The message a notification leads to; shown opened.
+    in-out property <int> show-message: -1;
+    callback open-attachment(int /* message */, int /* attachment */);
+    callback delete-notification(int);
+    callback delete-all-notifications();
 }
 
 // The page shown (0 Heute, 1 Hausaufgaben, 2 Noten, 3 Absenzen, 4 Kalender,
@@ -343,6 +361,7 @@ export global Nav {
     in-out property <int> study-plan: -1; // the test whose plan is open
     in-out property <bool> info: false;
     in-out property <bool> chart: false;
+    in-out property <bool> notifications: false;
     in-out property <int> open-subject: -1;
 }
 

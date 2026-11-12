@@ -14,7 +14,7 @@ use slint::{Color, ComponentHandle, Image, ModelRc, SharedString, VecModel};
 
 use crate::{format, photos, subject_icons};
 use crate::{
-    AbsenceItem, AppData, AppWindow, CertBlock, CertRow, ChartLine, GradeItem, HomeworkDay, HomeworkItem, Lesson, MessageItem, State,
+    AbsenceItem, AppData, AppWindow, AttachmentItem, CertBlock, CertRow, ChartLine, GradeItem, HomeworkDay, HomeworkItem, Lesson, MessageItem, State,
     CalcGrade, Competence, DetailCard, DetailRow, GradeGroup, SubjectItem, TargetChip, TeacherView, TestItem, WeakSubject, WeekDay,
 };
 
@@ -960,32 +960,74 @@ fn date_time(t: Option<NaiveDateTime>) -> String {
     t.map(|t| format!("{} {:02}:{:02}", t.date().format("%d.%m.%Y"), t.hour(), t.minute())).unwrap_or_default()
 }
 
-fn apply_messages(d: &AppData, data: &register_core::data::Data) {
-    d.set_messages(model(
-        data.messages
-            .iter()
-            .map(|m| MessageItem {
-                id: m.id as i32,
-                subject: s(&m.subject),
-                from: s(m.from.to_uppercase()),
-                date: s(date_time(m.time_sent)),
-                text: s(&m.text),
-                unread: !m.read,
+const WEEKDAYS: [&str; 7] = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"];
+const MONTHS: [&str; 12] = [
+    "Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November",
+    "Dezember",
+];
+
+pub fn message_item(m: &register_core::model::Message, downloading: Option<i64>) -> MessageItem {
+    let t = m.time_sent;
+    MessageItem {
+        id: m.id as i32,
+        subject: s(&m.subject),
+        from: s(&m.from),
+        glyph: s(m.from.chars().next().map(|c| c.to_uppercase().to_string()).unwrap_or_else(|| "?".into())),
+        // dd.MM.yy · HH:mm · sender
+        date: s(format!("{} · {}", t.map(|t| t.format("%d.%m.%y · %H:%M").to_string()).unwrap_or_default(), m.from)
+            .to_uppercase()),
+        // EEEE, d. MMMM yyyy, HH:mm
+        sent: s(t
+            .map(|t| {
+                format!(
+                    "{}, {}. {} {}, {:02}:{:02}",
+                    WEEKDAYS[t.weekday().num_days_from_monday() as usize],
+                    t.day(),
+                    MONTHS[t.month0() as usize],
+                    t.year(),
+                    t.hour(),
+                    t.minute()
+                )
             })
-            .collect(),
-    ));
+            .unwrap_or_default()),
+        recipients: s(&m.recipients),
+        text: s(&m.text),
+        unread: !m.read,
+        attachments: model(
+            m.attachments
+                .iter()
+                .map(|a| AttachmentItem { id: a.id as i32, name: s(&a.original_name), downloading: downloading == Some(a.id) })
+                .collect(),
+        ),
+        is_message: false,
+        object_id: -1,
+    }
+}
+
+pub fn unread_count(data: &register_core::data::Data) -> i32 {
+    (data.messages.iter().filter(|m| !m.read).count() + data.notifications.len()) as i32
+}
+
+fn apply_messages(d: &AppData, data: &register_core::data::Data) {
+    d.set_messages(model(data.messages.iter().map(|m| message_item(m, None)).collect()));
     d.set_notifications(model(
         data.notifications
             .iter()
             .map(|n| MessageItem {
                 id: n.id as i32,
                 subject: s(&n.title),
-                from: SharedString::new(),
-                date: s(date_time(n.time_sent)),
+                // d.M.yy H:mm
+                date: s(n
+                    .time_sent
+                    .map(|t| format!("{}.{}.{:02} {}:{:02}", t.day(), t.month(), t.year() % 100, t.hour(), t.minute()))
+                    .unwrap_or_default()),
                 text: s(&n.subtitle),
                 unread: true,
+                is_message: n.kind == "message" && n.object_id.is_some(),
+                object_id: n.object_id.unwrap_or(-1) as i32,
+                ..Default::default()
             })
             .collect(),
     ));
-    d.set_unread((data.messages.iter().filter(|m| !m.read).count() + data.notifications.len()) as i32);
+    d.set_unread(unread_count(data));
 }

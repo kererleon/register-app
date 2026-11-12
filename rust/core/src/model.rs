@@ -330,6 +330,9 @@ pub struct Notification {
     pub subtitle: String,
     pub kind: String,
     pub time_sent: Option<NaiveDateTime>,
+    /// The message a notification of the kind "message" is about.
+    #[serde(default)]
+    pub object_id: Option<i64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -342,6 +345,26 @@ pub struct Message {
     pub recipients: String,
     pub time_sent: Option<NaiveDateTime>,
     pub read: bool,
+    #[serde(default)]
+    pub attachments: Vec<Attachment>,
+}
+
+/// A file sent with a message.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct Attachment {
+    pub id: i64,
+    pub message_id: i64,
+    pub original_name: String,
+    pub file: String,
+}
+
+impl Attachment {
+    /// The name the file is kept under on the device.
+    pub fn unique_name(&self) -> String {
+        let safe: String =
+            self.original_name.chars().map(|c| if matches!(c, '/' | '\\' | ':' | '\0') { '_' } else { c }).collect();
+        format!("msg_{}_{}_{}", self.message_id, self.id, safe.trim_start_matches('.'))
+    }
 }
 
 #[cfg(test)]
