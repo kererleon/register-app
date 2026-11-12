@@ -1,43 +1,185 @@
 import { Theme } from "theme.slint";
+import { Deco } from "data.slint";
 
-// The page background: violet glow top left, cyan glow bottom right and a
-// faint 32 px grid (AuroraBackdrop in the Flutter app).
+// The page background of each look (AuroraBackdrop / _AuroraPainter):
+// holo glow and grid, brainrot stripes and emojis, the israel flag with
+// stars, emojis and stickers, glass light spots, clean nothing.
 export component Backdrop inherits Rectangle {
     background: Theme.bg;
     clip: true;
     property <length> shortest: min(self.width, self.height);
-    if Theme.dark: Rectangle {
+    // Recomputed for a new size, look or brightness.
+    property <int> style-watch: Theme.style;
+    property <bool> dark-watch: Theme.dark;
+    changed style-watch => { Deco.resized(self.width, self.height); }
+    changed dark-watch => { Deco.resized(self.width, self.height); }
+    changed width => { Deco.resized(self.width, self.height); }
+    changed height => { Deco.resized(self.width, self.height); }
+    init => { Deco.resized(self.width, self.height); }
+
+    // Holo
+    if Theme.holo: Rectangle {
         x: root.width * 0.05 - root.shortest * 0.95;
         y: root.height * 0.02 - root.shortest * 0.95;
         width: root.shortest * 1.9;
         height: self.width;
-        background: @radial-gradient(circle, #7C5CFF4d 0%, #7C5CFF00 70%);
+        background: @radial-gradient(circle, Theme.violet.transparentize(Theme.dark ? 70% : 84%) 0%, Theme.violet.transparentize(100%) 70%);
     }
-    if Theme.dark: Rectangle {
+    if Theme.holo: Rectangle {
         x: root.width - root.shortest * 0.9;
         y: root.height * 0.85 - root.shortest * 0.9;
         width: root.shortest * 1.8;
         height: self.width;
-        background: @radial-gradient(circle, #22D3EE29 0%, #22D3EE00 70%);
+        background: @radial-gradient(circle, Theme.cyan.transparentize(Theme.dark ? 84% : 88%) 0%, Theme.cyan.transparentize(100%) 70%);
     }
-    Image {
+    if Theme.holo: Image {
         width: 100%;
         height: 100%;
         source: @image-url("grid.svg");
         horizontal-tiling: repeat;
         vertical-tiling: repeat;
-        opacity: Theme.dark ? 1 : 0.6;
+        colorize: Theme.dark ? #ffffff : Theme.ink;
+        opacity: Theme.dark ? 1 : 1.15;
+    }
+
+    // Glass: four soft light spots.
+    if Theme.glass: Rectangle {
+        x: root.width * 0.1 - root.shortest * 0.9;
+        y: root.height * 0.08 - root.shortest * 0.9;
+        width: root.shortest * 1.8;
+        height: self.width;
+        background: @radial-gradient(circle, (Theme.dark ? #0A84FF8c : #0A84FF73) 0%, #0A84FF00 70%);
+    }
+    if Theme.glass: Rectangle {
+        x: root.width * 0.95 - root.shortest * 0.75;
+        y: root.height * 0.3 - root.shortest * 0.75;
+        width: root.shortest * 1.5;
+        height: self.width;
+        background: @radial-gradient(circle, (Theme.dark ? #BF5AF270 : #BF5AF25c) 0%, #BF5AF200 70%);
+    }
+    if Theme.glass: Rectangle {
+        x: root.width * 0.2 - root.shortest * 0.8;
+        y: root.height * 0.75 - root.shortest * 0.8;
+        width: root.shortest * 1.6;
+        height: self.width;
+        background: @radial-gradient(circle, (Theme.dark ? #64D2FF62 : #64D2FF50) 0%, #64D2FF00 70%);
+    }
+    if Theme.glass: Rectangle {
+        x: root.width * 0.85 - root.shortest * 0.7;
+        y: root.height * 0.95 - root.shortest * 0.7;
+        width: root.shortest * 1.4;
+        height: self.width;
+        background: @radial-gradient(circle, (Theme.dark ? #FF64824e : #FF648240) 0%, #FF648200 70%);
+    }
+
+    // Brainrot: diagonal stripes.
+    if Theme.brainrot: Path {
+        width: 100%;
+        height: 100%;
+        viewbox-width: root.width / 1px;
+        viewbox-height: root.height / 1px;
+        stroke: Theme.violet.transparentize(Theme.dark ? 93% : 88%);
+        stroke-width: 18px;
+        commands: Deco.stripes;
+    }
+
+    // Israel: the flag across the top, a fade into the page, the bottom stripe.
+    if Theme.israel: Rectangle {
+        y: 0;
+        height: Deco.flag-height;
+        background: #ffffff;
+        Rectangle {
+            y: parent.height * 0.1;
+            height: parent.height * 0.15;
+            background: #0038B8;
+        }
+        Rectangle {
+            y: parent.height * 0.75;
+            height: parent.height * 0.15;
+            background: #0038B8;
+        }
+        Path {
+            width: 100%;
+            height: 100%;
+            viewbox-width: root.width / 1px;
+            viewbox-height: Deco.flag-height / 1px;
+            stroke: #0038B8;
+            stroke-width: Deco.flag-height * 0.035;
+            commands: Deco.flag-star;
+        }
+    }
+    if Theme.israel: Rectangle {
+        y: Deco.flag-height - 40px;
+        height: 60px;
+        background: @linear-gradient(180deg, Theme.night.transparentize(100%) 0%, Theme.bg 100%);
+    }
+    if Theme.israel: Rectangle {
+        y: root.height - 14px;
+        height: 8px;
+        background: Theme.violet-deep.transparentize(Theme.dark ? 30% : 10%);
+    }
+
+    // Emojis, stars and stickers (brainrot and israel).
+    if Theme.sticker: Rectangle {
+        for item in Deco.items: Rectangle {
+            x: item.x;
+            y: item.y;
+            width: item.kind == 1 ? item.size * 2 : (item.kind == 2 ? sticker-text.preferred-width + 20px : emoji.preferred-width);
+            height: item.kind == 1 ? item.size * 2 : (item.kind == 2 ? sticker-text.preferred-height + 12px : emoji.preferred-height);
+            transform-rotation: item.rotation;
+            transform-origin: { x: 0, y: 0 };
+            if item.kind == 1: Path {
+                width: 100%;
+                height: 100%;
+                viewbox-width: item.size * 2 / 1px;
+                viewbox-height: item.size * 2 / 1px;
+                stroke: Theme.violet-deep.transparentize(100% - item.opacity * 100%);
+                stroke-width: 1.8px;
+                commands: item.path;
+            }
+            emoji := Text {
+                visible: item.kind == 0;
+                x: 0;
+                y: 0;
+                text: item.kind == 0 ? item.text : "";
+                font-size: item.size;
+                opacity: item.opacity;
+            }
+            if item.kind == 2: Rectangle {
+                x: 3px;
+                y: 3px;
+                border-radius: 8px;
+                background: Theme.violet-deep.transparentize(Theme.dark ? 75% : 82%);
+            }
+            if item.kind == 2: Rectangle {
+                border-radius: 8px;
+                background: #ffffff.transparentize(Theme.dark ? 90% : 30%);
+                border-width: 1.5px;
+                border-color: Theme.violet-deep.transparentize(Theme.dark ? 55% : 60%);
+            }
+            sticker-text := Text {
+                visible: item.kind == 2;
+                x: 10px;
+                y: 6px;
+                text: item.kind == 2 ? item.text : "";
+                font-family: "Rubik";
+                font-weight: 900;
+                font-size: item.size;
+                letter-spacing: 0.5px;
+                color: Theme.violet-deep.transparentize(Theme.dark ? 45% : 50%);
+            }
+        }
     }
 }
 
-// Small upper-case monospace caption (HudLabel). The text must be given in
-// capitals.
+// Small upper-case caption (HudLabel): monospace in holo, Bangers in
+// brainrot, Rubik in israel. The text must be given in capitals.
 export component HudLabel inherits Text {
     color: Theme.muted;
     font-family: Theme.font-mono;
-    font-size: 10.5px;
-    font-weight: 600;
-    letter-spacing: 1.6px;
+    font-size: Theme.brainrot ? 12px : 10.5px;
+    font-weight: Theme.israel ? 700 : 600;
+    letter-spacing: Theme.brainrot ? 1.1px : (Theme.israel ? 0.4px : 1.6px);
 }
 
 // "● FÄLLIG" above a group of panels.
@@ -62,22 +204,27 @@ export component SectionLabel inherits HorizontalLayout {
     }
 }
 
-// The large card with a violet-to-cyan frame and a soft glow (GlowCard).
+// The large card (GlowCard): holo with a gradient frame and glow, sticker
+// looks with a thick frame and a hard shadow, clean flat, glass translucent.
 export component GlowCard inherits Rectangle {
     border-radius: Theme.radius-card;
-    background: Theme.dark ? Theme.accent-gradient : Theme.outline;
-    drop-shadow-blur: 28px;
-    drop-shadow-color: Theme.dark ? #7C5CFF47 : #7C5CFF24;
-    inner := Rectangle {
-        x: 1.2px;
-        y: 1.2px;
-        width: parent.width - 2.4px;
-        height: parent.height - 2.4px;
-        border-radius: Theme.radius-card - 1.2px;
-        background: Theme.surface;
+    background: Theme.holo ? Theme.accent-gradient : (Theme.sticker ? Theme.accent-gradient : (Theme.glass ? Theme.glass-fill-strong : Theme.surface));
+    border-width: Theme.clean ? 1px : (Theme.glass ? 1px : 0px);
+    border-color: Theme.glass ? Theme.glass-border : Theme.outline;
+    drop-shadow-blur: Theme.holo ? 28px : 0px;
+    drop-shadow-offset-x: Theme.sticker ? 7px : 0px;
+    drop-shadow-offset-y: Theme.sticker ? 7px : 0px;
+    drop-shadow-color: Theme.holo ? Theme.violet.transparentize(Theme.dark ? 72% : 86%) : (Theme.sticker ? (Theme.dark ? Theme.cyan : Theme.ink) : transparent);
+    if Theme.holo || Theme.sticker: Rectangle {
+        x: Theme.sticker ? 3px : 1.2px;
+        y: self.x;
+        width: parent.width - 2 * self.x;
+        height: parent.height - 2 * self.y;
+        border-radius: Theme.sticker ? 9px : Theme.radius-card - 1.2px;
+        background: Theme.sticker ? (Theme.dark ? Theme.night-surface : #ffffff) : Theme.surface;
     }
     VerticalLayout {
-        padding: 20px;
+        padding: Theme.sticker ? 23px : 20px;
         @children
     }
 }
@@ -91,8 +238,9 @@ component Bracket inherits Path {
     viewbox-height: 30;
 }
 
-// A glass panel with glowing corner brackets (HoloPanel). [accent] draws a
-// coloured stripe on the left.
+// A panel (HoloPanel): holo glass with glowing corner brackets, sticker
+// looks with a thick frame and hard shadow, clean flat, glass translucent.
+// [accent] draws a coloured stripe on the left (not in the clean look).
 export component HoloPanel inherits Rectangle {
     in property <bool> clickable: false;
     in property <bool> highlighted: false;
@@ -100,45 +248,56 @@ export component HoloPanel inherits Rectangle {
     in property <bool> has-accent: false;
     in property <length> inner-padding: 14px;
     callback clicked();
-    property <color> bracket-color: (highlighted ? Theme.cyan : Theme.primary).transparentize(highlighted ? 0% : 25%);
+    property <color> bracket-color: (highlighted ? Theme.secondary : Theme.primary).transparentize(highlighted ? 0% : 25%);
+    property <color> edge: highlighted ? Theme.cyan : (has-accent ? accent : Theme.violet);
     border-radius: Theme.radius-panel;
-    background: touch.has-hover && clickable ? Theme.surface-high.transparentize(20%) : Theme.surface.transparentize(Theme.dark ? 32% : 15%);
-    border-width: 1px;
-    border-color: highlighted ? Theme.cyan.transparentize(40%) : Theme.outline;
+    background: Theme.sticker ? (Theme.dark ? Theme.night-surface : #ffffff)
+        : (Theme.glass ? Theme.glass-fill
+        : (Theme.clean ? Theme.surface
+        : (touch.has-hover && clickable ? Theme.surface-high.transparentize(20%) : Theme.surface.transparentize(Theme.dark ? 32% : 15%))));
+    border-width: Theme.sticker ? 2.5px : (Theme.clean && highlighted ? 1.5px : 1px);
+    border-color: Theme.sticker ? (Theme.dark ? root.edge : Theme.ink)
+        : (Theme.glass ? (highlighted ? Theme.violet.transparentize(30%) : Theme.glass-border)
+        : (Theme.clean ? (highlighted ? Theme.violet : Theme.outline)
+        : (highlighted ? Theme.secondary.transparentize(40%) : Theme.outline)));
+    drop-shadow-offset-x: Theme.sticker ? 5px : 0px;
+    drop-shadow-offset-y: Theme.sticker ? 5px : 0px;
+    drop-shadow-blur: 0px;
+    drop-shadow-color: Theme.sticker ? (Theme.dark ? root.edge.transparentize(15%) : Theme.ink) : transparent;
     touch := TouchArea {
         enabled: root.clickable;
         mouse-cursor: root.clickable ? pointer : default;
         clicked => { root.clicked(); }
     }
-    if root.has-accent: Rectangle {
+    if root.has-accent && (Theme.holo || Theme.glass): Rectangle {
         x: 0;
-        y: 10px;
-        width: 3.5px;
-        height: parent.height - 20px;
+        y: Theme.glass ? 14px : 10px;
+        width: Theme.glass ? 4px : 3.5px;
+        height: parent.height - 2 * self.y;
         border-top-right-radius: 4px;
         border-bottom-right-radius: 4px;
-        background: @linear-gradient(90deg, root.accent 0%, root.accent.transparentize(45%) 100%);
+        background: Theme.glass ? root.accent : @linear-gradient(90deg, root.accent 0%, root.accent.transparentize(45%) 100%);
     }
     // Corner brackets: the rounded corner and 12 px along both edges.
-    Bracket {
+    if Theme.holo: Bracket {
         x: 0;
         y: 0;
         stroke: root.bracket-color;
         commands: "M 0.8 28.8 L 0.8 16.8 A 16 16 0 0 1 16.8 0.8 L 28.8 0.8";
     }
-    Bracket {
+    if Theme.holo: Bracket {
         x: parent.width - 30px;
         y: 0;
         stroke: root.bracket-color;
         commands: "M 1.2 0.8 L 13.2 0.8 A 16 16 0 0 1 29.2 16.8 L 29.2 28.8";
     }
-    Bracket {
+    if Theme.holo: Bracket {
         x: parent.width - 30px;
         y: parent.height - 30px;
         stroke: root.bracket-color;
         commands: "M 29.2 1.2 L 29.2 13.2 A 16 16 0 0 1 13.2 29.2 L 1.2 29.2";
     }
-    Bracket {
+    if Theme.holo: Bracket {
         x: 0;
         y: parent.height - 30px;
         stroke: root.bracket-color;
@@ -146,7 +305,7 @@ export component HoloPanel inherits Rectangle {
     }
     VerticalLayout {
         padding: root.inner-padding;
-        padding-left: root.inner-padding + (root.has-accent ? 6px : 0px);
+        padding-left: root.inner-padding + (root.has-accent && (Theme.holo || Theme.glass) ? 6px : 0px);
         @children
     }
 }

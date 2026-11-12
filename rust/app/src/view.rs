@@ -10,12 +10,12 @@ use register_core::grades::{self, Forecast};
 use register_core::model::{
     AbsenceGroup, CalendarHour, Grade, Homework, HomeworkKind, Justified, MissedHour, Semester, Subject, looks_like_test,
 };
-use slint::{Color, ComponentHandle, ModelRc, SharedString, VecModel};
+use slint::{Color, ComponentHandle, Image, ModelRc, SharedString, VecModel};
 
-use crate::format;
+use crate::{format, photos, subject_icons};
 use crate::{
     AbsenceItem, AppData, AppWindow, ChartLine, GradeItem, HomeworkDay, HomeworkItem, Lesson, MessageItem, State,
-    SubjectItem, WeekDay,
+    DetailCard, DetailRow, SubjectItem, TargetChip, TeacherView, TestItem, WeakSubject, WeekDay,
 };
 
 fn model<T: Clone + 'static>(items: Vec<T>) -> ModelRc<T> {
@@ -93,7 +93,7 @@ fn parse_time(t: &str) -> Option<NaiveTime> {
 
 /// "1-2" or "3." like the Flutter app.
 fn hours_short(h: &CalendarHour) -> String {
-    if h.length() > 1 { format!("{}-{}", h.from_hour, h.to_hour) } else { format!("{}.", h.from_hour) }
+    if h.length() > 1 { format!("{}–{}", h.from_hour, h.to_hour) } else { format!("{}.", h.from_hour) }
 }
 
 fn lesson(h: &CalendarHour, date: NaiveDate, now: NaiveDateTime, colors: &BTreeMap<String, u32>) -> Lesson {
@@ -102,27 +102,24 @@ fn lesson(h: &CalendarHour, date: NaiveDate, now: NaiveDateTime, colors: &BTreeM
     let notes: Vec<String> = h.homework_exams.iter().map(|e| format!("{}: {}", e.type_name, e.name)).collect();
     Lesson {
         hours: s(hours_short(h)),
-        time: s(if h.start().is_empty() { String::new() } else { format!("{}-{}", h.start(), h.end()) }),
+        time: s(if h.start().is_empty() { String::new() } else { format!("{}–{}", h.start(), h.end()) }),
         subject: s(&h.subject),
         nick: s(nick(&h.subject)),
         teachers: s(h.teachers.iter().map(|t| t.last_name.clone()).collect::<Vec<_>>().join("\n")),
-        rooms: s(h.rooms.join(", ")),
+        teacher_width: h.teachers.iter().map(|t| t.last_name.chars().count()).max().unwrap_or(0) as i32,
+        rooms: s(h.rooms.join("\n")),
         note: s(notes.join(" · ")),
         color: rgb(colors.get(&h.subject).copied().unwrap_or(0x7C5CFF)),
         span: h.length(),
         first: h.from_hour,
+        index: 0,
+        pattern: Image::default(),
+        photo: Image::default(),
+        has_photo: false,
+        selected: false,
         has_test: h.homework_exams.iter().any(|e| looks_like_test(&e.type_name) || looks_like_test(&e.name)),
         is_now: matches!((start, end), (Some(a), Some(b)) if now >= a && now < b),
         is_past: end.is_some_and(|e| now >= e),
-    }
-}
-
-/// "HEUTE", "MORGEN", "MO. 16.11."
-fn day_word(date: NaiveDate, today: NaiveDate) -> String {
-    match (date - today).num_days() {
-        0 => "HEUTE".into(),
-        1 => "MORGEN".into(),
-        _ => format!("{}. {}", wd2(date).to_uppercase(), format::short(date)),
     }
 }
 
@@ -134,6 +131,7 @@ fn homework_item(h: &Homework, header: String) -> HomeworkItem {
     HomeworkItem {
         id: h.id as i32,
         kind: s(format::kind_name(h.kind)),
+        urgent: false,
         header: s(header),
         title: s(title),
         subtitle: s(&h.subtitle),
@@ -149,6 +147,16 @@ fn label_caps(h: &Homework) -> String {
     h.label.as_deref().unwrap_or(if h.is_reminder() { "Erinnerung" } else { "" }).to_uppercase()
 }
 
+/// "Fr. 13.11." (EE dd.MM.)
+pub fn day_short(date: NaiveDate) -> String {
+    format!("{}. {}", wd2(date), format::short(date))
+}
+
+/// The tests of the next 30 days, as on the today page.
+pub fn tests_soon(data: &register_core::data::Data, today: NaiveDate) -> Vec<(NaiveDate, &Homework)> {
+    data.upcoming_tests().into_iter().filter(|(d, _)| (*d - today).num_days() <= 30).collect()
+}
+
 pub fn apply_today(ui: &AppWindow, state: &State) {
     let d = ui.global::<AppData>();
     let data = &state.data;
@@ -156,58 +164,138 @@ pub fn apply_today(ui: &AppWindow, state: &State) {
     let today = now.date();
     let colors = &state.settings.subject_colors;
     d.set_now_header(s(format!("{} · {:02}:{:02}", format::long(today).to_uppercase(), now.hour(), now.minute())));
+    d.set_day_number((today - NaiveDate::from_ymd_opt(2026, 1, 1).unwrap()).num_days() as i32);
 
-    let hours: &[CalendarHour] = data.calendar.get(&today).map(|d| d.hours.as_slice()).unwrap_or(&[]);
-    d.set_today_lessons(model(hours.iter().map(|h| lesson(h, today, now, colors)).collect()));
-
-    // The current lesson, or what comes next.
-    let mut title = String::new();
-    let mut detail = String::new();
-    let mut running = false;
-    for h in hours {
-        let (Some(a), Some(b)) = (parse_time(h.start()), parse_time(h.end())) else { continue };
-        let (a, b) = (today.and_time(a), today.and_time(b));
-        let room = if h.rooms.is_empty() { String::new() } else { format!(" · {}", h.rooms.join(", ")) };
-        if now >= a && now < b {
-            running = true;
-            title = h.subject.clone();
-            detail = format!("Läuft gerade · noch {} min{room}", (b - now).num_minutes() + 1);
-            break;
-        }
-        if now < a {
-            title = h.subject.clone();
-            detail = format!("Beginnt um {}{room}", h.start());
-            break;
-        }
-    }
-    if title.is_empty() {
-        title = if hours.is_empty() { "Heute kein Unterricht".into() } else { "Für heute geschafft".into() };
-    }
-    d.set_now_running(running);
-    d.set_now_title(s(title));
-    d.set_now_detail(s(detail));
-
-    // Due today and tomorrow, then the next tests.
-    let mut due = Vec::new();
-    for date in [today, today + Duration::days(1)] {
-        for h in data.homework_on(date).iter().filter(|h| !h.checked && h.kind != HomeworkKind::Grade) {
-            let label = label_caps(h);
-            let word = day_word(date, today);
-            let header = if label.is_empty() { word } else { format!("{word} · {label}") };
-            due.push(homework_item(h, header));
-        }
-    }
-    d.set_due(model(due));
-    d.set_tests(model(
-        data.upcoming_tests()
-            .into_iter()
-            .take(6)
-            .map(|(date, h)| {
-                let header = format!("{} · {}", day_word(date, today), label_caps(h));
-                homework_item(h, header)
+    let day = data.calendar.get(&today);
+    let hours: &[CalendarHour] = day.map(|d| d.hours.as_slice()).unwrap_or(&[]);
+    d.set_today_lessons(model(
+        hours
+            .iter()
+            .map(|h| {
+                let mut l = lesson(h, today, now, colors);
+                l.rooms = s(h.rooms.join(", "));
+                l
             })
             .collect(),
     ));
+
+    // What the "now" card says (_NowCard).
+    let times = |h: &CalendarHour| {
+        Some((today.and_time(parse_time(h.start())?), today.and_time(parse_time(h.end())?)))
+    };
+    let current = hours.iter().find(|h| times(h).is_some_and(|(a, b)| now >= a && now < b));
+    let next = hours.iter().find(|h| times(h).is_some_and(|(a, _)| a > now));
+    let over = hours.last().and_then(times).is_some_and(|(_, b)| now >= b);
+    let (state_no, subject, minutes, rooms, next_time) = if day.is_none() {
+        (0, String::new(), 0, String::new(), String::new())
+    } else if hours.is_empty() {
+        (1, String::new(), 0, String::new(), String::new())
+    } else if let Some(h) = current {
+        let (_, b) = times(h).unwrap();
+        (2, nick(&h.subject), (b - now).num_minutes(), h.rooms.join(", "), String::new())
+    } else if let Some(h) = next {
+        let (a, _) = times(h).unwrap();
+        (3, nick(&h.subject), (a - now).num_minutes(), String::new(), h.start().to_owned())
+    } else if over {
+        (4, String::new(), 0, String::new(), String::new())
+    } else {
+        (5, String::new(), 0, String::new(), String::new())
+    };
+    d.set_now_state(state_no);
+    d.set_now_subject(s(subject));
+    d.set_now_minutes(minutes as i32);
+    d.set_now_rooms(s(rooms));
+    d.set_next_time(s(next_time));
+
+    // Due today and tomorrow (_TaskRow).
+    let mut due = Vec::new();
+    for (date, when) in [(today, "HEUTE"), (today + Duration::days(1), "MORGEN")] {
+        for h in data.homework_on(date).iter().filter(|h| !matches!(h.kind, HomeworkKind::Grade | HomeworkKind::Observation)) {
+            let header = match &h.label {
+                Some(l) => format!("{when} · {}", l.to_uppercase()),
+                None => when.to_owned(),
+            };
+            let mut item = homework_item(h, header);
+            item.urgent = date == today;
+            due.push(item);
+        }
+    }
+    d.set_due(model(due));
+
+    // Tests with countdown and what is needed (_TestCountdown, TestTargets).
+    let semester = semester_of(state.semester);
+    let tests: Vec<TestItem> = tests_soon(data, today)
+        .into_iter()
+        .enumerate()
+        .map(|(i, (date, h))| {
+            let subject = h.label.as_deref().and_then(|l| {
+                data.subjects.iter().find(|s| s.name.trim().eq_ignore_ascii_case(l.trim()))
+            });
+            let average = subject.and_then(|s| grades::average(s, semester));
+            let targets: Vec<TargetChip> = match (subject, average) {
+                (Some(subject), Some(_)) => [6.0, 7.0, 8.0]
+                    .into_iter()
+                    .map(|target| {
+                        let (kind, needed) = match grades::forecast(subject, semester, target, 100) {
+                            Forecast::Safe => (0, 0.0),
+                            Forecast::Impossible => (1, 0.0),
+                            Forecast::Needs(g) => (2, g),
+                        };
+                        TargetChip {
+                            target: target as i32,
+                            kind,
+                            needed: s(if kind == 2 { grades::format_steps(needed) } else { String::new() }),
+                            needed_value: needed as f32,
+                        }
+                    })
+                    .collect(),
+                _ => Vec::new(),
+            };
+            TestItem {
+                index: i as i32,
+                days: (date - today).num_days() as i32,
+                header: s(match &h.label {
+                    Some(l) => format!("{} · {}", day_short(date), l).to_uppercase(),
+                    None => day_short(date).to_uppercase(),
+                }),
+                title: s(&h.title),
+                subtitle: s(&h.subtitle),
+                average_now: s(average.map(|a| grades::format_steps(a as f64 / 100.0)).unwrap_or_default()),
+                targets: model(targets),
+                date_long: s(format!("{}, {}", format::weekday(date), format::day_month(date))),
+            }
+        })
+        .collect();
+    d.set_tests(model(tests));
+
+    // Subjects below 6, lowest first.
+    let mut weak: Vec<(String, f64)> = data
+        .subjects
+        .iter()
+        .filter_map(|s| Some((s.name.clone(), grades::average(s, semester)? as f64 / 100.0)))
+        .filter(|(_, avg)| *avg < grades::PASS_MARK)
+        .collect();
+    weak.sort_by(|a, b| a.1.total_cmp(&b.1));
+    d.set_weak(model(
+        weak.into_iter()
+            .map(|(name, avg)| WeakSubject { name: s(name), value: avg as f32, label: s(grades::format_steps(avg)) })
+            .collect(),
+    ));
+}
+
+/// The days for [sessions] study sessions before the test: the days right
+/// before it, from today on and without Sundays (studyDays).
+pub fn study_days(test: NaiveDate, today: NaiveDate, sessions: usize) -> Vec<NaiveDate> {
+    let mut result = Vec::new();
+    let mut day = test - Duration::days(1);
+    while result.len() < sessions && day >= today {
+        if day.weekday() != chrono::Weekday::Sun {
+            result.push(day);
+        }
+        day -= Duration::days(1);
+    }
+    result.reverse();
+    result
 }
 
 fn apply_homework(d: &AppData, state: &State) {
@@ -408,6 +496,7 @@ fn apply_calendar(d: &AppData, state: &State) {
     let now = Local::now().naive_local();
     let today = now.date();
     let colors = &state.settings.subject_colors;
+    let brainrot = state.settings.style == 1;
     let monday = monday_of(today) + Duration::weeks(state.week_offset);
     let mut days = Vec::new();
     let mut hours = 6;
@@ -420,17 +509,109 @@ fn apply_calendar(d: &AppData, state: &State) {
             continue;
         }
         hours = hours.max(list.iter().map(|h| h.to_hour).max().unwrap_or(0));
+        let lessons: Vec<Lesson> = list
+            .into_iter()
+            .enumerate()
+            .map(|(n, h)| {
+                let mut l = lesson(h, date, now, colors);
+                l.index = n as i32;
+                l.selected = state.detail.is_some_and(|(dd, nn)| dd == date && nn == n);
+                if brainrot {
+                    if state.settings.show_photos
+                        && let Some(photo) = h.teachers.first().and_then(|t| photos::image_for(t, &state.settings.own_images, true))
+                    {
+                        l.photo = photo;
+                        l.has_photo = true;
+                    }
+                } else {
+                    l.pattern = subject_icons::pattern(&h.subject, colors.get(&h.subject).copied().unwrap_or(0x7C5CFF));
+                }
+                l
+            })
+            .collect();
         days.push(WeekDay {
             weekday: s(wd2(date).to_uppercase()),
             date: s(date.format("%d.%m").to_string()),
             is_today: date == today,
-            lessons: model(list.into_iter().map(|h| lesson(h, date, now, colors)).collect()),
+            lessons: model(lessons),
         });
     }
     let friday = monday + Duration::days(4);
     d.set_week_title(s(format!("{} - {}", monday.format("%d.%m.%y"), friday.format("%d.%m.%y"))));
     d.set_week_hours(hours);
     d.set_week(model(days));
+    apply_detail(d, state);
+}
+
+const MONTHS_ABBR: [&str; 12] = ["Jan.", "Feb.", "März", "Apr.", "Mai", "Juni", "Juli", "Aug.", "Sep.", "Okt.", "Nov.", "Dez."];
+
+/// The lessons of the chosen day in detail (CalendarCard).
+fn apply_detail(d: &AppData, state: &State) {
+    let Some((date, selected)) = state.detail else {
+        d.set_detail_open(false);
+        return;
+    };
+    d.set_detail_open(true);
+    d.set_detail_title(s(format!("{}., {}. {}", wd2(date), date.day(), MONTHS_ABBR[date.month0() as usize])));
+    let colors = &state.settings.subject_colors;
+    let brainrot = state.settings.style == 1;
+    let hours: &[CalendarHour] = state.data.calendar.get(&date).map(|d| d.hours.as_slice()).unwrap_or(&[]);
+    let cards: Vec<DetailCard> = hours
+        .iter()
+        .enumerate()
+        .map(|(n, h)| {
+            let teachers: Vec<TeacherView> = h
+                .teachers
+                .iter()
+                .map(|t| {
+                    let photo =
+                        if state.settings.show_photos { photos::image_for(t, &state.settings.own_images, brainrot) } else { None };
+                    TeacherView {
+                        name: s(t.full_name()),
+                        initial: s(t.last_name.chars().next().map(|c| c.to_string()).unwrap_or_else(|| "?".into())),
+                        has_photo: photo.is_some(),
+                        photo: photo.unwrap_or_default(),
+                        custom: brainrot
+                            && state.settings.own_images.contains_key(&register_core::teacher_photos::teacher_key(t)),
+                    }
+                })
+                .collect();
+            let mut rows = Vec::new();
+            if !h.teachers.is_empty() {
+                rows.push(DetailRow {
+                    icon: if h.teachers.len() == 1 { 1 } else { 2 },
+                    title: s(if h.teachers.len() == 1 { "LEHRER*IN" } else { "LEHRER*INNEN" }),
+                    content: s(h.teachers.iter().map(|t| t.full_name()).collect::<Vec<_>>().join(", ")),
+                });
+            }
+            if !h.rooms.is_empty() {
+                rows.push(DetailRow { icon: 3, title: s("RÄUME"), content: s(h.rooms.join(", ")) });
+            }
+            for (kind, name) in &h.lesson_contents {
+                rows.push(DetailRow { icon: 4, title: s(kind.to_uppercase()), content: s(name) });
+            }
+            for e in &h.homework_exams {
+                let test = looks_like_test(&e.type_name) || looks_like_test(&e.name);
+                rows.push(DetailRow { icon: if test { 5 } else { 6 }, title: s(e.type_name.to_uppercase()), content: s(&e.name) });
+            }
+            DetailCard {
+                subject: s(&h.subject),
+                letter: s(h.subject.chars().next().map(|c| c.to_uppercase().to_string()).unwrap_or_else(|| "?".into())),
+                color: rgb(colors.get(&h.subject).copied().unwrap_or(0x7C5CFF)),
+                hours: s(if h.from_hour == h.to_hour {
+                    format!("{}. STUNDE", h.from_hour)
+                } else {
+                    format!("{}. – {}. STUNDE", h.from_hour, h.to_hour)
+                }),
+                times: s(h.times.iter().map(|(a, b)| format!("{a} – {b}")).collect::<Vec<_>>().join(", ")),
+                teachers: model(teachers),
+                rows: model(rows),
+                selected: n == selected,
+            }
+        })
+        .collect();
+    d.set_detail_selected(selected as i32);
+    d.set_detail_cards(model(cards));
 }
 
 /// "Mi. 14.10.2026"
@@ -442,7 +623,8 @@ fn level_number(level: Level) -> i32 {
     match level {
         Level::Green => 0,
         Level::Yellow => 1,
-        Level::Red | Level::Over => 2,
+        Level::Red => 2,
+        Level::Over => 3,
     }
 }
 
@@ -495,6 +677,7 @@ fn apply_absences(d: &AppData, state: &State) {
     match absences::project(stat, state.data.calendar.values(), today()) {
         Some(p) => {
             let end = format!("{}. {}", p.end.day(), format::month(p.end.month()));
+            d.set_year_left(p.still_allowed as i32);
             if p.still_allowed == 0 {
                 d.set_year_allowed(s("Keine Fehlstunde mehr übrig"));
                 d.set_year_allowed_rest(SharedString::new());

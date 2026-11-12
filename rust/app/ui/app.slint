@@ -1,11 +1,11 @@
 import { Theme } from "theme.slint";
-import { AppData, Nav, HomeworkItem, HomeworkDay, GradeItem, SubjectItem, ChartLine, Lesson, WeekDay, AbsenceItem, MessageItem, SchoolItem } from "data.slint";
+import { AppData, Nav, Deco, DecoItem, DetailCard, DetailRow, TeacherView, TestItem, TargetChip, WeakSubject, HomeworkItem, HomeworkDay, GradeItem, SubjectItem, ChartLine, Lesson, WeekDay, AbsenceItem, MessageItem, SchoolItem } from "data.slint";
 import { Backdrop, PrimaryButton } from "widgets.slint";
 import { LoginPage } from "login.slint";
-import { TodayPage, HomeworkPage } from "pages.slint";
+import { TodayPage, HomeworkPage, StudyPlanDialog } from "pages.slint";
 import { GradesPage, CalendarPage, AbsencesPage, AbsenceForm, MessagesPage, SettingsPage } from "pages2.slint";
 
-export { Theme, AppData, Nav, HomeworkItem, HomeworkDay, GradeItem, SubjectItem, ChartLine, Lesson, WeekDay, AbsenceItem, MessageItem, SchoolItem }
+export { Theme, AppData, Nav, Deco, DecoItem, DetailCard, DetailRow, TeacherView, TestItem, TargetChip, WeakSubject, HomeworkItem, HomeworkDay, GradeItem, SubjectItem, ChartLine, Lesson, WeekDay, AbsenceItem, MessageItem, SchoolItem }
 
 struct NavEntry {
     icon: image,
@@ -22,7 +22,7 @@ component DrawerItem inherits Rectangle {
     callback clicked();
     height: 48px;
     border-radius: 12px;
-    background: selected ? Theme.selected-bg.transparentize(35%) : (ta.has-hover ? Theme.text.transparentize(94%) : transparent);
+    background: selected ? Theme.primary.transparentize(84%) : (ta.has-hover ? Theme.text.transparentize(94%) : transparent);
     HorizontalLayout {
         padding-left: collapsed ? 0px : 12px;
         padding-right: 12px;
@@ -122,17 +122,21 @@ export component AppWindow inherits Window {
     // Kept for starting on a given page (REGISTER_PAGE).
     in-out property <int> page <=> Nav.page;
     property <bool> collapsed: false;
-    property <[string]> titles: ["Heute", "Hausaufgaben", "Noten", "Absenzen", "Kalender", "Mitteilungen", "Einstellungen"];
+    property <[string]> titles: [
+        Theme.br("Heute", "Heute, no cap 💀", "Shalom achi! 🇮🇱"),
+        Theme.br("Register", "Register 🧠🔥", "Register 🇮🇱 Yalla"),
+        "Noten", "Absenzen", "Kalender", "Mitteilungen", "Einstellungen", "Zeugnis"];
     property <[NavEntry]> nav: [
-        { icon: @image-url("icons/bolt.svg"), label: "Heute", page: 0 },
-        { icon: @image-url("icons/assignment.svg"), label: "Hausaufgaben", page: 1 },
-        { icon: @image-url("icons/star.svg"), label: "Noten", page: 2 },
-        { icon: @image-url("icons/hotel.svg"), label: "Absenzen", page: 3 },
-        { icon: @image-url("icons/calendar_today.svg"), label: "Kalender", page: 4 },
-        { icon: @image-url("icons/chat.svg"), label: "Mitteilungen", page: 5 },
+        { icon: @image-url("icons/bolt.svg"), label: Theme.br("Heute", "Heute 🗿", "Heute 🇮🇱 Yalla"), page: 0 },
+        { icon: @image-url("icons/assignment.svg"), label: Theme.br("Hausaufgaben", "Hausaufgaben 😭", "Hausaufgaben 😩 Balagan"), page: 1 },
+        { icon: @image-url("icons/star.svg"), label: Theme.br("Noten", "Noten 📉", "Noten 📈 Tachles"), page: 2 },
+        { icon: @image-url("icons/hotel.svg"), label: Theme.br("Absenzen", "Absenzen 🛌", "Absenzen 🏖️ Matkot-Pause"), page: 3 },
+        { icon: @image-url("icons/calendar_today.svg"), label: Theme.br("Kalender", "Kalender 🗓️", "Kalender 🗓️ Ma nishma"), page: 4 },
+        { icon: @image-url("icons/list.svg"), label: Theme.br("Zeugnis", "Zeugnis 📜", "Zeugnis 📜 Kapara"), page: 7 },
+        { icon: @image-url("icons/chat.svg"), label: Theme.br("Mitteilungen", "Mitteilungen 📨", "Mitteilungen 📨 Achi?"), page: 5 },
     ];
-    property <NavEntry> settings-entry: { icon: @image-url("icons/settings.svg"), label: "Einstellungen", page: 6 };
-    property <NavEntry> logout-entry: { icon: @image-url("icons/logout.svg"), label: "Abmelden", page: -1 };
+    property <NavEntry> settings-entry: { icon: @image-url("icons/settings.svg"), label: Theme.br("Einstellungen", "Einstellungen ⚙️", "Einstellungen ⚙️ Beseder"), page: 6 };
+    property <NavEntry> logout-entry: { icon: @image-url("icons/logout.svg"), label: Theme.br("Abmelden", "Abmelden ✌️", "Yalla bye ✌️🇮🇱"), page: -1 };
     // Phones: four pages below and "Mehr" for the rest.
     property <[NavEntry]> bottom: [
         { icon: @image-url("icons/bolt.svg"), label: "Heute", page: 0 },
@@ -159,7 +163,7 @@ export component AppWindow inherits Window {
         // The menu (Flutter's drawer).
         if !root.narrow: Rectangle {
             width: root.collapsed ? 72px : 264px;
-            background: Theme.dark ? #000000 : Theme.bg;
+            background: Theme.dark ? Theme.night.darker(40%) : Theme.bg;
             animate width { duration: 160ms; easing: ease-out; }
             Rectangle {
                 x: 8px;
@@ -352,6 +356,12 @@ export component AppWindow inherits Window {
                 }
             }
         }
+    }
+
+    if Nav.study-plan >= 0 && Nav.study-plan < AppData.tests.length: StudyPlanDialog {
+        width: 100%;
+        height: 100%;
+        test: AppData.tests[Nav.study-plan];
     }
 
     if Nav.absence-form: AbsenceForm {

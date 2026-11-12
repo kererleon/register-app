@@ -4,6 +4,7 @@
 export struct HomeworkItem {
     id: int,
     kind: string,
+    urgent: bool,     // due today (today page)
     // "MORGEN · DEUTSCH" on the today page, "DEUTSCH" in the list.
     header: string,
     title: string,
@@ -56,14 +57,47 @@ export struct Lesson {
     subject: string,
     nick: string,       // "Deu"
     teachers: string,   // last names, one per line
+    teacher-width: int, // characters of the longest name
     rooms: string,
     note: string,
     color: color,
     span: int,          // lessons it lasts
     first: int,         // first hour
+    index: int,         // position in its day
+    pattern: image,     // subject icons behind the tile
+    photo: image,       // brainrot: the teacher's picture behind the tile
+    has-photo: bool,
+    selected: bool,
     has-test: bool,
     is-now: bool,
     is-past: bool,
+}
+
+// A teacher in the detail card: photo or initial.
+export struct TeacherView {
+    name: string,
+    initial: string,
+    photo: image,
+    has-photo: bool,
+    custom: bool,
+}
+
+// One line of the detail card (_ContentItem).
+export struct DetailRow {
+    icon: int,          // 0 time, 1 person, 2 people, 3 room, 4 lesson content, 5 test, 6 homework
+    title: string,
+    content: string,
+}
+
+export struct DetailCard {
+    subject: string,
+    letter: string,
+    color: color,
+    hours: string,
+    times: string,
+    teachers: [TeacherView],
+    rows: [DetailRow],
+    selected: bool,
 }
 
 export struct WeekDay {
@@ -92,6 +126,31 @@ export struct MessageItem {
     unread: bool,
 }
 
+// "Ø6 → 7½" under a test (TestTargets).
+export struct TargetChip {
+    target: int,
+    kind: int,         // 0 safe, 1 impossible, 2 reachable
+    needed: string,    // "7½"
+    needed-value: float,
+}
+
+export struct TestItem {
+    index: int,
+    days: int,
+    header: string,    // "FR. 13.11. · ENGLISCH"
+    title: string,
+    subtitle: string,
+    average-now: string, // "7½", empty without grades
+    targets: [TargetChip],
+    date-long: string, // "Freitag, 13. November", for the study plan
+}
+
+export struct WeakSubject {
+    name: string,
+    value: float,
+    label: string,
+}
+
 export struct SchoolItem {
     name: string,
     url: string,
@@ -118,12 +177,21 @@ export global AppData {
 
     // --- today ---
     in-out property <string> now-header;
-    in-out property <string> now-title;
-    in-out property <string> now-detail;
-    in-out property <bool> now-running;
+    // 0 loading, 1 no lessons, 2 running, 3 next lesson, 4 school is over
+    in-out property <int> now-state;
+    in-out property <string> now-subject;
+    in-out property <int> now-minutes;
+    in-out property <string> now-rooms;
+    in-out property <string> next-time;
     in-out property <[Lesson]> today-lessons;
     in-out property <[HomeworkItem]> due;
-    in-out property <[HomeworkItem]> tests;
+    in-out property <[TestItem]> tests;
+    in-out property <[WeakSubject]> weak;
+    // Days since 2026, for the meme of the day.
+    in-out property <int> day-number;
+    // Study plan: the test, then the days it would use.
+    pure callback study-days(int /* test */, int /* sessions */) -> [string];
+    callback create-study-plan(int /* test */, int /* sessions */);
 
     // --- homework ---
     in-out property <[HomeworkDay]> homework;
@@ -155,6 +223,15 @@ export global AppData {
     in-out property <string> week-title;
     in-out property <int> week-hours: 8;
     callback move-week(int);
+    in-out property <bool> detail-open: false;
+    in-out property <string> detail-title;   // "Do., 12. Nov."
+    in-out property <[DetailCard]> detail-cards;
+    in-out property <int> detail-selected: -1;
+    callback select-lesson(int /* day of week */, int /* lesson */);
+    callback detail-move(int /* days */);
+    callback close-detail();
+    callback pick-teacher-image(int /* card */, int /* teacher */);
+    callback reset-teacher-image(int /* card */, int /* teacher */);
 
     // --- absences ---
     in-out property <string> absence-percent;
@@ -162,6 +239,7 @@ export global AppData {
     in-out property <int> absence-level;
     in-out property <string> absence-label;
     in-out property <string> absence-left;
+    in-out property <int> year-left;
     in-out property <string> year-allowed;
     in-out property <string> year-allowed-rest;
     in-out property <string> year-detail;
@@ -187,4 +265,26 @@ export global AppData {
 export global Nav {
     in-out property <int> page: 0;
     in-out property <bool> absence-form: false;
+    in-out property <int> study-plan: -1; // the test whose plan is open
+}
+
+// Decorations of the brainrot and israel backgrounds: emojis, stars and
+// stickers, placed by Rust like the Flutter app's painter.
+export struct DecoItem {
+    kind: int,        // 0 emoji, 1 star, 2 sticker
+    text: string,
+    x: length,
+    y: length,
+    size: length,     // font size or star radius
+    rotation: angle,
+    opacity: float,
+    path: string,     // star outline, in a box of 2 × size
+}
+
+export global Deco {
+    in-out property <string> stripes;   // brainrot: diagonal stripes
+    in-out property <[DecoItem]> items;
+    in-out property <length> flag-height; // israel: the flag at the top
+    in-out property <string> flag-star;
+    callback resized(length, length);
 }

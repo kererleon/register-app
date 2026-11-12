@@ -20,10 +20,14 @@ slint = "1.18"
 directories = "6"
 chrono = { version = "0.4", default-features = false, features = ["std", "clock"] }
 serde_json = "1"
+ureq = { version = "3.5", default-features = false, features = ["rustls", "gzip"] }
+url = "2"
+image = { version = "0.25", default-features = false, features = ["jpeg", "png", "webp", "gif"] }
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 keyring = "4"
 notify-rust = "4"
+rfd = "0.18"
 
 [target.'cfg(target_os = "android")'.dependencies]
 slint = { version = "1.18", features = ["backend-android-activity-06"] }

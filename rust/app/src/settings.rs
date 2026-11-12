@@ -35,12 +35,25 @@ pub fn dir() -> PathBuf {
 }
 
 pub struct Settings {
+    /// 0 Holo, 1 Brainrot, 2 Israel, 3 Clean, 4 Liquid Glass.
+    pub style: i32,
     pub dark: bool,
     /// The accent of the clean look, as 0xAARRGGBB.
     pub accent: u32,
     pub school: String,
     /// Each subject keeps the colour it got first (0xRRGGBB).
     pub subject_colors: BTreeMap<String, u32>,
+    /// Teacher photos in the calendar.
+    pub show_photos: bool,
+    /// Own pictures of teachers (brainrot), by teacher key.
+    pub own_images: BTreeMap<String, String>,
+    /// Staff pages entered by hand, by register host.
+    pub staff_pages: BTreeMap<String, String>,
+}
+
+/// The staff page entered by hand for the school at [host].
+pub fn custom_staff_page(host: &str) -> Option<String> {
+    Settings::load().staff_pages.get(host).cloned()
 }
 
 /// Material's primary colours without the ones that look alike, as the
@@ -78,9 +91,19 @@ impl Settings {
             .and_then(|b| serde_json::from_slice(&b).ok())
             .unwrap_or(Value::Null);
         Settings {
+            style: v["style"].as_i64().unwrap_or(0) as i32,
             dark: v["dark"].as_bool().unwrap_or(true),
-            accent: v["accent"].as_u64().map(|a| a as u32).unwrap_or(0xff5b6cff),
+            accent: v["accent"].as_u64().map(|a| a as u32).unwrap_or(0xff2563eb),
             school: v["school"].as_str().unwrap_or_default().to_owned(),
+            show_photos: v["showPhotos"].as_bool().unwrap_or(true),
+            own_images: v["ownImages"]
+                .as_object()
+                .map(|m| m.iter().filter_map(|(k, p)| Some((k.clone(), p.as_str()?.to_owned()))).collect())
+                .unwrap_or_default(),
+            staff_pages: v["staffPages"]
+                .as_object()
+                .map(|m| m.iter().filter_map(|(k, p)| Some((k.clone(), p.as_str()?.to_owned()))).collect())
+                .unwrap_or_default(),
             subject_colors: v["subjectColors"]
                 .as_object()
                 .map(|m| m.iter().filter_map(|(k, c)| Some((k.clone(), c.as_u64()? as u32))).collect())
@@ -90,10 +113,14 @@ impl Settings {
 
     pub fn save(&self) {
         let v = json!({
+            "style": self.style,
             "dark": self.dark,
             "accent": self.accent,
             "school": self.school,
             "subjectColors": self.subject_colors,
+            "showPhotos": self.show_photos,
+            "ownImages": self.own_images,
+            "staffPages": self.staff_pages,
         });
         let _ = std::fs::create_dir_all(dir());
         let _ = std::fs::write(Self::path(), v.to_string());
