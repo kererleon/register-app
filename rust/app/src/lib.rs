@@ -2,7 +2,12 @@
 // device; the register is asked in the background, all parts at the same
 // time, and the window updates when the answers are there.
 
+mod dart_random;
+mod decor;
+mod subject_icon_data;
+mod subject_icons;
 mod format;
+mod photos;
 mod notify;
 mod settings;
 mod view;
@@ -42,6 +47,8 @@ pub struct State {
     pub semester: i32,
     pub show_cancelled: bool,
     pub sort_by_type: bool,
+    /// The day shown in detail and the selected lesson.
+    pub detail: Option<(chrono::NaiveDate, usize)>,
     remember: bool,
 }
 
@@ -81,6 +88,14 @@ fn refresh(shared: &Shared) -> Option<String> {
     let mut data = before.clone();
     let report = data.refresh(&client);
     notify::announce(&register_core::changes::between(&before, &data, today()));
+    // Teacher photos: the list from the school's website, then the photos of
+    // this and next week's teachers.
+    if !client.is_demo() {
+        photos::ensure(client.url());
+        let teachers: Vec<register_core::model::Teacher> =
+            data.calendar.values().flat_map(|d| d.hours.iter().flat_map(|h| h.teachers.iter().cloned())).collect();
+        photos::download(&teachers);
+    }
     let mut state = shared.lock().unwrap();
     state.data = data;
     if state.remember && !client.is_demo() {
@@ -159,6 +174,11 @@ pub fn run() -> Result<(), slint::PlatformError> {
     let ui = AppWindow::new()?;
     let settings = settings::Settings::load();
     let theme = ui.global::<Theme>();
+    theme.set_style(settings.style);
+    // For trying out a look: REGISTER_STYLE=1 (brainrot).
+    if let Some(style) = std::env::var("REGISTER_STYLE").ok().and_then(|s| s.parse().ok()) {
+        theme.set_style(style);
+    }
     theme.set_dark(settings.dark);
     theme.set_accent_choice(slint::Color::from_argb_encoded(settings.accent));
 
@@ -171,6 +191,7 @@ pub fn run() -> Result<(), slint::PlatformError> {
         semester: 2,
         show_cancelled: false,
         sort_by_type: false,
+        detail: None,
         remember: true,
     }));
 
@@ -187,11 +208,43 @@ pub fn run() -> Result<(), slint::PlatformError> {
         ui.set_page(page);
     }
 
+    // The background's emojis, stars and stickers for the window's size;
+    // a new look also changes the calendar tiles (photos or icons).
+    ui.global::<Deco>().on_resized({
+        let weak = ui.as_weak();
+        let shared = shared.clone();
+        move |w, h| {
+            if let Ok(mut state) = shared.try_lock() {
+                let style = weak.unwrap().global::<Theme>().get_style();
+                if state.settings.style != style {
+                    state.settings.style = style;
+                    state.settings.save();
+                    view::apply(&weak.unwrap(), &mut state);
+                }
+            }
+            let ui = weak.unwrap();
+            let theme = ui.global::<Theme>();
+            let d = decor::decorate(theme.get_style(), theme.get_dark(), w as f64, h as f64);
+            let deco = ui.global::<Deco>();
+            deco.set_stripes(d.stripes.into());
+            deco.set_items(decor::model(d.items));
+            deco.set_flag_height(d.flag_height);
+            deco.set_flag_star(d.flag_star.into());
+        }
+    });
+
     // Saved data is shown at once. The saved login is read in the background:
     // the system's secure store can be slow or ask for permission, and the
     // window must not wait for it.
     if let Some(saved) = Data::load(&data_path()) {
         let mut state = shared.lock().unwrap();
+        // For trying out the detail card: REGISTER_SELECT=3,0 (Thursday, first lesson).
+        if let Some((day, lesson)) = std::env::var("REGISTER_SELECT").ok().and_then(|v| {
+            let (a, b) = v.split_once(',')?;
+            Some((a.parse::<i64>().ok()?, b.parse::<usize>().ok()?))
+        }) {
+            state.detail = Some((monday_of(today()) + chrono::Duration::days(day), lesson));
+        }
         state.semester = saved.config.as_ref().and_then(|c| c.current_semester).map(|c| c as i32 - 1).unwrap_or(2);
         state.data = saved;
         view::apply(&ui, &mut state);
@@ -390,6 +443,96 @@ pub fn run() -> Result<(), slint::PlatformError> {
         }
     });
 
+    data.on_select_lesson({
+        let weak = ui.as_weak();
+        let shared = shared.clone();
+        move |day, lesson| {
+            let mut state = shared.lock().unwrap();
+            let monday = monday_of(today()) + chrono::Duration::weeks(state.week_offset);
+            // The week's days as shown (Saturday only with lessons).
+            let date = monday + chrono::Duration::days(day as i64);
+            state.detail = Some((date, lesson as usize));
+            view::apply(&weak.unwrap(), &mut state);
+        }
+    });
+
+    data.on_detail_move({
+        let weak = ui.as_weak();
+        let shared = shared.clone();
+        move |step| {
+            let ui = weak.unwrap();
+            let target = {
+                let mut state = shared.lock().unwrap();
+                let Some((date, _)) = state.detail else { return };
+                let target = date + chrono::Duration::days(step as i64);
+                state.detail = Some((target, usize::MAX));
+                view::apply(&ui, &mut state);
+                (!state.data.calendar.contains_key(&target)).then(|| monday_of(target))
+            };
+            // A day of another week: load that week.
+            if let Some(monday) = target {
+                background(&ui, &shared, move |s| {
+                    let client = s.lock().unwrap().client.clone()?;
+                    let mut data = s.lock().unwrap().data.clone();
+                    let result = data.load_week(&client, monday);
+                    s.lock().unwrap().data = data;
+                    result.err().map(|e| e.to_string())
+                });
+            }
+        }
+    });
+
+    data.on_close_detail({
+        let weak = ui.as_weak();
+        let shared = shared.clone();
+        move || {
+            let mut state = shared.lock().unwrap();
+            state.detail = None;
+            view::apply(&weak.unwrap(), &mut state);
+        }
+    });
+
+    data.on_pick_teacher_image({
+        let weak = ui.as_weak();
+        let shared = shared.clone();
+        move |card, teacher| {
+            let teacher = {
+                let state = shared.lock().unwrap();
+                state.detail.and_then(|(date, _)| {
+                    state.data.calendar.get(&date)?.hours.get(card as usize)?.teachers.get(teacher as usize).cloned()
+                })
+            };
+            let Some(teacher) = teacher else { return };
+            if let Some(path) = photos::pick_own(&teacher) {
+                let mut state = shared.lock().unwrap();
+                let key = register_core::teacher_photos::teacher_key(&teacher);
+                if let Some(old) = state.settings.own_images.insert(key, path) {
+                    let _ = std::fs::remove_file(old);
+                }
+                state.settings.save();
+                view::apply(&weak.unwrap(), &mut state);
+            }
+        }
+    });
+
+    data.on_reset_teacher_image({
+        let weak = ui.as_weak();
+        let shared = shared.clone();
+        move |card, teacher| {
+            let mut state = shared.lock().unwrap();
+            let teacher = state.detail.and_then(|(date, _)| {
+                state.data.calendar.get(&date)?.hours.get(card as usize)?.teachers.get(teacher as usize).cloned()
+            });
+            if let Some(teacher) = teacher {
+                if let Some(old) = state.settings.own_images.remove(&register_core::teacher_photos::teacher_key(&teacher)) {
+                    let _ = std::fs::remove_file(old);
+                }
+                state.settings.save();
+                view::apply(&weak.unwrap(), &mut state);
+            }
+        }
+    });
+
     data.on_mark_read({
         let weak = ui.as_weak();
         let shared = shared.clone();
@@ -405,6 +548,54 @@ pub fn run() -> Result<(), slint::PlatformError> {
             background(&ui, &shared, move |s| {
                 let client = s.lock().unwrap().client.clone()?;
                 client.send("api/message/markAsRead", json!({ "messageId": id })).err().map(|e| e.to_string())
+            });
+        }
+    });
+
+    data.on_study_days({
+        let shared = shared.clone();
+        move |test, sessions| {
+            let state = shared.lock().unwrap();
+            let today = today();
+            let days = view::tests_soon(&state.data, today)
+                .get(test as usize)
+                .map(|(date, _)| view::study_days(*date, today, sessions.max(1) as usize))
+                .unwrap_or_default();
+            ModelRc::new(VecModel::from(days.into_iter().map(|d| SharedString::from(view::day_short(d))).collect::<Vec<_>>()))
+        }
+    });
+
+    data.on_create_study_plan({
+        let weak = ui.as_weak();
+        let shared = shared.clone();
+        move |test, sessions| {
+            let ui = weak.unwrap();
+            let plan = {
+                let state = shared.lock().unwrap();
+                let today = today();
+                view::tests_soon(&state.data, today).get(test as usize).map(|(date, h)| {
+                    let what = [h.label.clone(), Some(h.title.clone())].into_iter().flatten().collect::<Vec<_>>().join(" – ");
+                    let days = view::study_days(*date, today, sessions.max(1) as usize);
+                    let n = days.len();
+                    days.into_iter()
+                        .enumerate()
+                        .map(|(i, day)| (day, format!("Lernen {}/{n}: {what} (Test am {})", i + 1, view::day_short(*date))))
+                        .collect::<Vec<_>>()
+                })
+            };
+            let Some(plan) = plan else { return };
+            background(&ui, &shared, move |s| {
+                let client = s.lock().unwrap().client.clone()?;
+                let mut data = s.lock().unwrap().data.clone();
+                let n = plan.len();
+                for (day, text) in plan {
+                    if let Err(e) = data.add_reminder(&client, day, &text) {
+                        s.lock().unwrap().data = data;
+                        return Some(format!("Lernplan nicht vollständig: {e}"));
+                    }
+                }
+                s.lock().unwrap().data = data;
+                Some(format!("Lernplan mit {n} Erinnerungen eingetragen"))
             });
         }
     });
@@ -526,6 +717,7 @@ pub fn run() -> Result<(), slint::PlatformError> {
     // Remember the look for the next start.
     let mut state = shared.lock().unwrap();
     let theme = ui.global::<Theme>();
+    state.settings.style = theme.get_style();
     state.settings.dark = theme.get_dark();
     state.settings.accent = theme.get_accent_choice().as_argb_encoded();
     state.settings.save();

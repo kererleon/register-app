@@ -12,3 +12,4 @@ pub mod json;
 pub mod model;
 pub mod parse;
 pub mod schools;
+pub mod teacher_photos;

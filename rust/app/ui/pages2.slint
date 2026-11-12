@@ -1,8 +1,8 @@
 import { Theme } from "theme.slint";
-import { AppData, Nav, Lesson, AbsenceItem } from "data.slint";
+import { AppData, Nav, Lesson, AbsenceItem, DetailCard, TeacherView } from "data.slint";
 import { GlowCard, HoloPanel, HudLabel, SectionLabel, StatusPill, NeonRing, IconButton, OutlineButton, PrimaryButton, TextButton, Meter, EmptyState, Field, HoloToggle } from "widgets.slint";
-import { Page } from "pages.slint";
-import { Switch, SpinBox } from "std-widgets.slint";
+import { Page, AbsenceMeter, AbsenceYearOutlook } from "pages.slint";
+import { Switch, SpinBox, ScrollView } from "std-widgets.slint";
 
 // --- Grades ---------------------------------------------------------------
 
@@ -184,7 +184,7 @@ export component GradesPage inherits Page {
                     y: (parent.height - self.height) / 2;
                     source: @image-url("icons/expand_more.svg");
                     colorize: Theme.muted;
-                    rotation-angle: root.open == i ? 180deg : 0deg;
+                    transform-rotation: root.open == i ? 180deg : 0deg;
                 }
             }
             if root.open == i && subject.forecast != "": Text {
@@ -242,16 +242,40 @@ export component GradesPage inherits Page {
 
 component LessonCell inherits Rectangle {
     in property <Lesson> lesson;
+    in property <int> day;
+    property <int> longest-teacher: lesson.teacher-width;
+    property <color> edge: lesson.has-test ? Theme.danger : (lesson.is-now ? Theme.cyan : lesson.color);
     border-radius: 6px;
-    background: lesson.is-now ? Theme.cyan.transparentize(85%) : Theme.surface.transparentize(30%);
+    background: lesson.selected ? Theme.primary.transparentize(78%) : (lesson.is-now ? Theme.cyan.transparentize(80%) : Theme.surface.transparentize(Theme.dark ? 30% : 12%));
     border-width: 1px;
-    border-color: lesson.is-now ? Theme.cyan.transparentize(40%) : Theme.outline;
+    border-color: lesson.selected ? Theme.primary.transparentize(30%) : Theme.outline;
     clip: true;
+    // Subject icons, or in the brainrot look the teacher's picture.
+    if !Theme.brainrot: Image {
+        x: 0;
+        y: 0;
+        width: parent.width;
+        height: parent.height;
+        source: lesson.pattern;
+        image-fit: preserve;
+        horizontal-alignment: left;
+        vertical-alignment: top;
+    }
+    if Theme.brainrot && lesson.has-photo: Image {
+        width: parent.width;
+        height: parent.height;
+        source: lesson.photo;
+        image-fit: cover;
+        vertical-alignment: top;
+    }
+    if Theme.brainrot && lesson.has-photo: Rectangle {
+        background: @linear-gradient(180deg, Theme.surface.transparentize(55%) 0%, Theme.surface.transparentize(20%) 100%);
+    }
     Rectangle {
         x: 0;
-        width: 3px;
+        width: lesson.has-test || lesson.is-now ? 4px : 3px;
         height: parent.height;
-        background: lesson.color;
+        background: root.edge;
     }
     VerticalLayout {
         alignment: center;
@@ -263,35 +287,37 @@ component LessonCell inherits Rectangle {
             color: Theme.cyan;
             horizontal-alignment: center;
         }
+        // Long names shrink to fit instead of being cut (FittedBox).
         Text {
             text: lesson.nick;
             color: Theme.text;
             font-family: Theme.font-body;
-            font-size: 13px;
-            font-weight: 500;
+            font-size: min(13px, (root.width - 12px) * 1.8 / max(1, lesson.nick.character-count));
+            font-weight: 700;
             horizontal-alignment: center;
-            overflow: elide;
         }
-        Text {
+        if lesson.teachers != "": Text {
             text: lesson.teachers;
             color: Theme.muted;
             font-family: Theme.font-mono;
-            font-size: 9.5px;
+            font-size: min(10px, (root.width - 12px) * 1.6 / max(1, root.longest-teacher));
             horizontal-alignment: center;
-            overflow: elide;
         }
         if lesson.rooms != "": Text {
             text: lesson.rooms;
             color: Theme.muted;
             font-family: Theme.font-mono;
-            font-size: 9.5px;
+            font-size: min(10px, (root.width - 12px) * 1.6 / max(1, lesson.rooms.character-count));
             horizontal-alignment: center;
-            overflow: elide;
         }
+    }
+    TouchArea {
+        mouse-cursor: pointer;
+        clicked => { AppData.select-lesson(root.day, lesson.index); }
     }
 }
 
-export component CalendarPage inherits Page {
+component WeekGrid inherits Page {
     property <length> hour-height: 52px;
     HorizontalLayout {
         alignment: center;
@@ -321,15 +347,15 @@ export component CalendarPage inherits Page {
     }
     HorizontalLayout {
         spacing: 4px;
-        for day in AppData.week: VerticalLayout {
+        for day[d] in AppData.week: VerticalLayout {
             spacing: 6px;
             horizontal-stretch: 1;
             Rectangle {
                 height: 36px;
                 border-radius: 8px;
                 background: day.is-today ? Theme.accent-gradient : transparent;
-                drop-shadow-blur: day.is-today ? 14px : 0px;
-                drop-shadow-color: #7C5CFF73;
+                drop-shadow-blur: day.is-today && Theme.holo ? 14px : 0px;
+                drop-shadow-color: Theme.violet.transparentize(55%);
                 VerticalLayout {
                     alignment: center;
                     HudLabel {
@@ -354,9 +380,247 @@ export component CalendarPage inherits Page {
                     height: lesson.span * root.hour-height - 2px;
                     width: parent.width;
                     lesson: lesson;
-                    opacity: lesson.is-past ? 0.75 : 1.0;
+                    day: d;
                 }
             }
+        }
+    }
+}
+
+// A round teacher photo with the accent ring, or the initial (_TeacherPhoto).
+component TeacherPhoto inherits VerticalLayout {
+    in property <TeacherView> teacher;
+    in property <int> card;
+    in property <int> index;
+    spacing: 6px;
+    min-width: 120px;
+    HorizontalLayout {
+        alignment: center;
+        Rectangle {
+            width: 73px;
+            height: 73px;
+            border-radius: 36.5px;
+            background: Theme.accent-gradient;
+            Rectangle {
+                width: 68px;
+                height: 68px;
+                border-radius: 34px;
+                background: Theme.surface;
+                clip: true;
+                if root.teacher.has-photo: Image {
+                    width: 100%;
+                    height: 100%;
+                    source: root.teacher.photo;
+                    image-fit: cover;
+                }
+                if !root.teacher.has-photo: Text {
+                    text: root.teacher.initial;
+                    color: Theme.text;
+                    font-family: Theme.font-display;
+                    font-size: 24px;
+                    font-weight: Theme.display-weight;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+            }
+        }
+    }
+    Text {
+        text: root.teacher.name;
+        color: Theme.text;
+        font-family: Theme.font-body;
+        font-size: 12.5px;
+        font-weight: 500;
+        horizontal-alignment: center;
+        wrap: word-wrap;
+    }
+    if Theme.brainrot: HorizontalLayout {
+        alignment: center;
+        spacing: 2px;
+        TextButton {
+            text: root.teacher.custom ? "Anderes Bild" : "Eigenes Bild hochladen";
+            icon: @image-url("icons/add_photo_alternate.svg");
+            has-icon: true;
+            clicked => { AppData.pick-teacher-image(root.card, root.index); }
+        }
+        if root.teacher.custom: IconButton {
+            icon: @image-url("icons/undo.svg");
+            icon-size: 18px;
+            clicked => { AppData.reset-teacher-image(root.card, root.index); }
+        }
+    }
+}
+
+component DetailLine inherits HorizontalLayout {
+    in property <int> icon;
+    in property <string> title;
+    in property <string> content;
+    spacing: 10px;
+    VerticalLayout {
+        padding-top: 2px;
+        Image {
+            width: 20px;
+            height: 20px;
+            source: root.icon == 0 ? @image-url("icons/schedule.svg") : (root.icon == 1 ? @image-url("icons/person.svg") : (root.icon == 2 ? @image-url("icons/people.svg") : (root.icon == 3 ? @image-url("icons/meeting_room.svg") : (root.icon == 4 ? @image-url("icons/school.svg") : (root.icon == 5 ? @image-url("icons/bolt.svg") : @image-url("icons/assignment.svg"))))));
+            colorize: root.icon == 5 ? Theme.danger : Theme.primary;
+        }
+        Rectangle { }
+    }
+    VerticalLayout {
+        spacing: 2px;
+        horizontal-stretch: 1;
+        HudLabel { text: root.title; }
+        Text {
+            text: root.content;
+            color: Theme.text;
+            font-family: Theme.font-body;
+            font-size: 14px;
+            wrap: word-wrap;
+        }
+    }
+}
+
+// The lesson in detail (CalendarCard).
+export component LessonDetail inherits HoloPanel {
+    in property <DetailCard> card;
+    in property <int> index;
+    has-accent: true;
+    accent: card.color;
+    highlighted: card.selected;
+    inner-padding: 16px;
+    VerticalLayout {
+        spacing: 8px;
+        HorizontalLayout {
+            spacing: 12px;
+            // SubjectGlyph
+            Rectangle {
+                width: 44px;
+                height: 44px;
+                border-radius: 13px;
+                background: root.card.color.transparentize(84%);
+                border-width: 1.4px;
+                border-color: root.card.color.transparentize(30%);
+                Text {
+                    text: root.card.letter;
+                    color: root.card.color.mix(#ffffff, 65%);
+                    font-family: "Sora";
+                    font-size: 20px;
+                    font-weight: 700;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+            }
+            Text {
+                text: root.card.subject;
+                color: Theme.text;
+                font-family: Theme.font-display;
+                font-size: 21px;
+                font-weight: Theme.display-weight;
+                letter-spacing: Theme.display-spacing;
+                vertical-alignment: center;
+                wrap: word-wrap;
+                horizontal-stretch: 1;
+            }
+        }
+        DetailLine {
+            icon: 0;
+            title: root.card.hours;
+            content: root.card.times;
+        }
+        // Side by side; with the upload buttons of the brainrot look they
+        // do not fit next to each other and go one below the other (Wrap).
+        if root.card.teachers.length > 0 && !Theme.brainrot: HorizontalLayout {
+            spacing: 4px;
+            alignment: start;
+            for t[i] in root.card.teachers: TeacherPhoto {
+                teacher: t;
+                card: root.index;
+                index: i;
+            }
+        }
+        if root.card.teachers.length > 0 && Theme.brainrot: VerticalLayout {
+            spacing: 12px;
+            for t[i] in root.card.teachers: HorizontalLayout {
+                alignment: start;
+                TeacherPhoto {
+                    width: self.preferred-width;
+                    teacher: t;
+                    card: root.index;
+                    index: i;
+                }
+            }
+        }
+        for row in root.card.rows: DetailLine {
+            icon: row.icon;
+            title: row.title;
+            content: row.content;
+        }
+    }
+}
+
+// The day's lessons next to the calendar (RightSidebar / CalendarDetail).
+component DetailPanel inherits Rectangle {
+    VerticalLayout {
+        Rectangle {
+            height: 52px;
+            HorizontalLayout {
+                padding-left: 4px;
+                padding-right: 8px;
+                spacing: 4px;
+                IconButton {
+                    y: (parent.height - self.height) / 2;
+                    icon: @image-url("icons/chevron_right.svg");
+                    tint: Theme.text;
+                    icon-size: 26px;
+                    clicked => { AppData.close-detail(); }
+                }
+                Text {
+                    text: AppData.detail-title;
+                    color: Theme.text;
+                    font-family: Theme.font-display;
+                    font-size: 19px;
+                    font-weight: Theme.display-weight;
+                    vertical-alignment: center;
+                    horizontal-stretch: 1;
+                }
+                IconButton {
+                    y: (parent.height - self.height) / 2;
+                    icon: @image-url("icons/chevron_left.svg");
+                    tint: Theme.text;
+                    clicked => { AppData.detail-move(-1); }
+                }
+                IconButton {
+                    y: (parent.height - self.height) / 2;
+                    icon: @image-url("icons/chevron_right.svg");
+                    tint: Theme.text;
+                    clicked => { AppData.detail-move(1); }
+                }
+            }
+        }
+        ScrollView {
+            VerticalLayout {
+                padding: 8px;
+                spacing: 12px;
+                if AppData.detail-cards.length == 0: EmptyState {
+                    icon: @image-url("icons/calendar_today.svg");
+                    title: "Kein Unterricht";
+                    text: "";
+                }
+                for card[i] in AppData.detail-cards: LessonDetail {
+                    card: card;
+                    index: i;
+                }
+            }
+        }
+    }
+}
+
+export component CalendarPage inherits Rectangle {
+    property <bool> side-by-side: self.width >= 820px;
+    HorizontalLayout {
+        if !AppData.detail-open || root.side-by-side: WeekGrid { }
+        if AppData.detail-open: DetailPanel {
+            width: root.side-by-side ? 340px : root.width;
         }
     }
 }
@@ -477,57 +741,8 @@ export component AbsencesPage inherits Page {
                 }
                 Rectangle { }
             }
-            HorizontalLayout {
-                StatusPill {
-                    text: AppData.absence-label;
-                    tint: root.level-color;
-                }
-                Rectangle { }
-                HudLabel {
-                    text: AppData.absence-left;
-                    vertical-alignment: center;
-                }
-            }
-            Meter {
-                fraction: AppData.absence-fraction;
-                tint: root.level-color;
-            }
-            if AppData.year-allowed != "": VerticalLayout {
-                spacing: 4px;
-                HorizontalLayout {
-                    spacing: 8px;
-                    Image {
-                        source: @image-url("icons/event.svg");
-                        width: 16px;
-                        height: 16px;
-                        y: (parent.height - self.height) / 2;
-                        colorize: root.level-color;
-                    }
-                    Text {
-                        text: AppData.year-allowed;
-                        color: root.level-color;
-                        font-family: Theme.font-body;
-                        font-size: 13.5px;
-                        vertical-alignment: center;
-                    }
-                    Text {
-                        text: AppData.year-allowed-rest;
-                        color: Theme.text;
-                        font-family: Theme.font-body;
-                        font-size: 13.5px;
-                        vertical-alignment: center;
-                        wrap: word-wrap;
-                        horizontal-stretch: 1;
-                    }
-                }
-                Text {
-                    x: 24px;
-                    text: AppData.year-detail;
-                    color: Theme.text.transparentize(15%);
-                    font-family: Theme.font-body;
-                    font-size: 11.5px;
-                }
-            }
+            AbsenceMeter { }
+            if AppData.year-detail != "": AbsenceYearOutlook { }
             HorizontalLayout {
                 spacing: 24px;
                 padding-top: 6px;
@@ -733,19 +948,128 @@ export component MessagesPage inherits Page {
 
 // --- Settings -------------------------------------------------------------
 
+// One look in the style picker (_StyleCard).
+component StyleCard inherits Rectangle {
+    in property <int> style;
+    in property <string> title;
+    in property <string> subtitle;
+    in property <[color]> colors;
+    in property <string> emoji;
+    property <bool> selected: Theme.style == root.style;
+    height: 132px;
+    border-radius: 16px;
+    background: selected ? Theme.accent-gradient : Theme.outline;
+    Rectangle {
+        x: root.selected ? 3px : 1.5px;
+        y: self.x;
+        width: parent.width - 2 * self.x;
+        height: parent.height - 2 * self.y;
+        border-radius: 13px;
+        background: root.colors[0];
+        VerticalLayout {
+            padding: 14px;
+            spacing: 10px;
+            HorizontalLayout {
+                Text {
+                    text: root.emoji;
+                    font-size: 22px;
+                    color: root.colors[2];
+                }
+                Rectangle { }
+                if root.selected: Image {
+                    source: @image-url("icons/check.svg");
+                    width: 20px;
+                    height: 20px;
+                    colorize: root.colors[2];
+                }
+            }
+            HorizontalLayout {
+                spacing: 6px;
+                alignment: start;
+                for c in root.colors: Rectangle {
+                    width: 26px;
+                    height: 8px;
+                    border-radius: 4px;
+                    background: c;
+                }
+            }
+            VerticalLayout {
+                spacing: 2px;
+                Text {
+                    text: root.title;
+                    color: #ffffff;
+                    font-family: "Sora";
+                    font-size: 18px;
+                    font-weight: 700;
+                }
+                Text {
+                    text: root.subtitle;
+                    color: #ffffffb3;
+                    font-family: "Inter";
+                    font-size: 12px;
+                    overflow: elide;
+                }
+            }
+        }
+    }
+    TouchArea {
+        mouse-cursor: pointer;
+        clicked => { Theme.style = root.style; }
+    }
+}
+
 export component SettingsPage inherits Page {
-    property <[color]> accents: [#5b6cff, #12b886, #f76707, #e64980, #7950f2, #1c7ed6];
+    property <[color]> accents: [#2563EB, #7C3AED, #DB2777, #DC2626, #EA580C, #CA8A04, #16A34A, #0D9488, #0891B2, #52525B];
 
     SectionLabel { text: "DESIGN"; }
     HoloPanel {
         VerticalLayout {
-            spacing: 14px;
-            Switch {
-                text: "Holo (dunkel) – sonst Clean (hell)";
-                checked <=> Theme.dark;
+            spacing: 12px;
+            HudLabel { text: "STIL DER APP"; }
+            HorizontalLayout {
+                spacing: 12px;
+                StyleCard {
+                    style: 0;
+                    title: "Holo";
+                    subtitle: "Futuristisch, clean, leuchtend";
+                    colors: [#0A0E1A, #7C5CFF, #22D3EE];
+                    emoji: "✦";
+                }
+                StyleCard {
+                    style: 1;
+                    title: "Brainrot";
+                    subtitle: "Laut, bunt, Meme-Style";
+                    colors: [#14001F, #FF2E93, #B6FF00];
+                    emoji: "💀";
+                }
+                StyleCard {
+                    style: 2;
+                    title: "Israel";
+                    subtitle: "Shalom, Sababa, Yalla";
+                    colors: [#06102E, #0038B8, #FFFFFF];
+                    emoji: "🇮🇱";
+                }
             }
-            if !Theme.dark: VerticalLayout {
-                spacing: 8px;
+            HorizontalLayout {
+                spacing: 12px;
+                StyleCard {
+                    style: 3;
+                    title: "Clean";
+                    subtitle: "Ruhig, modern, eine Akzentfarbe";
+                    colors: [#18181B, #2563EB, #E4E4E7];
+                    emoji: "○";
+                }
+                StyleCard {
+                    style: 4;
+                    title: "Liquid Glass";
+                    subtitle: "Glas, Licht und weiche Farben";
+                    colors: [#1C2A4A, #0A84FF, #BF5AF2];
+                    emoji: "◐";
+                }
+                Rectangle { }
+            }
+            if Theme.clean: VerticalLayout {
+                spacing: 10px;
                 HudLabel { text: "AKZENTFARBE"; }
                 HorizontalLayout {
                     spacing: 10px;
@@ -763,6 +1087,10 @@ export component SettingsPage inherits Page {
                         }
                     }
                 }
+            }
+            Switch {
+                text: "Dunkel";
+                checked <=> Theme.dark;
             }
         }
     }

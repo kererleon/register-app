@@ -1,6 +1,6 @@
-// The look of the Flutter app's "Holo" style, with its exact colours, fonts
-// and sizes (lib/ui/theme.dart and lib/ui/holo.dart). "Clean" is the light
-// look with one accent colour.
+// The five looks of the Flutter app (lib/ui/theme.dart, lib/ui/holo.dart):
+// 0 Holo, 1 Brainrot, 2 Israel, 3 Clean (one accent colour), 4 Liquid Glass.
+// Every value is taken from there; [dark] switches light and dark.
 
 import "fonts/inter-400.ttf";
 import "fonts/inter-500.ttf";
@@ -11,42 +11,93 @@ import "fonts/sora-700.ttf";
 import "fonts/jetbrains-mono-500.ttf";
 import "fonts/jetbrains-mono-600.ttf";
 import "fonts/jetbrains-mono-700.ttf";
+import "fonts/comic-neue-400.ttf";
+import "fonts/comic-neue-700.ttf";
+import "fonts/bangers-400.ttf";
+import "fonts/rubik-400.ttf";
+import "fonts/rubik-500.ttf";
+import "fonts/rubik-600.ttf";
+import "fonts/rubik-700.ttf";
+import "fonts/rubik-900.ttf";
 
 export global Theme {
+    in-out property <int> style: 0;
     in-out property <bool> dark: true;
-    // Accent for the clean look.
+    // The accent of the clean look.
     in-out property <color> accent-choice: #5b6cff;
     // True when the window is narrow (phone): bottom bar instead of the menu.
     in-out property <bool> narrow: false;
 
-    // AppColors (holo)
-    out property <color> violet: dark ? #7C5CFF : accent-choice;
-    out property <color> violet-deep: dark ? #5B3DF5 : accent-choice.darker(25%);
-    out property <color> cyan: dark ? #22D3EE : accent-choice;
-    out property <color> success: dark ? #2DD4A3 : #22A06B;
-    out property <color> warning: dark ? #F5B544 : #D99A1F;
-    out property <color> danger: dark ? #FF5C7A : #E5484D;
+    out property <bool> holo: style == 0;
+    out property <bool> brainrot: style == 1;
+    out property <bool> israel: style == 2;
+    out property <bool> clean: style == 3;
+    out property <bool> glass: style == 4;
+    // Brainrot and Israel: thick borders and hard shadows.
+    out property <bool> sticker: style == 1 || style == 2;
+
+    // A text in the looks' own words (br() in the Flutter app); israel
+    // falls back to the holo text, the calm looks always use it.
+    public pure function br(holo: string, brainrot: string, israel: string) -> string {
+        if (style == 1) { return brainrot; }
+        if (style == 2) { return israel; }
+        return holo;
+    }
+
+    pure function pick(holo: color, brainrot: color, israel: color, clean: color, glass: color) -> color {
+        if (style == 1) { return brainrot; }
+        if (style == 2) { return israel; }
+        if (style == 3) { return clean; }
+        if (style == 4) { return glass; }
+        return holo;
+    }
+
+    // AppColors
+    out property <color> violet: clean ? accent-choice : pick(#7C5CFF, #FF2E93, #2F6BFF, #000000, #0A84FF);
+    out property <color> violet-deep: clean ? accent-choice.darker(30%) : pick(#5B3DF5, #D1006E, #0038B8, #000000, #0066D6);
+    out property <color> cyan: clean ? accent-choice : pick(#22D3EE, #B6FF00, #7CC4FF, #000000, #64D2FF);
+    out property <color> cyan-deep: clean ? accent-choice.darker(30%) : pick(#0891B2, #4F7A00, #1F6FD1, #000000, #0A7FBF);
+    out property <color> success: pick(#2DD4A3, #00FF85, #2DBE8C, #22A06B, #30D158);
+    out property <color> warning: pick(#F5B544, #FFE600, #F2B33D, #D99A1F, #FF9F0A);
+    out property <color> danger: pick(#FF5C7A, #FF3B30, #E5484D, #E5484D, #FF453A);
+    out property <color> night: pick(#0A0E1A, #14001F, #06102E, #0F0F10, #0B0C14);
+    out property <color> night-surface: pick(#111729, #23003A, #0C1A45, #18181B, #1C1D27);
+    out property <color> night-surface-high: pick(#182038, #320A52, #132558, #222226, #262836);
+    out property <color> night-outline: pick(#26304D, #7A2BC4, #24407F, #2E2E33, #3A3C4C);
+    out property <color> frost: pick(#F4F6FB, #FFF6B0, #F7FAFF, #F6F6F7, #EEF1F8);
+    out property <color> frost-surface-high: pick(#EAEEF8, #FFE94D, #E8EFFC, #EDEDEF, #E4E8F2);
+    out property <color> frost-outline: pick(#D8DEEC, #111111, #C9D6F2, #E2E2E5, #D3D9E6);
+    out property <color> ink: pick(#0E1426, #111111, #0A1A44, #111113, #0B0C14);
 
     // ColorScheme
-    out property <color> bg: dark ? #0A0E1A : #F4F6FB;            // surface / night
-    out property <color> surface: dark ? #111729 : #FFFFFF;       // surfaceContainer
-    out property <color> surface-high: dark ? #182038 : #EAEEF8;
-    out property <color> drawer: dark ? #070A13 : #FFFFFF;        // surfaceContainerLowest
-    out property <color> outline: dark ? #26304D : #D8DEEC;       // outlineVariant
-    out property <color> text: dark ? #E7EAF6 : #0E1426;          // onSurface
-    out property <color> muted: dark ? #98A2C3 : #59627E;         // onSurfaceVariant
-    out property <color> selected-bg: dark ? #2A2163 : #E6E0FF;   // primaryContainer
+    out property <color> bg: dark ? night : frost;
+    out property <color> surface: dark ? night-surface : #FFFFFF;
+    out property <color> surface-high: dark ? night-surface-high : frost-surface-high;
+    // The menu (surfaceContainerLow).
+    out property <color> drawer: dark ? night-surface : #FFFFFF;
+    out property <color> outline: dark ? night-outline : frost-outline;
+    out property <color> text: dark ? #E7EAF6 : ink;
+    out property <color> muted: dark ? #98A2C3 : #59627E;
+    out property <color> selected-bg: israel ? (dark ? #102A6B : #DCE7FF) : (dark ? #2A2163 : #E6E0FF);
     out property <color> primary: dark ? violet : violet-deep;
-    out property <brush> accent-gradient: dark ? @linear-gradient(135deg, violet 0%, cyan 100%) : @linear-gradient(135deg, accent-choice 0%, accent-choice 100%);
+    out property <color> secondary: dark ? cyan : cyan-deep;
+    out property <brush> accent-gradient: brainrot ? @linear-gradient(135deg, violet 0%, warning 50%, cyan 100%) : (clean ? @linear-gradient(135deg, accent-choice 0%, accent-choice 100%) : (glass ? @linear-gradient(135deg, violet 0%, #5E5CE6 100%) : @linear-gradient(135deg, violet 0%, cyan 100%)));
 
-    // Fonts: Inter for text, Sora for headings, JetBrains Mono for data.
-    out property <string> font-body: "Inter";
-    out property <string> font-display: "Sora";
-    out property <string> font-mono: "JetBrains Mono";
+    // Fonts: body, headings, data (dates, hours, numbers).
+    out property <string> font-body: brainrot ? "Comic Neue" : (israel ? "Rubik" : (glass ? "" : "Inter"));
+    out property <string> font-display: brainrot ? "Bangers" : (israel ? "Rubik" : (holo ? "Sora" : font-body));
+    out property <string> font-mono: brainrot ? "Bangers" : (israel ? "Rubik" : (holo ? "JetBrains Mono" : font-body));
+    out property <int> display-weight: brainrot ? 400 : (israel ? 700 : 600);
+    out property <length> display-spacing: brainrot ? 1.2px : (israel ? -0.2px : (holo ? -0.4px : -0.3px));
 
-    out property <length> radius-panel: 16px;
-    out property <length> radius-card: 22px;
+    out property <length> radius-panel: sticker ? 8px : (glass ? 22px : (clean ? 12px : 16px));
+    out property <length> radius-card: sticker ? 12px : (glass ? 26px : (clean ? 14px : 22px));
     out property <length> gap: 12px;
     out property <length> page-padding: narrow ? 12px : 16px;
     out property <length> max-content: 860px;
+
+    // Glass panels (glassDecoration): translucent white in both modes.
+    out property <brush> glass-fill: dark ? @linear-gradient(180deg, #ffffff2e 0%, #ffffff1a 8%, #ffffff0a 100%) : @linear-gradient(180deg, #ffffffcc 0%, #ffffff94 8%, #ffffff61 100%);
+    out property <brush> glass-fill-strong: dark ? @linear-gradient(180deg, #ffffff3d 0%, #ffffff24 8%, #ffffff0f 100%) : @linear-gradient(180deg, #ffffffe6 0%, #ffffffb3 8%, #ffffff75 100%);
+    out property <color> glass-border: dark ? #ffffff29 : #ffffffa6;
 }
