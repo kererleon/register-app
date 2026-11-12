@@ -396,6 +396,21 @@ export global Prefs {
     in property <[string]> nickable;
     in property <[ColorItem]> subject-colors;
     // A switch or choice changed: Rust saves and applies it.
+    // --- profile ---
+    in-out property <int> profile-state; // 0 loading, 1 shown, 2 offline
+    in property <string> profile-name;
+    in property <string> profile-initials;
+    in property <string> profile-user;   // "name · role"
+    in property <string> profile-email;
+    in-out property <bool> profile-notify;
+    // What the server answered to a change, and whether it failed.
+    in-out property <string> profile-message;
+    in-out property <bool> profile-failed;
+    in-out property <bool> profile-busy;
+    callback load-profile();
+    callback set-notify-emails(bool);
+    callback change-email(string /* password */, string /* email */);
+    callback change-password(string /* old */, string /* new */);
     callback changed();
     callback add-ignored(string);
     callback remove-ignored(string);
@@ -423,6 +438,7 @@ export global Nav {
     in-out property <bool> info: false;
     in-out property <bool> chart: false;
     in-out property <bool> notifications: false;
+    in-out property <int> profile: 0; // 1 profile, 2 change email, 3 change password
     in-out property <int> open-subject: -1;
 }
 

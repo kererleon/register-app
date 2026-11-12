@@ -1,8 +1,12 @@
 //! The settings page: its switches, lists and dialogs.
 
+use std::sync::Arc;
+
+use register_core::client::Client;
+use serde_json::json;
 use slint::{ComponentHandle, SharedString};
 
-use crate::{AppData, AppWindow, Prefs, Shared, Theme, data_path, photos, settings, view};
+use crate::{AppData, AppWindow, Nav, Prefs, Shared, Theme, data_path, photos, settings, view};
 
 /// Whether [mode] (0 device, 1 light, 2 dark) means the dark look.
 pub fn dark(mode: i32) -> bool {
@@ -281,4 +285,154 @@ pub fn setup(ui: &AppWindow, shared: &Shared) {
     });
 
     p.on_open_url(|url| open_url(url.as_str()));
+
+    // --- profile ---
+
+    p.on_load_profile({
+        let weak = ui.as_weak();
+        let shared = shared.clone();
+        move || {
+            let ui = weak.unwrap();
+            let p = ui.global::<Prefs>();
+            if p.get_profile_name().is_empty() {
+                p.set_profile_state(0);
+            }
+            let weak = weak.clone();
+            let shared = shared.clone();
+            std::thread::spawn(move || {
+                let client = shared.lock().unwrap().client.clone();
+                let profile = client.and_then(|c| c.send("api/profile/get", json!({})).ok()).filter(|v| v.is_object());
+                let _ = weak.upgrade_in_event_loop(move |ui| {
+                    let p = ui.global::<Prefs>();
+                    let Some(v) = profile else {
+                        // Offline: what was loaded before stays.
+                        if p.get_profile_name().is_empty() {
+                            p.set_profile_state(2);
+                        }
+                        return;
+                    };
+                    let text = |key: &str| register_core::json::text(&v[key]);
+                    let name = text("name");
+                    let parts: Vec<&str> = name.split_whitespace().collect();
+                    let first = |w: &str| w.chars().next().map(|c| c.to_uppercase().to_string()).unwrap_or_default();
+                    let initials = match parts.as_slice() {
+                        [] => "?".to_owned(),
+                        [one] => first(one),
+                        [a, .., b] => first(a) + &first(b),
+                    };
+                    p.set_profile_initials(initials.into());
+                    p.set_profile_user(format!("{} · {}", text("username"), text("roleName")).to_uppercase().into());
+                    p.set_profile_email(text("email").into());
+                    p.set_profile_notify(register_core::json::boolean(&v["notificationsEnabled"]).unwrap_or(false));
+                    p.set_profile_name(name.into());
+                    p.set_profile_state(1);
+                });
+            });
+        }
+    });
+
+    p.on_set_notify_emails({
+        let shared = shared.clone();
+        move |on| {
+            let shared = shared.clone();
+            std::thread::spawn(move || {
+                let client = shared.lock().unwrap().client.clone();
+                if let Some(client) = client {
+                    let _ = client.send("api/profile/updateNotificationSettings", json!({ "notificationsEnabled": on }));
+                }
+            });
+        }
+    });
+
+    p.on_change_email({
+        let weak = ui.as_weak();
+        let shared = shared.clone();
+        move |pass, email| {
+            let ui = weak.unwrap();
+            let p = ui.global::<Prefs>();
+            p.set_profile_busy(true);
+            p.set_profile_message(SharedString::new());
+            let weak = weak.clone();
+            let shared = shared.clone();
+            let (pass, email) = (pass.to_string(), email.trim().to_owned());
+            std::thread::spawn(move || {
+                let client = shared.lock().unwrap().client.clone();
+                let result = match client {
+                    Some(c) => c.send("api/profile/updateProfile", json!({ "email": email, "password": pass })),
+                    None => Err(register_core::client::Error::NoInternet),
+                };
+                let _ = weak.upgrade_in_event_loop(move |ui| {
+                    let p = ui.global::<Prefs>();
+                    p.set_profile_busy(false);
+                    let (message, failed) = match result {
+                        Ok(v) if v["error"].is_null() => {
+                            (v["message"].as_str().unwrap_or("Email-Adresse geändert").to_owned(), false)
+                        }
+                        Ok(v) => (
+                            format!("[{}]: {}", v["error"].as_str().unwrap_or("error"), v["message"].as_str().unwrap_or_default()),
+                            true,
+                        ),
+                        Err(e) => (e.to_string(), true),
+                    };
+                    p.set_profile_message(message.into());
+                    p.set_profile_failed(failed);
+                    if !failed {
+                        // Back to the profile, which shows the new address.
+                        ui.global::<Nav>().set_profile(1);
+                        p.invoke_load_profile();
+                    }
+                });
+            });
+        }
+    });
+
+    p.on_change_password({
+        let weak = ui.as_weak();
+        let shared = shared.clone();
+        move |old, new| {
+            let ui = weak.unwrap();
+            let p = ui.global::<Prefs>();
+            p.set_profile_busy(true);
+            p.set_profile_message(SharedString::new());
+            let weak = weak.clone();
+            let shared = shared.clone();
+            let (old, new) = (old.to_string(), new.to_string());
+            std::thread::spawn(move || {
+                let current = shared.lock().unwrap().client.clone();
+                let result = match current {
+                    Some(c) => {
+                        // The old password is sent as typed, like the Flutter app.
+                        let with_old = Client::new(c.url(), c.user(), &old);
+                        with_old.change_password(&new).and_then(|()| {
+                            // Logged in again with the new password.
+                            let fresh = Arc::new(Client::new(c.url(), c.user(), &new));
+                            fresh.login(None)?;
+                            let mut state = shared.lock().unwrap();
+                            if state.settings.remember {
+                                settings::store_login(fresh.url(), fresh.user(), &new);
+                            }
+                            state.client = Some(fresh);
+                            Ok(())
+                        })
+                    }
+                    None => Err(register_core::client::Error::NoInternet),
+                };
+                let _ = weak.upgrade_in_event_loop(move |ui| {
+                    let p = ui.global::<Prefs>();
+                    p.set_profile_busy(false);
+                    match result {
+                        Ok(()) => {
+                            p.set_profile_message("Passwort erfolgreich geändert".into());
+                            p.set_profile_failed(false);
+                            ui.global::<Nav>().set_profile(1);
+                        }
+                        Err(e) => {
+                            p.set_profile_message(e.to_string().into());
+                            p.set_profile_failed(true);
+                        }
+                    }
+                });
+            });
+        }
+    });
 }

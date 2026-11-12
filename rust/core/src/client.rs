@@ -259,6 +259,34 @@ impl Client {
         Ok(body)
     }
 
+    /// Changes the password on the server. Afterwards this connection is
+    /// logged out: continue with a new [Client] that has the new password.
+    pub fn change_password(&self, new: &str) -> Result<(), Error> {
+        if self.demo {
+            return Err(Error::Server("In der Demo kann das Passwort nicht geändert werden".into()));
+        }
+        let mut session = self.session.lock().unwrap();
+        self.agent.cookie_jar_lock().clear();
+        session.logged_in = false;
+        let response: Value = self
+            .agent
+            .post(self.address("api/auth/setNewPassword"))
+            .send_json(json!({ "username": self.user, "oldPassword": self.pass, "newPassword": new }))
+            .map_err(network_error)?
+            .body_mut()
+            .read_json()
+            .map_err(|e| Error::Server(e.to_string()))?;
+        if response["error"].is_null() {
+            Ok(())
+        } else {
+            Err(Error::Server(format!(
+                "[{}] {}",
+                response["error"].as_str().unwrap_or("error"),
+                response["message"].as_str().unwrap_or_default()
+            )))
+        }
+    }
+
     /// Downloads a file (GET with query parameters), e.g. an attachment.
     pub fn download(&self, path: &str, query: &[(&str, String)]) -> Result<Vec<u8>, Error> {
         if self.demo {

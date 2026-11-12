@@ -224,6 +224,16 @@ pub fn run() -> Result<(), slint::PlatformError> {
     if let Some(section) = std::env::var("REGISTER_SECTION").ok().and_then(|p| p.parse().ok()) {
         ui.global::<Prefs>().set_section(section);
     }
+    // REGISTER_PROFILE=1 the profile, 2 change email, 3 change password.
+    if let Some(profile) = std::env::var("REGISTER_PROFILE").ok().and_then(|p| p.parse::<i32>().ok()) {
+        ui.global::<Nav>().set_profile(profile);
+        let weak = ui.as_weak();
+        slint::Timer::single_shot(std::time::Duration::from_secs(2), move || {
+            if let Some(ui) = weak.upgrade() {
+                ui.global::<Prefs>().invoke_load_profile();
+            }
+        });
+    }
     if let Some(dialog) = std::env::var("REGISTER_DIALOG").ok().and_then(|p| p.parse().ok()) {
         ui.global::<Prefs>().set_dialog(dialog);
     }
