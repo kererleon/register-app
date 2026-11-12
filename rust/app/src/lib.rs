@@ -47,6 +47,7 @@ pub struct State {
     pub semester: i32,
     pub show_cancelled: bool,
     pub sort_by_type: bool,
+    pub last_page: i32,
     /// The day shown in detail and the selected lesson.
     pub detail: Option<(chrono::NaiveDate, usize)>,
     remember: bool,
@@ -192,6 +193,7 @@ pub fn run() -> Result<(), slint::PlatformError> {
         show_cancelled: false,
         sort_by_type: false,
         detail: None,
+        last_page: 0,
         remember: true,
     }));
 
@@ -549,6 +551,85 @@ pub fn run() -> Result<(), slint::PlatformError> {
                 let client = s.lock().unwrap().client.clone()?;
                 client.send("api/message/markAsRead", json!({ "messageId": id })).err().map(|e| e.to_string())
             });
+        }
+    });
+
+    // Finds an entry of the homework page by its day and place.
+    fn find_homework(state: &State, day: &str, index: i32) -> Option<(chrono::NaiveDate, register_core::model::Homework)> {
+        let date = chrono::NaiveDate::parse_from_str(day, "%d.%m.%Y").ok()?;
+        Some((date, state.data.homework_on(date).get(index as usize)?.clone()))
+    }
+
+    data.on_move_homework({
+        let weak = ui.as_weak();
+        let shared = shared.clone();
+        move |day, index, y, m, d| {
+            let ui = weak.unwrap();
+            let Some((from, hw)) = find_homework(&shared.lock().unwrap(), &day, index) else { return };
+            let Some(to) = chrono::NaiveDate::from_ymd_opt(y, m as u32, d as u32) else { return };
+            if to == from {
+                return;
+            }
+            background(&ui, &shared, move |s| {
+                let client = s.lock().unwrap().client.clone()?;
+                let mut data = s.lock().unwrap().data.clone();
+                let result = data.move_homework(&client, &hw, from, to);
+                s.lock().unwrap().data = data;
+                Some(match result {
+                    Ok(()) => format!("Auf {} verschoben", format::long(to)),
+                    Err(e) => format!("Die Aufgabe konnte nicht verschoben werden: {e}"),
+                })
+            });
+        }
+    });
+
+    data.on_reset_move({
+        let weak = ui.as_weak();
+        let shared = shared.clone();
+        move |day, index| {
+            let ui = weak.unwrap();
+            let Some((_, hw)) = find_homework(&shared.lock().unwrap(), &day, index) else { return };
+            background(&ui, &shared, move |s| {
+                let client = s.lock().unwrap().client.clone()?;
+                let mut data = s.lock().unwrap().data.clone();
+                let result = data.reset_move(&client, &hw);
+                s.lock().unwrap().data = data;
+                Some(match result {
+                    Ok(()) => "Verschiebung zurückgesetzt".into(),
+                    Err(e) => format!("Die Erinnerung konnte nicht gelöscht werden: {e}"),
+                })
+            });
+        }
+    });
+
+    data.on_homework_info({
+        let weak = ui.as_weak();
+        let shared = shared.clone();
+        move |day, index| {
+            let ui = weak.unwrap();
+            let state = shared.lock().unwrap();
+            let Some((date, hw)) = find_homework(&state, &day, index) else { return };
+            let d = ui.global::<AppData>();
+            d.set_info_title(hw.title.as_str().into());
+            d.set_info_text(view::homework_info(&state.data, &hw, date).into());
+            ui.global::<Nav>().set_info(true);
+        }
+    });
+
+    data.on_page_shown({
+        let weak = ui.as_weak();
+        let shared = shared.clone();
+        move |page| {
+            let mut state = shared.lock().unwrap();
+            // Leaving the homework page: what was new has been seen.
+            if state.last_page == 1 && page != 1 && !state.data.unseen.is_empty() {
+                state.data.unseen.clear();
+                if state.remember {
+                    let _ = state.data.save(&data_path());
+                }
+                view::apply(&weak.unwrap(), &mut state);
+            }
+            state.last_page = page;
         }
     });
 

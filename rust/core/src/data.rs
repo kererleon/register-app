@@ -12,6 +12,26 @@ use crate::client::{Client, Error};
 use crate::model::*;
 use crate::parse;
 
+/// An entry of a teacher moved to another day: shown there as a reminder.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct Moved {
+    pub to: NaiveDate,
+    pub reminder_id: i64,
+}
+
+/// What an entry looked like before the register changed it.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub struct PreviousVersion {
+    pub title: String,
+    pub subtitle: String,
+    pub changed_at: i64,
+}
+
+/// Identifies an entry across reloads ("gradeGroup:1338").
+pub fn homework_key(h: &Homework) -> String {
+    format!("{:?}:{}", h.kind, h.id)
+}
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq)]
 pub struct Data {
     pub config: Option<Config>,
@@ -23,6 +43,18 @@ pub struct Data {
     pub messages: Vec<Message>,
     /// When the data was last loaded completely, as a Unix time.
     pub fetched_at: Option<i64>,
+    /// Entries moved to another day, by [homework_key].
+    #[serde(default)]
+    pub moved: BTreeMap<String, Moved>,
+    /// When each entry was seen first, by [homework_key].
+    #[serde(default)]
+    pub first_seen: BTreeMap<String, i64>,
+    /// Earlier versions of changed entries.
+    #[serde(default)]
+    pub previous: BTreeMap<String, PreviousVersion>,
+    /// New or changed entries the user has not looked at yet.
+    #[serde(default)]
+    pub unseen: std::collections::BTreeSet<String>,
 }
 
 /// Which parts failed to load, with the first error.
@@ -88,7 +120,11 @@ impl Data {
             report.error.get_or_insert(e);
         };
         match dashboard {
-            Ok(v) => self.dashboard = parse::dashboard(&v),
+            Ok(v) => {
+                let new = parse::dashboard(&v);
+                self.track_changes(&new);
+                self.dashboard = new;
+            }
             Err(e) => fail("Hausaufgaben", e, &mut report),
         }
         match absences {
@@ -217,8 +253,87 @@ impl Data {
     }
 
     fn reload_dashboard(&mut self, client: &Client) -> Result<(), Error> {
-        self.dashboard = parse::dashboard(&client.send("api/student/dashboard/dashboard", json!({ "viewFuture": true }))?);
+        let new = parse::dashboard(&client.send("api/student/dashboard/dashboard", json!({ "viewFuture": true }))?);
+        self.track_changes(&new);
+        self.dashboard = new;
         Ok(())
+    }
+
+    /// Marks entries that are new or changed since the last load (not on
+    /// the very first load) and remembers when each was seen first.
+    fn track_changes(&mut self, new: &[DashboardDay]) {
+        let now = Local::now().timestamp();
+        let first_load = self.dashboard.is_empty();
+        let old: std::collections::HashMap<String, &Homework> =
+            self.dashboard.iter().flat_map(|d| &d.homework).map(|h| (homework_key(h), h)).collect();
+        for h in new.iter().flat_map(|d| &d.homework) {
+            let key = homework_key(h);
+            self.first_seen.entry(key.clone()).or_insert(now);
+            match old.get(&key) {
+                None if !first_load => {
+                    self.unseen.insert(key);
+                }
+                Some(before) if before.title != h.title || before.subtitle != h.subtitle => {
+                    self.previous.insert(
+                        key.clone(),
+                        PreviousVersion { title: before.title.clone(), subtitle: before.subtitle.clone(), changed_at: now },
+                    );
+                    self.unseen.insert(key);
+                }
+                _ => {}
+            }
+        }
+    }
+
+    /// Moves an entry to another day. Own reminders really move; entries of
+    /// teachers can not be changed, so a reminder on the new day shows the
+    /// move everywhere, including the website.
+    pub fn move_homework(&mut self, client: &Client, h: &Homework, from: NaiveDate, to: NaiveDate) -> Result<(), Error> {
+        let key = homework_key(h);
+        let own = h.is_reminder();
+        let text = if own {
+            h.subtitle.clone()
+        } else {
+            let mut parts: Vec<&str> = Vec::new();
+            if let Some(l) = &h.label {
+                parts.push(l);
+            }
+            parts.push(&h.title);
+            if !h.subtitle.is_empty() {
+                parts.push(&h.subtitle);
+            }
+            const WD: [&str; 7] = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
+            format!(
+                "Verschoben: {} (eigentlich {}. {})",
+                parts.join(" – "),
+                WD[from.weekday().num_days_from_monday() as usize],
+                from.format("%d.%m.")
+            )
+        };
+        let created = client.send(
+            "api/student/dashboard/save_reminder",
+            json!({ "date": to.format("%Y-%m-%d").to_string(), "text": text }),
+        )?;
+        let created_id = crate::json::int(&created["id"])
+            .ok_or_else(|| Error::Server("Die Aufgabe konnte nicht verschoben werden".into()))?;
+        // Remove what the new reminder replaces: the reminder itself, or the
+        // reminder of an earlier move of the same entry.
+        let replaced = if own { Some(h.id) } else { self.moved.get(&key).map(|m| m.reminder_id) };
+        if let Some(id) = replaced {
+            client.send("api/student/dashboard/delete_reminder", json!({ "id": id }))?;
+        }
+        if !own {
+            self.moved.insert(key, Moved { to, reminder_id: created_id });
+        }
+        self.reload_dashboard(client)
+    }
+
+    /// Undoes a move: deletes the reminder on the new day.
+    pub fn reset_move(&mut self, client: &Client, h: &Homework) -> Result<(), Error> {
+        if let Some(m) = self.moved.remove(&homework_key(h)) {
+            client.send("api/student/dashboard/delete_reminder", json!({ "id": m.reminder_id }))?;
+        }
+        self.reload_dashboard(client)
     }
 
     /// Upcoming tests (today and later), soonest first.

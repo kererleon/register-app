@@ -2,7 +2,7 @@ import { Theme } from "theme.slint";
 import { AppData, Nav, Deco, DecoItem, DetailCard, DetailRow, TeacherView, TestItem, TargetChip, WeakSubject, HomeworkItem, HomeworkDay, GradeItem, SubjectItem, ChartLine, Lesson, WeekDay, AbsenceItem, MessageItem, SchoolItem } from "data.slint";
 import { Backdrop, PrimaryButton } from "widgets.slint";
 import { LoginPage } from "login.slint";
-import { TodayPage, HomeworkPage, StudyPlanDialog } from "pages.slint";
+import { TodayPage, HomeworkPage, StudyPlanDialog, InfoDialog } from "pages.slint";
 import { GradesPage, CalendarPage, AbsencesPage, AbsenceForm, MessagesPage, SettingsPage } from "pages2.slint";
 
 export { Theme, AppData, Nav, Deco, DecoItem, DetailCard, DetailRow, TeacherView, TestItem, TargetChip, WeakSubject, HomeworkItem, HomeworkDay, GradeItem, SubjectItem, ChartLine, Lesson, WeekDay, AbsenceItem, MessageItem, SchoolItem }
@@ -146,6 +146,7 @@ export component AppWindow inherits Window {
         { icon: @image-url("icons/list.svg"), label: "Mehr", page: -2 },
     ];
     property <bool> narrow: self.width < 720px;
+    changed page => { AppData.page-shown(self.page); }
     changed narrow => { Theme.narrow = self.narrow; }
     init => { Theme.narrow = self.narrow; }
 
@@ -362,6 +363,11 @@ export component AppWindow inherits Window {
         width: 100%;
         height: 100%;
         test: AppData.tests[Nav.study-plan];
+    }
+
+    if Nav.info: InfoDialog {
+        width: 100%;
+        height: 100%;
     }
 
     if Nav.absence-form: AbsenceForm {
