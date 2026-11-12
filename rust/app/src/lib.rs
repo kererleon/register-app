@@ -20,7 +20,7 @@ use register_core::client::{Client, Error};
 use register_core::data::{Data, monday_of, today};
 use register_core::schools;
 use serde_json::json;
-use slint::{ComponentHandle, ModelRc, SharedString, VecModel, Weak};
+use slint::{ComponentHandle, Model, ModelRc, SharedString, VecModel, Weak};
 
 slint::include_modules!();
 
@@ -48,6 +48,8 @@ pub struct State {
     pub show_cancelled: bool,
     pub sort_by_type: bool,
     pub last_page: i32,
+    /// The grade calculator's grades: value, weight, description.
+    pub calc: Vec<(i32, i32, Option<String>)>,
     /// The day shown in detail and the selected lesson.
     pub detail: Option<(chrono::NaiveDate, usize)>,
     remember: bool,
@@ -124,6 +126,11 @@ fn login(ui: &AppWindow, shared: &Shared, url: String, user: String, pass: Strin
         let client = Arc::new(Client::new(&url, &user, &pass));
         let result = client.login(code.as_deref());
         let ok = result.is_ok();
+        // The connection is stored right away: loading below needs it, and
+        // must not wait for the window to have taken the login.
+        if ok {
+            shared.lock().unwrap().client = Some(client.clone());
+        }
         let (weak2, shared2) = (weak.clone(), shared.clone());
         let _ = weak.upgrade_in_event_loop(move |ui| {
             let data = ui.global::<AppData>();
@@ -172,6 +179,12 @@ fn login(ui: &AppWindow, shared: &Shared, url: String, user: String, pass: Strin
 }
 
 pub fn run() -> Result<(), slint::PlatformError> {
+    // For trying out the app without an account: REGISTER_DEMO=1 uses the
+    // demo data in a folder of its own, the real data stays untouched.
+    let demo = std::env::var_os("REGISTER_DEMO").is_some();
+    if demo {
+        settings::set_dir(std::env::temp_dir().join("register-rust-demo"));
+    }
     let ui = AppWindow::new()?;
     let settings = settings::Settings::load();
     let theme = ui.global::<Theme>();
@@ -194,6 +207,7 @@ pub fn run() -> Result<(), slint::PlatformError> {
         sort_by_type: false,
         detail: None,
         last_page: 0,
+        calc: Vec::new(),
         remember: true,
     }));
 
@@ -204,6 +218,11 @@ pub fn run() -> Result<(), slint::PlatformError> {
             title: "Supplenz am 13.11.".into(),
             body: "3. Stunde Mathematik: Test Vertretung".into(),
         }]);
+    }
+    // For trying out an opened subject: REGISTER_OPEN_SUBJECT=1.
+    let open_subject: Option<usize> = std::env::var("REGISTER_OPEN_SUBJECT").ok().and_then(|v| v.parse().ok());
+    if let Some(i) = open_subject {
+        ui.global::<Nav>().set_open_subject(i as i32);
     }
     // For trying out a page directly: REGISTER_PAGE=2 (grades).
     if let Some(page) = std::env::var("REGISTER_PAGE").ok().and_then(|p| p.parse().ok()) {
@@ -252,12 +271,28 @@ pub fn run() -> Result<(), slint::PlatformError> {
         view::apply(&ui, &mut state);
         data.set_logged_in(true);
     }
-    {
+    if !demo {
         let weak = ui.as_weak();
         let shared = shared.clone();
         std::thread::spawn(move || match settings::load_login() {
             Some((url, user, pass)) => {
                 shared.lock().unwrap().client = Some(Arc::new(Client::new(&url, &user, &pass)));
+                if let Some(i) = open_subject {
+                    let shared = shared.clone();
+                    let weak = weak.clone();
+                    std::thread::spawn(move || {
+                        let (client, id) = {
+                            let s = shared.lock().unwrap();
+                            (s.client.clone(), s.data.subjects.get(i).map(|s| s.id))
+                        };
+                        if let (Some(client), Some(id)) = (client, id) {
+                            let mut data = shared.lock().unwrap().data.clone();
+                            let _ = data.load_subject_details(&client, id, 0);
+                            shared.lock().unwrap().data = data;
+                            update(weak, shared, None);
+                        }
+                    });
+                }
                 let _ = weak.upgrade_in_event_loop(|ui| {
                     let data = ui.global::<AppData>();
                     data.set_logged_in(true);
@@ -397,6 +432,121 @@ pub fn run() -> Result<(), slint::PlatformError> {
             let mut state = shared.lock().unwrap();
             state.sort_by_type = sort;
             view::apply(&weak.unwrap(), &mut state);
+        }
+    });
+
+    data.on_forecast({
+        let shared = shared.clone();
+        move |id, target, weight| {
+            let state = shared.lock().unwrap();
+            let semester = match state.semester {
+                0 => register_core::model::Semester::First,
+                1 => register_core::model::Semester::Second,
+                _ => register_core::model::Semester::All,
+            };
+            let Some(subject) = state.data.subjects.iter().find(|s| s.id == id as i64) else {
+                return ForecastResult { kind: 0, needed: SharedString::new(), needed_value: 0.0 };
+            };
+            match register_core::grades::forecast(subject, semester, target as f64, weight) {
+                register_core::grades::Forecast::Safe => ForecastResult { kind: 0, needed: SharedString::new(), needed_value: 0.0 },
+                register_core::grades::Forecast::Impossible => {
+                    ForecastResult { kind: 1, needed: SharedString::new(), needed_value: 0.0 }
+                }
+                register_core::grades::Forecast::Needs(g) => ForecastResult {
+                    kind: 2,
+                    needed: register_core::grades::format_steps(g).into(),
+                    needed_value: g as f32,
+                },
+            }
+        }
+    });
+
+    data.on_set_thick({
+        let weak = ui.as_weak();
+        let shared = shared.clone();
+        move |line, thick| {
+            let mut state = shared.lock().unwrap();
+            let name = weak.unwrap().global::<AppData>().get_chart().row_data(line as usize).map(|l| l.name.to_string());
+            if let Some(name) = name {
+                state.settings.subject_thick.insert(name, thick);
+                state.settings.save();
+                view::apply(&weak.unwrap(), &mut state);
+            }
+        }
+    });
+
+    data.on_calc_valid_grade(|t| register_core::grades::parse_input(&t).is_some());
+    data.on_calc_valid_weight(|t| t.trim().parse::<i32>().is_ok_and(|w| (0..=1000).contains(&w)));
+
+    data.on_calc_add({
+        let weak = ui.as_weak();
+        let shared = shared.clone();
+        move |grade, weight| {
+            let (Some(g), Ok(w)) = (register_core::grades::parse_input(&grade), weight.trim().parse::<i32>()) else { return };
+            let mut state = shared.lock().unwrap();
+            state.calc.push((g, w, None));
+            let ui = weak.unwrap();
+            view::apply_calculator(&ui.global::<AppData>(), &state);
+        }
+    });
+
+    data.on_calc_set({
+        let weak = ui.as_weak();
+        let shared = shared.clone();
+        move |i, grade, weight| {
+            let (Some(g), Ok(w)) = (register_core::grades::parse_input(&grade), weight.trim().parse::<i32>()) else { return };
+            let mut state = shared.lock().unwrap();
+            if let Some(entry) = state.calc.get_mut(i as usize) {
+                // An edited grade shows no description any more.
+                *entry = (g, w, None);
+            }
+            let ui = weak.unwrap();
+            let pairs: Vec<(i32, i32)> = state.calc.iter().map(|(g, w, _)| (*g, *w)).collect();
+            ui.global::<AppData>().set_calc_average(register_core::grades::calculator_average(&pairs).into());
+        }
+    });
+
+    data.on_calc_remove({
+        let weak = ui.as_weak();
+        let shared = shared.clone();
+        move |i| {
+            let mut state = shared.lock().unwrap();
+            if (i as usize) < state.calc.len() {
+                state.calc.remove(i as usize);
+            }
+            let ui = weak.unwrap();
+            view::apply_calculator(&ui.global::<AppData>(), &state);
+        }
+    });
+
+    // The grades of a subject and semester, without cancelled ones.
+    fn importable(state: &State, subject: i32, semester: i32) -> Vec<(i32, i32, Option<String>)> {
+        let Some(s) = state.data.subjects.get(subject as usize) else { return Vec::new() };
+        let semester = match semester {
+            0 => register_core::model::Semester::First,
+            1 => register_core::model::Semester::Second,
+            _ => register_core::model::Semester::All,
+        };
+        register_core::grades::grades_of(s, semester)
+            .filter(|g| !g.cancelled)
+            .filter_map(|g| Some((g.value?, g.weight_percent, Some(format!("{} · {}", s.name, g.kind)))))
+            .collect()
+    }
+
+    data.on_calc_import_preview({
+        let shared = shared.clone();
+        move |subject, semester| importable(&shared.lock().unwrap(), subject, semester).len() as i32
+    });
+
+    data.on_calc_import({
+        let weak = ui.as_weak();
+        let shared = shared.clone();
+        move |subject, semester| {
+            let mut state = shared.lock().unwrap();
+            let grades = importable(&state, subject, semester);
+            state.calc = grades;
+            let ui = weak.unwrap();
+            view::apply_calculator(&ui.global::<AppData>(), &state);
         }
     });
 
@@ -792,6 +942,20 @@ pub fn run() -> Result<(), slint::PlatformError> {
             }
         }
     });
+
+    if demo {
+        login(&ui, &shared, "https://vinzentinum.digitalesregister.it".into(), "demo-user-6540".into(), "demo".into(), false, None);
+        if let Some(i) = open_subject {
+            let weak = ui.as_weak();
+            let shared = shared.clone();
+            slint::Timer::single_shot(std::time::Duration::from_millis(800), move || {
+                let id = shared.lock().unwrap().data.subjects.get(i).map(|s| s.id as i32);
+                if let (Some(ui), Some(id)) = (weak.upgrade(), id) {
+                    ui.global::<AppData>().invoke_open_subject(id);
+                }
+            });
+        }
+    }
 
     ui.run()?;
 

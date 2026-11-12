@@ -146,6 +146,12 @@ pub struct Grade {
     pub name: String,
     pub description: String,
     pub created: String,
+    /// Competences rated with 1 to 5 stars.
+    #[serde(default)]
+    pub competences: Vec<(String, i32)>,
+    /// Why a cancelled grade was cancelled (loaded separately).
+    #[serde(default)]
+    pub cancelled_description: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

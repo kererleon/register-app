@@ -1,0 +1,887 @@
+// The grades page (grades_page.dart, sorted_grades_widget.dart), the grade
+// chart (grades_chart_page.dart) and the grade calculator
+// (grade_calculator.dart).
+
+import { Theme } from "theme.slint";
+import { AppData, Nav, SubjectItem, GradeItem, GradeGroup, ForecastResult, CalcGrade } from "data.slint";
+import { GlowCard, HoloPanel, HudLabel, SectionLabel, StatusPill, NeonRing, IconButton, OutlineButton, PrimaryButton, TextButton, EmptyState, Field } from "widgets.slint";
+import { Page } from "pages.slint";
+import { ScrollView, Slider } from "std-widgets.slint";
+
+// Colour of a grade on the 1–10 scale (gradeColor).
+export global Grades {
+    public pure function color(g: float) -> color {
+        if (g == 0) { return Theme.violet; }
+        if (g < 6) { return Theme.danger; }
+        if (g < 7) { return Theme.warning; }
+        if (g < 8.5) { return Theme.violet; }
+        return Theme.cyan;
+    }
+}
+
+component Chart inherits Rectangle {
+    in property <length> plot-height: 110px;
+    property <length> left: 22px;
+    property <length> plot-width: self.width - self.left;
+    height: self.plot-height + 20px;
+    // Grid lines and labels for the grades 3 to 10.
+    for g[i] in [10, 9, 8, 7, 6, 5, 4, 3]: Rectangle {
+        y: root.plot-height * i / 7;
+        height: 1px;
+        Rectangle {
+            x: root.left;
+            width: root.plot-width;
+            height: 1px;
+            background: Theme.outline;
+        }
+        Text {
+            x: 0;
+            y: -6px;
+            text: g;
+            color: Theme.text.transparentize(15%);
+            font-family: Theme.font-body;
+            font-size: 10px;
+        }
+    }
+    for line in AppData.chart: Rectangle {
+        x: root.left;
+        width: root.plot-width;
+        height: root.plot-height;
+        visible: line.thick > 0;
+        Path {
+            width: 100%;
+            height: 100%;
+            viewbox-width: 1000;
+            viewbox-height: 100;
+            stroke: line.color;
+            stroke-width: line.thick * 1px;
+            fill: transparent;
+            commands: line.commands;
+        }
+        if line.dots != "": Path {
+            width: 100%;
+            height: 100%;
+            viewbox-width: 1000;
+            viewbox-height: 100;
+            fill: line.color;
+            stroke-width: 0px;
+            commands: line.dots;
+        }
+    }
+    Text {
+        x: root.left - 16px;
+        y: root.plot-height + 6px;
+        text: AppData.chart-from;
+        color: Theme.text;
+        font-family: Theme.font-body;
+        font-size: 10px;
+    }
+    Text {
+        x: root.width - self.width;
+        y: root.plot-height + 6px;
+        text: AppData.chart-to;
+        color: Theme.text;
+        font-family: Theme.font-body;
+        font-size: 10px;
+    }
+}
+
+// A ChoiceChip.
+component Choice inherits Rectangle {
+    in property <string> text;
+    in property <bool> selected;
+    callback clicked();
+    height: 30px;
+    width: label.preferred-width + (selected ? 34px : 22px);
+    border-radius: 8px;
+    background: selected ? Theme.selected-bg : transparent;
+    border-width: 1px;
+    border-color: selected ? Theme.selected-bg : Theme.outline;
+    HorizontalLayout {
+        alignment: center;
+        spacing: 4px;
+        if root.selected: Image {
+            y: (parent.height - self.height) / 2;
+            source: @image-url("icons/check.svg");
+            width: 14px;
+            height: 14px;
+            colorize: Theme.text;
+        }
+        label := Text {
+            text: root.text;
+            color: Theme.text;
+            font-family: Theme.font-body;
+            font-size: 13px;
+            font-weight: 500;
+            vertical-alignment: center;
+        }
+    }
+    TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+// "Was brauche ich?" (_ForecastPanel).
+component ForecastPanel inherits Rectangle {
+    in property <SubjectItem> subject;
+    in-out property <int> target: min(9, max(5, floor(subject.average-value)) + 1);
+    in-out property <int> weight: 100;
+    property <ForecastResult> f: AppData.forecast(subject.id, root.target, root.weight);
+    property <color> tint: f.kind == 0 ? Theme.success : (f.kind == 1 ? Theme.danger : Grades.color(f.needed-value));
+    border-radius: 14px;
+    background: Theme.surface-high.transparentize(40%);
+    border-width: 1px;
+    border-color: Theme.outline;
+    VerticalLayout {
+        padding: 14px;
+        spacing: 10px;
+        HudLabel { text: Theme.br("WAS BRAUCHE ICH?", "WAS BRAUCHE ICH? 🤔", "TACHLES: WAS BRAUCHE ICH? 🤔"); }
+        if subject.next-test != "": HorizontalLayout {
+            spacing: 6px;
+            Image {
+                source: @image-url("icons/bolt.svg");
+                width: 18px;
+                height: 18px;
+                colorize: Theme.danger;
+            }
+            Text {
+                text: subject.next-test;
+                color: Theme.text;
+                font-family: Theme.font-body;
+                font-size: 14px;
+                font-weight: 600;
+                wrap: word-wrap;
+                horizontal-stretch: 1;
+            }
+        }
+        HorizontalLayout {
+            spacing: 14px;
+            if f.kind == 2: NeonRing {
+                size: 56px;
+                stroke: 5px;
+                font-size: 15px;
+                value: f.needed-value;
+                label: f.needed;
+            }
+            if f.kind != 2: Image {
+                y: (parent.height - self.height) / 2;
+                width: 40px;
+                height: 40px;
+                source: f.kind == 0 ? @image-url("icons/verified.svg") : @image-url("icons/block.svg");
+                colorize: root.tint;
+            }
+            VerticalLayout {
+                alignment: center;
+                spacing: 2px;
+                horizontal-stretch: 1;
+                Text {
+                    text: f.kind == 0 ? Theme.br("Schon sicher", "Schon safe, sigma 🗿", "Sababa achi, schon sicher 😎")
+                        : (f.kind == 1 ? Theme.br("Mit einem Test nicht erreichbar", "Unmöglich, L + ratio 💀", "Oy vey – nicht mal mit 10 😵")
+                        : "Mindestens " + f.needed);
+                    color: root.tint;
+                    font-family: Theme.font-body;
+                    font-size: 15.5px;
+                    font-weight: 600;
+                }
+                Text {
+                    text: (subject.next-test != "" ? "in diesem Test" : "im nächsten Test") + " (" + root.weight + " %), damit dein Durchschnitt auf " + root.target + " kommt.";
+                    color: Theme.text;
+                    font-family: Theme.font-body;
+                    font-size: 12.5px;
+                    wrap: word-wrap;
+                }
+            }
+        }
+        HorizontalLayout {
+            spacing: 6px;
+            alignment: start;
+            HudLabel {
+                text: "ZIEL Ø";
+                vertical-alignment: center;
+            }
+            for t in [6, 7, 8, 9]: Choice {
+                text: t;
+                selected: root.target == t;
+                clicked => { root.target = t; }
+            }
+            Rectangle { width: 8px; }
+            HudLabel {
+                text: "GEWICHT";
+                vertical-alignment: center;
+            }
+            for w in [50, 100]: Choice {
+                text: w + " %";
+                selected: root.weight == w;
+                clicked => { root.weight = w; }
+            }
+        }
+    }
+}
+
+// One grade or observation (GradeWidget / ObservationWidget).
+component GradeRow inherits VerticalLayout {
+    in property <GradeItem> grade;
+    padding-left: 16px;
+    padding-right: 12px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    spacing: 6px;
+    HorizontalLayout {
+        spacing: 12px;
+        VerticalLayout {
+            spacing: 2px;
+            horizontal-stretch: 1;
+            Text {
+                text: grade.name;
+                color: grade.cancelled ? Theme.muted : Theme.text;
+                font-family: Theme.font-body;
+                font-size: 15px;
+                wrap: word-wrap;
+                // Struck through when cancelled.
+                Rectangle {
+                    visible: grade.cancelled;
+                    y: parent.height / 2;
+                    height: 1px;
+                    width: parent.preferred-width;
+                    background: Theme.muted;
+                }
+            }
+            if grade.description != "": Text {
+                text: grade.description;
+                color: Theme.text;
+                font-family: Theme.font-body;
+                font-size: 14px;
+                wrap: word-wrap;
+            }
+            Text {
+                text: grade.line;
+                color: Theme.muted;
+                font-family: Theme.font-body;
+                font-size: 13.5px;
+                wrap: word-wrap;
+            }
+            if grade.created != "": Text {
+                text: grade.created;
+                color: Theme.muted;
+                font-family: Theme.font-body;
+                font-size: 12px;
+                wrap: word-wrap;
+            }
+            if grade.cancelled-reason != "": Text {
+                text: grade.cancelled-reason;
+                color: Theme.muted;
+                font-family: Theme.font-body;
+                font-size: 12px;
+                wrap: word-wrap;
+            }
+        }
+        if !grade.observation: Rectangle {
+            width: 46px;
+            NeonRing {
+                y: 0;
+                size: 46px;
+                font-size: 12px;
+                value: grade.value-num;
+                label: grade.value;
+                opacity: grade.cancelled ? 0.4 : 1;
+            }
+        }
+    }
+    for c in grade.competences: HorizontalLayout {
+        padding-left: 16px;
+        spacing: 8px;
+        Text {
+            text: c.name;
+            color: grade.cancelled ? Theme.muted : Theme.text;
+            font-family: Theme.font-body;
+            font-size: 13px;
+            vertical-alignment: center;
+            wrap: word-wrap;
+            horizontal-stretch: 1;
+        }
+        for n in 5: Image {
+            width: 20px;
+            height: 20px;
+            source: n < c.stars ? @image-url("icons/star.svg") : @image-url("icons/star_outline.svg");
+            colorize: n < c.stars ? Theme.cyan : Theme.muted;
+        }
+    }
+}
+
+component SubjectPanel inherits HoloPanel {
+    in property <SubjectItem> subject;
+    in property <bool> open;
+    callback toggled();
+    has-accent: subject.average-value > 0;
+    accent: Grades.color(subject.average-value);
+    highlighted: open;
+    inner-padding: 0px;
+    VerticalLayout {
+        Rectangle {
+            min-height: head.preferred-height;
+            head := HorizontalLayout {
+                padding-left: 8px;
+                padding-right: 12px;
+                padding-top: 6px;
+                padding-bottom: 6px;
+                spacing: 14px;
+                NeonRing {
+                    y: (parent.height - self.height) / 2;
+                    size: 46px;
+                    font-size: 12px;
+                    value: subject.average-value;
+                    label: subject.average;
+                }
+                HorizontalLayout {
+                    spacing: 8px;
+                    horizontal-stretch: 1;
+                    alignment: start;
+                    Text {
+                        text: subject.name + (subject.ignored ? " *" : "");
+                        color: Theme.text;
+                        font-family: Theme.font-body;
+                        font-size: 15.5px;
+                        vertical-alignment: center;
+                    }
+                    if subject.test-chip != "": StatusPill {
+                        y: (parent.height - self.height) / 2;
+                        text: subject.test-chip;
+                        icon: @image-url("icons/bolt.svg");
+                        has-icon: true;
+                    }
+                    if subject.average-value > 0 && subject.average-value < 6: StatusPill {
+                        y: (parent.height - self.height) / 2;
+                        text: Theme.br("unter 6", "Ohio 🌽", "Oy vey 🫠 unter 6");
+                        tint: Theme.danger;
+                        icon: @image-url("icons/warning_amber.svg");
+                        has-icon: true;
+                    }
+                }
+                VerticalLayout {
+                    alignment: center;
+                    Image {
+                        width: 24px;
+                        height: 24px;
+                        source: @image-url("icons/expand_more.svg");
+                        colorize: Theme.text;
+                        transform-rotation: root.open ? 180deg : 0deg;
+                        animate transform-rotation { duration: 200ms; }
+                    }
+                }
+            }
+            TouchArea {
+                mouse-cursor: pointer;
+                clicked => { root.toggled(); }
+            }
+        }
+        if root.open && subject.average-value > 0: VerticalLayout {
+            padding-left: 12px;
+            padding-right: 12px;
+            padding-bottom: 12px;
+            ForecastPanel { subject: subject; }
+        }
+        if root.open && !subject.loaded: VerticalLayout {
+            padding: 12px;
+            HudLabel { text: "LADE …"; }
+        }
+        if root.open: VerticalLayout {
+            padding-bottom: 6px;
+            for group in subject.groups: VerticalLayout {
+                if group.title != "": VerticalLayout {
+                    padding-left: 16px;
+                    padding-top: 8px;
+                    HudLabel { text: group.title; }
+                }
+                for grade in group.entries: GradeRow { grade: grade; }
+            }
+        }
+    }
+}
+
+export component GradesPage inherits Page {
+    property <int> open: Nav.open-subject;
+
+    GlowCard {
+        VerticalLayout {
+            spacing: 12px;
+            HorizontalLayout {
+                spacing: 16px;
+                NeonRing {
+                    size: 76px;
+                    stroke: 6px;
+                    font-size: 22px;
+                    value: AppData.overall-value;
+                    label: AppData.overall;
+                }
+                VerticalLayout {
+                    alignment: center;
+                    spacing: 4px;
+                    HudLabel { text: "GESAMTDURCHSCHNITT"; }
+                    Text {
+                        text: AppData.semester == 0 ? "1. Semester" : (AppData.semester == 1 ? "2. Semester" : "Beide Semester");
+                        color: Theme.text;
+                        font-family: Theme.font-display;
+                        font-size: 21px;
+                        font-weight: Theme.display-weight;
+                        letter-spacing: Theme.display-spacing;
+                    }
+                    Text {
+                        text: AppData.overall-value == 0 ? "Noch keine Noten"
+                            : (AppData.overall-value >= 6 ? Theme.br("Alles im grünen Bereich", "W Rizz, alles grün 🔥", "Sababa, alles grün 🇮🇱")
+                            : Theme.br("Unter der Genügend-Grenze", "Kritisch, lock in 😭", "Oy vey – yalla, lernen 😵"));
+                        color: Grades.color(AppData.overall-value);
+                        font-family: Theme.font-body;
+                        font-size: 12.5px;
+                    }
+                }
+                Rectangle { }
+                IconButton {
+                    icon: @image-url("icons/tune.svg");
+                    tint: Theme.text;
+                    clicked => { Nav.page = 6; }
+                }
+            }
+            if AppData.chart.length > 0: VerticalLayout {
+                spacing: 8px;
+                HudLabel { text: "VERLAUF"; }
+                Rectangle {
+                    height: chart.height;
+                    chart := Chart { width: parent.width; }
+                    IconButton {
+                        x: parent.width - self.width;
+                        y: parent.height - self.height - 18px;
+                        width: 30px;
+                        height: 30px;
+                        icon: @image-url("icons/fullscreen.svg");
+                        tint: Theme.text;
+                        clicked => { Nav.chart = true; }
+                    }
+                }
+            }
+        }
+    }
+
+    HorizontalLayout {
+        alignment: center;
+        spacing: 8px;
+        OutlineButton {
+            text: "Nach Art sortieren";
+            icon: @image-url("icons/category.svg");
+            has-icon: true;
+            active: AppData.sort-by-type;
+            clicked => { AppData.set-sort-by-type(!AppData.sort-by-type); }
+        }
+        OutlineButton {
+            text: "Gelöschte anzeigen";
+            icon: @image-url("icons/delete_sweep.svg");
+            has-icon: true;
+            active: AppData.show-cancelled;
+            clicked => { AppData.set-show-cancelled(!AppData.show-cancelled); }
+        }
+    }
+
+    SectionLabel { text: Theme.br("FÄCHER", "FÄCHER 📚", "FÄCHER 📚 TACHLES"); }
+    if AppData.subjects.length == 0: EmptyState {
+        icon: @image-url("icons/star.svg");
+        title: "Noch keine Noten";
+        text: "Sobald Noten eingetragen sind, erscheinen sie hier.";
+    }
+    for subject[i] in AppData.subjects: SubjectPanel {
+        subject: subject;
+        open: root.open == i;
+        toggled => {
+            if root.open == i {
+                Nav.open-subject = -1;
+            } else {
+                Nav.open-subject = i;
+                AppData.open-subject(subject.id);
+            }
+        }
+    }
+    if AppData.ignored-note != "": Text {
+        text: AppData.ignored-note;
+        color: Theme.muted;
+        font-family: Theme.font-body;
+        font-size: 14px;
+        wrap: word-wrap;
+    }
+
+    SectionLabel { text: "WERKZEUGE"; }
+    HoloPanel {
+        clickable: true;
+        clicked => { Nav.page = 8; }
+        HorizontalLayout {
+            spacing: 14px;
+            Rectangle {
+                width: 40px;
+                height: 40px;
+                border-radius: 12px;
+                background: Theme.cyan.transparentize(84%);
+                border-width: 1.4px;
+                border-color: Theme.cyan.transparentize(30%);
+                Text {
+                    text: "Ø";
+                    color: Theme.cyan.mix(#ffffff, 65%);
+                    font-family: "Sora";
+                    font-size: 18px;
+                    font-weight: 700;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+            }
+            VerticalLayout {
+                alignment: center;
+                horizontal-stretch: 1;
+                Text {
+                    text: "Notenrechner";
+                    color: Theme.text;
+                    font-family: Theme.font-body;
+                    font-size: 15.5px;
+                    font-weight: 600;
+                }
+                Text {
+                    text: "Berechne den Durchschnitt von beliebigen Noten";
+                    color: Theme.text;
+                    font-family: Theme.font-body;
+                    font-size: 12.5px;
+                }
+            }
+            Image {
+                y: (parent.height - self.height) / 2;
+                width: 24px;
+                height: 24px;
+                source: @image-url("icons/chevron_right.svg");
+                colorize: Theme.text;
+            }
+        }
+    }
+}
+
+// The grade chart full screen, with each subject's line thickness
+// (GradesChartPage, ChartLegend).
+export component ChartPage inherits Rectangle {
+    background: Theme.bg;
+    VerticalLayout {
+        Rectangle {
+            height: 56px;
+            HorizontalLayout {
+                padding-left: 8px;
+                spacing: 8px;
+                IconButton {
+                    y: (parent.height - self.height) / 2;
+                    icon: @image-url("icons/arrow_back.svg");
+                    tint: Theme.text;
+                    clicked => { Nav.chart = false; }
+                }
+                Text {
+                    text: "Notendiagramm";
+                    color: Theme.text;
+                    font-family: Theme.font-display;
+                    font-size: 19px;
+                    font-weight: Theme.display-weight;
+                    vertical-alignment: center;
+                }
+            }
+        }
+        ScrollView {
+            VerticalLayout {
+                padding: 16px;
+                spacing: 12px;
+                Chart { plot-height: 320px; }
+                for line[i] in AppData.chart: HorizontalLayout {
+                    spacing: 12px;
+                    Text {
+                        width: 200px;
+                        text: line.name;
+                        color: line.color;
+                        font-family: Theme.font-body;
+                        font-size: 14px;
+                        vertical-alignment: center;
+                        overflow: elide;
+                    }
+                    Slider {
+                        minimum: 0;
+                        maximum: 5;
+                        value: line.thick;
+                        changed(v) => { AppData.set-thick(i, round(v)); }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// The grade calculator (GradeCalculator).
+export component CalculatorPage inherits Rectangle {
+    in-out property <bool> adding: false;
+    in-out property <bool> importing: false;
+    in-out property <int> import-subject: -1;
+    in-out property <int> import-semester: 2;
+    VerticalLayout {
+        if AppData.calc-grades.length == 0: VerticalLayout {
+            padding: 32px;
+            spacing: 16px;
+            alignment: start;
+            Text {
+                text: "Um zu beginnen, importiere entweder bestehende Noten aus einem Fach\noder füge eine erste Note hinzu.";
+                color: Theme.text;
+                font-family: Theme.font-display;
+                font-size: 20px;
+                font-weight: Theme.display-weight;
+                horizontal-alignment: center;
+                wrap: word-wrap;
+            }
+            HorizontalLayout {
+                alignment: center;
+                PrimaryButton {
+                    width: 230px;
+                    text: "Noten importieren";
+                    icon: @image-url("icons/save_alt.svg");
+                    has-icon: true;
+                    clicked => { root.importing = true; }
+                }
+            }
+            HorizontalLayout {
+                alignment: center;
+                PrimaryButton {
+                    width: 230px;
+                    text: "Note hinzufügen";
+                    icon: @image-url("icons/add.svg");
+                    has-icon: true;
+                    clicked => { root.adding = true; }
+                }
+            }
+        }
+        if AppData.calc-grades.length > 0: Rectangle {
+            height: 64px;
+            background: Theme.surface;
+            HorizontalLayout {
+                padding-left: 16px;
+                padding-right: 16px;
+                VerticalLayout {
+                    alignment: center;
+                    Text {
+                        text: "Durchschnitt";
+                        color: Theme.text;
+                        font-family: Theme.font-body;
+                        font-size: 16px;
+                    }
+                    Text {
+                        text: AppData.calc-grades.length == 1 ? "1 Note" : AppData.calc-grades.length + " Noten";
+                        color: Theme.muted;
+                        font-family: Theme.font-body;
+                        font-size: 13px;
+                    }
+                }
+                Rectangle { }
+                Text {
+                    text: AppData.calc-average;
+                    color: Theme.text;
+                    font-family: Theme.font-mono;
+                    font-size: 20px;
+                    font-weight: 700;
+                    vertical-alignment: center;
+                }
+            }
+        }
+        if AppData.calc-grades.length > 0: ScrollView {
+            VerticalLayout {
+                padding: 8px;
+                padding-bottom: 160px;
+                spacing: 6px;
+                for g[i] in AppData.calc-grades: HoloPanel {
+                    inner-padding: 8px;
+                    VerticalLayout {
+                        spacing: 4px;
+                        HorizontalLayout {
+                            spacing: 8px;
+                            IconButton {
+                                y: (parent.height - self.height) / 2;
+                                icon: @image-url("icons/close.svg");
+                                tint: Theme.text;
+                                clicked => { AppData.calc-remove(i); }
+                            }
+                            VerticalLayout {
+                                width: 100px;
+                                HudLabel { text: "GEWICHTUNG %"; }
+                                Field {
+                                    text: g.weight;
+                                    edited(t) => {
+                                        if AppData.calc-valid-weight(t) {
+                                            AppData.calc-set(i, g.grade, t);
+                                        }
+                                    }
+                                }
+                            }
+                            VerticalLayout {
+                                horizontal-stretch: 1;
+                                HudLabel { text: "NOTE"; }
+                                Field {
+                                    text: g.grade;
+                                    edited(t) => {
+                                        if AppData.calc-valid-grade(t) {
+                                            AppData.calc-set(i, t, g.weight);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if g.description != "": Text {
+                            x: 16px;
+                            text: g.description;
+                            color: Theme.muted;
+                            font-family: Theme.font-body;
+                            font-size: 12px;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if AppData.calc-grades.length > 0: PrimaryButton {
+        x: parent.width - self.width - 16px;
+        y: parent.height - self.height - 16px;
+        width: 190px;
+        height: 52px;
+        text: "Note hinzufügen";
+        icon: @image-url("icons/add.svg");
+        has-icon: true;
+        clicked => { root.adding = true; }
+    }
+
+    // "Neue Note erstellen"
+    if root.adding: Rectangle {
+        background: #00000099;
+        TouchArea {
+            clicked => { root.adding = false; }
+        }
+        GlowCard {
+            x: (parent.width - self.width) / 2;
+            y: (parent.height - self.height) / 2;
+            width: min(380px, parent.width - 24px);
+            TouchArea { }
+            VerticalLayout {
+                spacing: 10px;
+                Text {
+                    text: "Neue Note erstellen";
+                    color: Theme.text;
+                    font-family: Theme.font-display;
+                    font-size: 20px;
+                    font-weight: Theme.display-weight;
+                }
+                HudLabel { text: "NOTE"; }
+                new-grade := Field { placeholder: "z. B. 8+, 7/8, 7,5"; }
+                if new-grade.text != "" && !AppData.calc-valid-grade(new-grade.text): Text {
+                    text: "Ungültiger Wert";
+                    color: Theme.danger;
+                    font-size: 12px;
+                }
+                HudLabel { text: "GEWICHTUNG %"; }
+                new-weight := Field {
+                    text: "100";
+                }
+                if new-weight.text != "" && !AppData.calc-valid-weight(new-weight.text): Text {
+                    text: "Ungültiger Wert";
+                    color: Theme.danger;
+                    font-size: 12px;
+                }
+                HorizontalLayout {
+                    alignment: end;
+                    spacing: 8px;
+                    TextButton {
+                        text: "Abbrechen";
+                        clicked => { root.adding = false; }
+                    }
+                    PrimaryButton {
+                        width: 130px;
+                        text: "Hinzufügen";
+                        enabled: AppData.calc-valid-grade(new-grade.text) && AppData.calc-valid-weight(new-weight.text);
+                        clicked => {
+                            AppData.calc-add(new-grade.text, new-weight.text);
+                            root.adding = false;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // "Noten importieren"
+    if root.importing: Rectangle {
+        background: Theme.bg;
+        VerticalLayout {
+            padding: 16px;
+            spacing: 10px;
+            HorizontalLayout {
+                spacing: 8px;
+                IconButton {
+                    icon: @image-url("icons/close.svg");
+                    tint: Theme.text;
+                    clicked => { root.importing = false; }
+                }
+                Text {
+                    text: "Noten importieren";
+                    color: Theme.text;
+                    font-family: Theme.font-display;
+                    font-size: 19px;
+                    font-weight: Theme.display-weight;
+                    vertical-alignment: center;
+                }
+            }
+            HudLabel { text: "FACH AUSWÄHLEN"; }
+            ScrollView {
+                height: min(320px, AppData.calc-subjects.length * 42px);
+                VerticalLayout {
+                    for name[i] in AppData.calc-subjects: Rectangle {
+                        height: 40px;
+                        border-radius: 8px;
+                        background: root.import-subject == i ? Theme.selected-bg : transparent;
+                        Text {
+                            x: 12px;
+                            text: name;
+                            color: Theme.text;
+                            font-family: Theme.font-body;
+                            font-size: 14px;
+                            vertical-alignment: center;
+                            height: parent.height;
+                        }
+                        TouchArea {
+                            mouse-cursor: pointer;
+                            clicked => { root.import-subject = i; }
+                        }
+                    }
+                }
+            }
+            HorizontalLayout {
+                spacing: 6px;
+                alignment: start;
+                for label[s] in ["Erstes Semester", "Zweites Semester", "Beide Semester"]: Choice {
+                    text: label;
+                    selected: root.import-semester == s;
+                    clicked => { root.import-semester = s; }
+                }
+            }
+            if root.import-subject >= 0 && AppData.calc-import-preview(root.import-subject, root.import-semester) == 0: Text {
+                text: "Für dieses Fach sind in diesem Zeitraum keine Noten verfügbar";
+                color: Theme.muted;
+                font-family: Theme.font-body;
+                font-size: 14px;
+                wrap: word-wrap;
+            }
+            HorizontalLayout {
+                alignment: end;
+                PrimaryButton {
+                    width: 150px;
+                    text: "Importieren";
+                    enabled: root.import-subject >= 0 && AppData.calc-import-preview(root.import-subject, root.import-semester) > 0;
+                    clicked => {
+                        AppData.calc-import(root.import-subject, root.import-semester);
+                        root.importing = false;
+                    }
+                }
+            }
+            Rectangle { }
+        }
+    }
+}

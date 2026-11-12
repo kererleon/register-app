@@ -120,6 +120,11 @@ fn grade(g: &Value) -> Option<Grade> {
         name: text(&g["name"]),
         description: text(&g["description"]),
         created: text(&g["created"]),
+        competences: list(&g["competences"])
+            .iter()
+            .map(|c| (text(&c["typeName"]), float(&c["grade"]).unwrap_or(0.0) as i32))
+            .collect(),
+        cancelled_description: None,
     })
 }
 

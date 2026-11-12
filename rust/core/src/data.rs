@@ -183,7 +183,15 @@ impl Data {
         let user = self.config.as_ref().map(|c| c.user_id).unwrap_or(0);
         client.select_semester(semester as u8 + 1)?;
         let v = client.send("api/student/subject_detail", json!({ "studentId": user, "subjectId": subject_id }))?;
-        let (grades, observations) = parse::subject_detail(&v);
+        let (mut grades, observations) = parse::subject_detail(&v);
+        // Why cancelled grades were cancelled.
+        for g in grades.iter_mut().filter(|g| g.cancelled) {
+            if let Some(id) = g.id
+                && let Ok(d) = client.send("api/student/entry/getGrade", json!({ "gradeId": id }))
+            {
+                g.cancelled_description = crate::json::string(&d["cancelledDescription"]).filter(|s| !s.is_empty());
+            }
+        }
         if let Some(subject) = self.subjects.iter_mut().find(|s| s.id == subject_id) {
             subject.details[semester] = Some(grades);
             subject.observations[semester] = Some(observations);
@@ -386,5 +394,24 @@ mod tests {
         data.save(&path).unwrap();
         assert_eq!(Data::load(&path), Some(data));
         std::fs::remove_file(path).ok();
+    }
+}
+
+#[cfg(test)]
+mod detail_tests {
+    use super::*;
+
+    #[test]
+    fn demo_subject_details_load() {
+        let client = Client::new("https://vinzentinum.digitalesregister.it", "demo-user-6540", "x");
+        client.login(None).unwrap();
+        let mut data = Data::default();
+        data.refresh(&client);
+        let sport = data.subjects.iter().find(|s| s.name == "Bewegung und Sport").unwrap().id;
+        data.load_subject_details(&client, sport, 0).unwrap();
+        let s = data.subjects.iter().find(|s| s.id == sport).unwrap();
+        let details = s.details[0].as_ref().expect("details");
+        assert_eq!(details[0].name, "Ausdauertest");
+        assert!(!s.observations[0].as_ref().unwrap().is_empty());
     }
 }
