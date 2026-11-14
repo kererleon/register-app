@@ -72,7 +72,7 @@ class Wrapper {
     (dio.httpClientAdapter as DefaultHttpClientAdapter).onHttpClientCreate =
         (client) {
       client.userAgent =
-          "Digitales-Register-App $appVersion; https://github.com/miDeb/digitales_register";
+          "Register-App $appVersion; https://github.com/kererleon/register-app";
       return null;
     };
     //dio.interceptors.add(DebugInterceptor());
