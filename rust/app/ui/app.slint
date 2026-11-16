@@ -162,6 +162,20 @@ export component AppWindow inherits Window {
         height: 100%;
     }
 
+    // Phones draw under the status bar, the gesture bar and the keyboard:
+    // everything the user touches stays between them.
+    in property <length> test-inset-top;
+    in property <length> test-inset-bottom;
+    property <length> inset-top: max(self.safe-area-insets.top, self.test-inset-top);
+    property <length> inset-bottom: max(self.safe-area-insets.bottom, self.test-inset-bottom, self.virtual-keyboard-size.height);
+    property <bool> more: false;
+
+    safe := Rectangle {
+    x: root.safe-area-insets.left;
+    y: root.inset-top;
+    width: root.width - root.safe-area-insets.left - root.safe-area-insets.right;
+    height: root.height - root.inset-top - root.inset-bottom;
+
     if !AppData.logged-in: LoginPage {
         width: 100%;
         height: 100%;
@@ -406,13 +420,12 @@ export component AppWindow inherits Window {
                     padding: 4px;
                     for entry in root.bottom: BottomItem {
                         entry: entry;
-                        selected: entry.page == -2 ? (Nav.page == 3 || Nav.page >= 5) : Nav.page == entry.page;
+                        selected: entry.page == -2 ? (Nav.page == 3 || Nav.page >= 5 || root.more) : Nav.page == entry.page;
                         clicked => {
                             if entry.page >= 0 {
                                 Nav.page = entry.page;
                             } else {
-                                // "Mehr": absences, messages, settings in turn.
-                                Nav.page = Nav.page == 3 ? 5 : (Nav.page == 5 ? 6 : 3);
+                                root.more = true;
                             }
                         }
                     }
@@ -470,5 +483,86 @@ export component AppWindow inherits Window {
     if Nav.absence-form: AbsenceForm {
         width: 100%;
         height: 100%;
+    }
+
+    // "Mehr" on phones: the pages that have no place in the bar.
+    if root.more && root.narrow: Rectangle {
+        background: #00000099;
+        TouchArea {
+            clicked => { root.more = false; }
+        }
+        Rectangle {
+            y: parent.height - self.height;
+            height: more-list.preferred-height + 16px;
+            background: Theme.drawer;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            TouchArea { }
+            more-list := VerticalLayout {
+                padding: 8px;
+                alignment: start;
+                Rectangle {
+                    height: 16px;
+                    Rectangle {
+                        width: 36px;
+                        height: 4px;
+                        border-radius: 2px;
+                        background: Theme.outline;
+                    }
+                }
+                for entry in [root.nav[3], root.nav[5], root.nav[6], root.settings-entry, root.logout-entry]: Rectangle {
+                    height: 52px;
+                    border-radius: 12px;
+                    background: Nav.page == entry.page ? Theme.primary.transparentize(82%) : (more-ta.has-hover ? Theme.text.transparentize(94%) : transparent);
+                    HorizontalLayout {
+                        padding-left: 16px;
+                        padding-right: 16px;
+                        spacing: 16px;
+                        Image {
+                            y: (parent.height - self.height) / 2;
+                            width: 24px;
+                            height: 24px;
+                            source: entry.icon;
+                            colorize: Nav.page == entry.page ? Theme.primary : Theme.text;
+                        }
+                        Text {
+                            text: entry.label;
+                            color: Nav.page == entry.page ? Theme.primary : Theme.text;
+                            font-family: Theme.font-body;
+                            font-size: 15px;
+                            font-weight: 500;
+                            vertical-alignment: center;
+                        }
+                        Rectangle { }
+                        if entry.page == 5 && AppData.unread > 0: VerticalLayout {
+                            alignment: center;
+                            Rectangle {
+                                width: max(20px, unread.preferred-width + 10px);
+                                height: 20px;
+                                border-radius: 10px;
+                                background: #f44336;
+                                unread := Text {
+                                    text: AppData.unread;
+                                    color: white;
+                                    font-size: 12px;
+                                }
+                            }
+                        }
+                    }
+                    more-ta := TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => {
+                            root.more = false;
+                            if entry.page >= 0 {
+                                Nav.page = entry.page;
+                            } else {
+                                AppData.logout();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
     }
 }

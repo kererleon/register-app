@@ -1,15 +1,18 @@
 import { Theme } from "theme.slint";
 import { AppData, Nav, Prefs } from "data.slint";
 import { GlowCard, Field, PrimaryButton, TextButton, HudLabel } from "widgets.slint";
-import { CheckBox } from "std-widgets.slint";
+import { CheckBox, ScrollView } from "std-widgets.slint";
 
 export component LoginPage inherits Rectangle {
     property <string> school-name;
     property <string> school-url;
     property <bool> remember: true;
 
+    // Scrolls when the keyboard leaves too little room.
+    ScrollView {
     VerticalLayout {
         alignment: center;
+        min-height: root.height;
         padding: Theme.page-padding;
         HorizontalLayout {
             alignment: center;
@@ -177,5 +180,6 @@ export component LoginPage inherits Rectangle {
                 }
             }
         }
+    }
     }
 }
