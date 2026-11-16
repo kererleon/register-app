@@ -58,12 +58,21 @@ jobs:
         run: |
           Copy-Item target\release\register.exe Register-Rust.exe
           Compress-Archive -Path Register-Rust.exe -DestinationPath Register-Rust-Windows.zip
+      - name: Installer
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress }
+          $version = (Select-String -Path Cargo.toml -Pattern '^version = "(.+)"').Matches[0].Groups[1].Value
+          & $iscc "/DAppVersion=$version.${{ github.run_number }}" packaging\windows\installer.iss
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - uses: actions/upload-artifact@v4
         with:
           name: windows
           path: |
             rust/Register-Rust.exe
             rust/Register-Rust-Windows.zip
+            rust/Register-Rust-Setup.exe
 
   android:
     needs: test
@@ -115,8 +124,8 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           TAG="rust-build-${{ github.run_number }}"
-          gh release create "$TAG" Register-Rust-Android.apk Register-Rust.exe Register-Rust-Windows.zip Register-Rust-macOS.zip \
+          gh release create "$TAG" Register-Rust-Android.apk Register-Rust-Setup.exe Register-Rust.exe Register-Rust-Windows.zip Register-Rust-macOS.zip \
             --target "${{ github.sha }}" \
             --title "Register Rust (build ${{ github.run_number }})" \
-            --notes "Die schnelle Rust-Version von Register – eigenständige App neben der Flutter-Version. Android: Register-Rust-Android.apk. Windows: Register-Rust.exe starten (keine Installation nötig). Mac: Register-Rust-macOS.zip entpacken, Rechtsklick → Öffnen." \
+            --notes "Die schnelle Rust-Version von Register – eigenständige App neben der Flutter-Version. Android: Register-Rust-Android.apk. Windows: Register-Rust-Setup.exe installiert die App (Startmenü, Deinstallation); Register-Rust.exe läuft auch ohne Installation. Mac: Register-Rust-macOS.zip entpacken, Rechtsklick → Öffnen." \
             --latest=false
