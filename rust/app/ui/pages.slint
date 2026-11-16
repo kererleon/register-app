@@ -34,7 +34,7 @@ component LessonLine inherits Rectangle {
         padding-left: 10px;
         padding-right: 10px;
         Text {
-            width: 36px;
+            width: Theme.narrow ? 30px : 36px;
             text: lesson.hours;
             color: Theme.text;
             font-family: Theme.font-mono;
@@ -43,7 +43,7 @@ component LessonLine inherits Rectangle {
             vertical-alignment: center;
         }
         Text {
-            width: 92px;
+            width: Theme.narrow ? 84px : 92px;
             text: lesson.time;
             color: Theme.muted;
             font-family: Theme.font-mono;
@@ -68,11 +68,15 @@ component LessonLine inherits Rectangle {
             colorize: Theme.danger;
         }
         Text {
+            // A long room name must not push the subject away.
+            max-width: root.width * 0.3;
             text: lesson.rooms;
             color: Theme.text;
             font-family: Theme.font-mono;
             font-size: 11px;
             vertical-alignment: center;
+            horizontal-alignment: right;
+            overflow: elide;
         }
     }
 }
@@ -185,7 +189,8 @@ component TaskRow inherits HoloPanel {
 component TargetPill inherits StatusPill {
     in property <TargetChip> chip;
     property <float> v: chip.needed-value;
-    text: "Ø" + chip.target + " → " + (chip.kind == 0 ? Theme.br("sicher", "safe 🗿", "sababa 😎") : (chip.kind == 1 ? Theme.br("unmöglich", "L 💀", "oy vey 😵") : chip.needed));
+    // On a phone three of them share one line: short words.
+    text: "Ø" + chip.target + " → " + (chip.kind == 0 ? (Theme.narrow ? "✓" : Theme.br("sicher", "safe 🗿", "sababa 😎")) : (chip.kind == 1 ? (Theme.narrow ? "✗" : Theme.br("unmöglich", "L 💀", "oy vey 😵")) : chip.needed));
     tint: chip.kind == 0 ? Theme.success : (chip.kind == 1 ? Theme.danger : (v < 6 ? Theme.danger : (v < 7 ? Theme.warning : (v < 8.5 ? Theme.violet : Theme.cyan))));
 }
 
@@ -196,10 +201,12 @@ component TestCountdown inherits HoloPanel {
     has-accent: true;
     accent: root.tint;
     highlighted: test.days <= 1;
+    VerticalLayout {
+    spacing: 8px;
     HorizontalLayout {
-        spacing: 12px;
+        spacing: Theme.narrow ? 8px : 12px;
         VerticalLayout {
-            width: 64px;
+            width: Theme.narrow ? 52px : 64px;
             alignment: center;
             Text {
                 text: test.days <= 1 ? "!" : test.days;
@@ -218,7 +225,11 @@ component TestCountdown inherits HoloPanel {
         VerticalLayout {
             spacing: 4px;
             horizontal-stretch: 1;
-            HudLabel { text: test.header; }
+            min-width: 0px;
+            HudLabel {
+                text: test.header;
+                overflow: elide;
+            }
             Text {
                 text: test.title;
                 color: Theme.text;
@@ -236,7 +247,7 @@ component TestCountdown inherits HoloPanel {
                 max-height: 36px;
                 overflow: elide;
             }
-            if test.average-now != "": HorizontalLayout {
+            if test.average-now != "" && !Theme.narrow: HorizontalLayout {
                 padding-top: 4px;
                 spacing: 6px;
                 alignment: start;
@@ -253,6 +264,16 @@ component TestCountdown inherits HoloPanel {
             tint: Theme.violet;
             clicked => { Nav.study-plan = test.index; }
         }
+    }
+    // On a phone the targets get the card's full width.
+    if test.average-now != "" && Theme.narrow: HudLabel {
+        text: "Ø JETZT " + test.average-now + " · BRAUCHST";
+    }
+    if test.average-now != "" && Theme.narrow: HorizontalLayout {
+        spacing: 6px;
+        alignment: start;
+        for chip in test.targets: TargetPill { chip: chip; }
+    }
     }
 }
 
