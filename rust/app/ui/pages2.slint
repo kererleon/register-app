@@ -592,7 +592,7 @@ export component AbsencesPage inherits Page {
             AbsenceMeter { }
             if AppData.year-detail != "": AbsenceYearOutlook { }
             HorizontalLayout {
-                spacing: 24px;
+                spacing: Theme.narrow ? 12px : 24px;
                 padding-top: 6px;
                 Count {
                     value: AppData.count-absences;
@@ -609,7 +609,7 @@ export component AbsencesPage inherits Page {
                 }
                 Count {
                     value: AppData.count-delayed;
-                    label: "Verspätungen";
+                    label: Theme.narrow ? "Verspätet" : "Verspätungen";
                     tint: Theme.warning;
                 }
                 Rectangle { }
@@ -831,6 +831,8 @@ component MessageCard inherits HoloPanel {
                     spacing: 4px;
                     padding-top: 6px;
                     padding-bottom: 6px;
+                    horizontal-stretch: 1;
+                    min-width: 0px;
                     HorizontalLayout {
                         spacing: 8px;
                         Text {
@@ -849,7 +851,10 @@ component MessageCard inherits HoloPanel {
                             }
                         }
                     }
-                    HudLabel { text: m.date; }
+                    HudLabel {
+                        text: m.date;
+                        overflow: elide;
+                    }
                 }
                 VerticalLayout {
                     alignment: center;

@@ -205,7 +205,23 @@ component ForecastPanel inherits Rectangle {
                 selected: root.target == t;
                 clicked => { root.target = t; }
             }
-            Rectangle { width: 8px; }
+            if !Theme.narrow: Rectangle { width: 8px; }
+            if !Theme.narrow: HudLabel {
+                text: "GEWICHT";
+                vertical-alignment: center;
+            }
+            for w in [50, 100]: Choice {
+                visible: !Theme.narrow;
+                width: Theme.narrow ? 0px : self.preferred-width;
+                text: w + " %";
+                selected: root.weight == w;
+                clicked => { root.weight = w; }
+            }
+        }
+        // On a phone the weight has a row of its own.
+        if Theme.narrow: HorizontalLayout {
+            spacing: 6px;
+            alignment: start;
             HudLabel {
                 text: "GEWICHT";
                 vertical-alignment: center;
@@ -465,7 +481,7 @@ export component GradesPage inherits Page {
         }
     }
 
-    HorizontalLayout {
+    if !Theme.narrow: HorizontalLayout {
         alignment: center;
         spacing: 8px;
         OutlineButton {
@@ -483,6 +499,28 @@ export component GradesPage inherits Page {
             clicked => { AppData.set-show-cancelled(!AppData.show-cancelled); }
         }
     }
+    // On a phone the two buttons do not fit side by side.
+    if Theme.narrow: HorizontalLayout {
+        alignment: center;
+        OutlineButton {
+            text: "Nach Art sortieren";
+            icon: @image-url("icons/category.svg");
+            has-icon: true;
+            active: AppData.sort-by-type;
+            clicked => { AppData.set-sort-by-type(!AppData.sort-by-type); }
+        }
+    }
+    if Theme.narrow: HorizontalLayout {
+        alignment: center;
+        OutlineButton {
+            text: "Gelöschte anzeigen";
+            icon: @image-url("icons/delete_sweep.svg");
+            has-icon: true;
+            active: AppData.show-cancelled;
+            clicked => { AppData.set-show-cancelled(!AppData.show-cancelled); }
+        }
+    }
+
 
     SectionLabel { text: Theme.br("FÄCHER", "FÄCHER 📚", "FÄCHER 📚 TACHLES"); }
     if AppData.subjects.length == 0: EmptyState {

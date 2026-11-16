@@ -224,6 +224,14 @@ pub fn run() -> Result<(), slint::PlatformError> {
     if let Some(section) = std::env::var("REGISTER_SECTION").ok().and_then(|p| p.parse().ok()) {
         ui.global::<Prefs>().set_section(section);
     }
+    // For trying out a phone's status and gesture bars: REGISTER_INSETS=32,24.
+    if let Some((top, bottom)) = std::env::var("REGISTER_INSETS")
+        .ok()
+        .and_then(|v| v.split_once(',').and_then(|(t, b)| Some((t.parse::<f32>().ok()?, b.parse::<f32>().ok()?))))
+    {
+        ui.set_test_inset_top(top);
+        ui.set_test_inset_bottom(bottom);
+    }
     // For trying out the phone layout: REGISTER_SIZE=390x800.
     if let Some((w, h)) = std::env::var("REGISTER_SIZE")
         .ok()
@@ -1186,7 +1194,8 @@ pub fn run() -> Result<(), slint::PlatformError> {
         }
     });
 
-    if demo {
+    // REGISTER_LOGIN_PAGE=1 stays on the login page (for trying it out).
+    if demo && std::env::var_os("REGISTER_LOGIN_PAGE").is_none() {
         login(&ui, &shared, "https://vinzentinum.digitalesregister.it".into(), "demo-user-6540".into(), "demo".into(), false, None);
         if let Some(i) = open_subject {
             let weak = ui.as_weak();

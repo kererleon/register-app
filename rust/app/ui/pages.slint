@@ -13,6 +13,8 @@ export component Page inherits ScrollView {
             VerticalLayout {
                 width: min(Theme.max-content, root.visible-width - 2 * Theme.page-padding);
                 spacing: 10px;
+                // Short pages keep their cards' own heights.
+                alignment: start;
                 @children
             }
         }
