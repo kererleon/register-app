@@ -2,8 +2,8 @@
 
 use crate::model::{Grade, GradeValue, Semester, Subject};
 
-/// Lowest and highest grade the Digitales Register gives.
-pub const MIN_GRADE: f64 = 1.0;
+/// Lowest and highest grade: at this school no grade below 4 is given.
+pub const MIN_GRADE: f64 = 4.0;
 pub const MAX_GRADE: f64 = 10.0;
 /// The pass mark in South Tyrol.
 pub const PASS_MARK: f64 = 6.0;
@@ -217,8 +217,11 @@ mod tests {
         let s = subject(vec![g(500, 100)]);
         // (6 * 200 - 500) / 100 = 7
         assert_eq!(forecast(&s, Semester::First, 6.0, 100), Forecast::Needs(7.0));
-        assert_eq!(forecast(&s, Semester::First, 4.0, 100), Forecast::Needs(3.0));
-        assert_eq!(forecast(&s, Semester::First, 2.5, 100), Forecast::Safe);
+        // (5.5 * 200 - 500) / 100 = 6
+        assert_eq!(forecast(&s, Semester::First, 5.5, 100), Forecast::Needs(6.0));
+        // A 4 is the worst grade there is: (4.5 * 200 - 500) / 100 = 4
+        assert_eq!(forecast(&s, Semester::First, 4.5, 100), Forecast::Safe);
+        assert_eq!(forecast(&s, Semester::First, 4.0, 100), Forecast::Safe);
         assert_eq!(forecast(&subject(vec![g(200, 100)]), Semester::First, 8.0, 100), Forecast::Impossible);
     }
 

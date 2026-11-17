@@ -20,7 +20,8 @@ import 'package:dr/data.dart';
 import 'package:dr/utc_date_time.dart';
 
 /// Lowest and highest grade the Digitales Register gives.
-const minGrade = 1.0;
+// At this school no grade below 4 is given.
+const minGrade = 4.0;
 const maxGrade = 10.0;
 
 /// The pass mark in South Tyrol.
@@ -40,7 +41,7 @@ enum ForecastKind {
 class Forecast {
   final ForecastKind kind;
 
-  /// The grade needed in the next test, on the 1–10 scale.
+  /// The grade needed in the next test, on the 4–10 scale.
   final double required;
 
   const Forecast(this.kind, this.required);
